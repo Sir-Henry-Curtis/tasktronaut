@@ -1,0 +1,32 @@
+#!/usr/bin/env node
+// GSD v1.5 TaskStart hook — inject planning context when a new task begins.
+const fs = require('fs');
+const path = require('path');
+let input = '';
+const t = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', c => { input += c; });
+process.stdin.on('end', () => {
+  clearTimeout(t);
+  try {
+    const data = JSON.parse(input);
+    const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
+    const sp = path.join(cwd, '.planning', 'STATE.md');
+    if (!fs.existsSync(sp)) { out(''); process.exit(0); }
+    const state = fs.readFileSync(sp, 'utf8').trim();
+    const phase = (state.match(/current_phase:\s*(\S+)/) || [])[1];
+    const step = (state.match(/current_step:\s*(\S+)/) || [])[1];
+    let plan = '';
+    if (phase && (step === 'execute' || step === 'verify')) {
+      const pp = path.join(cwd, '.planning', 'PLANS', 'phase-' + String(phase).padStart(2,'0') + '.xml');
+      if (fs.existsSync(pp)) {
+        const c = fs.readFileSync(pp, 'utf8');
+        plan = '\n\n### Active Phase Plan\n```xml\n' + c.slice(0,3000) + (c.length>3000?'\n...[truncated]':'') + '\n```';
+      }
+    }
+    out('## GSD Project Context\n\nA GSD workflow is active. Current state:\n\n```\n' + state + '\n```' + plan +
+      '\n\nUse /gsd-next to advance, or /gsd-<command> for a specific step.');
+  } catch (_) { out(''); }
+  process.exit(0);
+});
+function out(c) { process.stdout.write(JSON.stringify({ cancel: false, contextModification: c })); }

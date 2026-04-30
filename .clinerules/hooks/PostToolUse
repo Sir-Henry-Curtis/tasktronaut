@@ -1,0 +1,35 @@
+#!/usr/bin/env node
+// GSD v1.5 PostToolUse hook — detect stuck loops from repetitive file writes.
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const WARN_AT = 3;
+let input = '';
+const t = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', c => { input += c; });
+process.stdin.on('end', () => {
+  clearTimeout(t);
+  try {
+    const data = JSON.parse(input);
+    const sid = data.session_id;
+    const tool = (data.postToolUse || {}).tool_name || '';
+    if (!['write_to_file','apply_diff','str_replace_editor','create_file'].includes(tool)) { out(''); process.exit(0); }
+    const fp = ((data.postToolUse || {}).tool_input || {}).path ||
+               ((data.postToolUse || {}).tool_input || {}).file_path || '';
+    if (!fp || !sid || /[\/\\]|\.\."/.test(sid)) { out(''); process.exit(0); }
+    const tmp = path.join(os.tmpdir(), 'gsd-writes-' + sid + '.json');
+    let w = {};
+    try { if (fs.existsSync(tmp)) w = JSON.parse(fs.readFileSync(tmp,'utf8')); } catch(_){}
+    w[fp] = (w[fp] || 0) + 1;
+    try { fs.writeFileSync(tmp, JSON.stringify(w)); } catch(_){}
+    if (w[fp] >= WARN_AT) {
+      out('## GSD Loop Warning\n\n`' + fp + '` written **' + w[fp] + ' times** this session.\n\n' +
+        '**Actions:**\n1. Verify output meets acceptance criteria.\n' +
+        '2. Run /gsd-verify-work to check criteria.\n' +
+        '3. If blocked: document in STATE.md and ask user for input.');
+    } else { out(''); }
+  } catch(_) { out(''); }
+  process.exit(0);
+});
+function out(c) { process.stdout.write(JSON.stringify({ cancel: false, contextModification: c })); }

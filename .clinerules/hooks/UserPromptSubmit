@@ -1,0 +1,49 @@
+#!/usr/bin/env node
+// GSD v1.5 UserPromptSubmit hook — detect /gsd-* and inject planning context.
+const fs = require('fs');
+const path = require('path');
+let input = '';
+const t = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', c => { input += c; });
+process.stdin.on('end', () => {
+  clearTimeout(t);
+  try {
+    const data = JSON.parse(input);
+    const prompt = (data.userPromptSubmit || {}).prompt || '';
+    const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
+    const m = prompt.match(/(^|\s)\/gsd-([a-zA-Z0-9-]+)/);
+    if (!m) { out(''); process.exit(0); }
+    const cmd = 'gsd-' + m[2];
+    const pd = path.join(cwd, '.planning');
+    let ctx = '## GSD Context for /' + cmd + '\n\n';
+    const sp = path.join(pd, 'STATE.md');
+    let state = '';
+    if (fs.existsSync(sp)) {
+      state = fs.readFileSync(sp, 'utf8').trim();
+      ctx += '### Current State\n```\n' + state + '\n```\n\n';
+    } else if (!cmd.includes('new-project')) {
+      ctx += '### No GSD Project\nRun /gsd-new-project to initialize.\n\n';
+    }
+    if (cmd.includes('execute') || cmd.includes('plan') || cmd.includes('verify')) {
+      const ph = (state.match(/current_phase:\s*(\S+)/) || [])[1];
+      if (ph) {
+        const pp = path.join(pd, 'PLANS', 'phase-' + String(ph).padStart(2,'0') + '.xml');
+        if (fs.existsSync(pp)) {
+          const c = fs.readFileSync(pp, 'utf8');
+          ctx += '### Phase ' + ph + ' Plan\n```xml\n' + c.slice(0,4000) + (c.length>4000?'\n...[truncated]':'') + '\n```\n\n';
+        }
+      }
+    }
+    if (cmd.includes('discuss') || cmd.includes('next') || cmd.includes('new-project')) {
+      const rp = path.join(pd, 'ROADMAP.md');
+      if (fs.existsSync(rp)) {
+        const r = fs.readFileSync(rp, 'utf8');
+        ctx += '### Roadmap\n' + r.slice(0,2000) + (r.length>2000?'\n...[truncated]':'') + '\n\n';
+      }
+    }
+    out(ctx);
+  } catch (_) { out(''); }
+  process.exit(0);
+});
+function out(c) { process.stdout.write(JSON.stringify({ cancel: false, contextModification: c })); }

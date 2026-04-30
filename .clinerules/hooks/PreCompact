@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+// GSD v1.5 PreCompact hook — preserve planning state before context compaction.
+const fs = require('fs');
+const path = require('path');
+let input = '';
+const t = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', c => { input += c; });
+process.stdin.on('end', () => {
+  clearTimeout(t);
+  try {
+    const data = JSON.parse(input);
+    const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
+    const sp = path.join(cwd, '.planning', 'STATE.md');
+    if (!fs.existsSync(sp)) { out(''); process.exit(0); }
+    const state = fs.readFileSync(sp, 'utf8').trim();
+    let proj = '';
+    const pp = path.join(cwd, '.planning', 'PROJECT.md');
+    if (fs.existsSync(pp)) proj = '\n\n### Project Summary\n' + fs.readFileSync(pp, 'utf8').slice(0, 500).trim();
+    out('## GSD State Checkpoint (saved before compaction)\n\n```\n' + state + '\n```' + proj +
+      '\n\nContinue from current_step after compaction. Run /gsd-next if unsure.');
+  } catch (_) { out(''); }
+  process.exit(0);
+});
+function out(c) { process.stdout.write(JSON.stringify({ cancel: false, contextModification: c })); }
