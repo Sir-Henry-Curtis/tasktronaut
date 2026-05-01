@@ -32,6 +32,8 @@ The current direction is a lightweight hybrid model referred to in the design no
 - use **GSD v1** as the workflow layer
 - add a small programmatic bridge where prompt-only orchestration is not sufficient
 
+For the multi-agent orchestration layer, the current recommendation is a **standalone Tauri desktop app** rather than a VS Code webview. The current prototype is branded **Laika**, Tasktronaut's Work Hound, and its rationale plus SVG architecture set are captured in [prototypes/laika/laika.md](./prototypes/laika/laika.md).
+
 This approach was chosen over a standalone orchestration replacement because it keeps the integration surface smaller, fits better with the existing extension model, and aligns with a controlled deployment environment.
 
 ### Bridge Layer Responsibilities
