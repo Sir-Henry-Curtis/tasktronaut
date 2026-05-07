@@ -5,11 +5,11 @@ Create executable phase prompts (PLAN.md files) for a roadmap phase with integra
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/get-shit-done/references/ui-brand.md
-@~/.claude/get-shit-done/references/revision-loop.md
-@~/.claude/get-shit-done/references/gate-prompts.md
-@~/.claude/get-shit-done/references/agent-contracts.md
-@~/.claude/get-shit-done/references/gates.md
+@.tasktronaut/references/ui-brand.md
+@.tasktronaut/references/revision-loop.md
+@.tasktronaut/references/gate-prompts.md
+@.tasktronaut/references/agent-contracts.md
+@.tasktronaut/references/gates.md
 </required_reading>
 
 <available_agent_types>
@@ -40,7 +40,7 @@ CONTEXT_WINDOW=$(gsd-sdk query config-get context_window 2>/dev/null || echo "20
 TDD_MODE=$(gsd-sdk query config-get workflow.tdd_mode 2>/dev/null || echo "false")
 ```
 
-When `TDD_MODE` is `true`, the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The planner's `<required_reading>` is extended to include `@~/.claude/get-shit-done/references/tdd.md` so gate enforcement rules are available during planning.
+When `TDD_MODE` is `true`, the planner agent is instructed to apply `type: tdd` to eligible tasks using heuristics from `references/tdd.md`. The planner's `<required_reading>` is extended to include `@.tasktronaut/references/tdd.md` so gate enforcement rules are available during planning.
 
 When `CONTEXT_WINDOW >= 500000`, the planner prompt includes the 3 most recent prior phase CONTEXT.md and SUMMARY.md files PLUS any phases explicitly listed in the current phase's `Depends on:` field in ROADMAP.md. Explicit dependencies always load regardless of recency (e.g., Phase 7 declaring `Depends on: Phase 2` always sees Phase 2's context). Bounded recency keeps the planner's context budget focused on recent work.
 
@@ -382,16 +382,19 @@ Write to: {phase_dir}/{phase_num}-RESEARCH.md
 </output>
 ```
 
-```
-Task(
-  prompt=research_prompt,
-  subagent_type="gsd-phase-researcher",
-  model="{researcher_model}",
-  description="Research Phase {phase}"
+If `use_subagent_gsd_phase_researcher` is available, use it. Otherwise perform
+the same research inline in the current context and write the research file
+yourself.
+
+```text
+use_subagent_gsd_phase_researcher(
+  prompt_1=research_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_phase_researcher`, wait for the result before doing more
+> research work inline.
 
 ### Handle Researcher Return
 
@@ -416,7 +419,7 @@ grep -l "## Validation Architecture" "${PHASE_DIR}"/*-RESEARCH.md 2>/dev/null ||
 ```
 
 **If found:**
-1. Read template: `~/.claude/get-shit-done/templates/VALIDATION.md`
+1. Read template: `.tasktronaut/templates/VALIDATION.md`
 2. Write to `${PHASE_DIR}/${PADDED_PHASE}-VALIDATION.md` (use Write tool)
 3. Fill frontmatter: `{N}` → phase number, `{phase-slug}` → slug, `{date}` → current date
 4. Verify:
@@ -678,16 +681,18 @@ Extract the list of files to be created/modified from CONTEXT.md and RESEARCH.md
 </pattern_mapping_context>
 ```
 
-Spawn with:
-```
-Task(
-  prompt="{above}",
-  subagent_type="gsd-pattern-mapper",
-  model="{researcher_model}",
+If `use_subagent_gsd_pattern_mapper` is available, use it. Otherwise perform the
+same mapping inline and write `PATTERNS.md` yourself.
+
+```text
+use_subagent_gsd_pattern_mapper(
+  prompt_1="{above}"
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_pattern_mapper`, wait for the result before doing more
+> pattern-mapping work inline.
 
 **Handle return:**
 - **`## PATTERN MAPPING COMPLETE`:** Update `PATTERNS_PATH` to the created file path, continue to step 8.
@@ -748,7 +753,7 @@ ${AGENT_SKILLS_PLANNER}
 
 ${TDD_MODE === 'true' ? `
 <tdd_mode_active>
-**TDD Mode is ENABLED.** Apply TDD heuristics from @~/.claude/get-shit-done/references/tdd.md to all eligible tasks:
+**TDD Mode is ENABLED.** Apply TDD heuristics from @.tasktronaut/references/tdd.md to all eligible tasks:
 - Business logic with defined I/O → type: tdd
 - API endpoints with request/response contracts → type: tdd
 - Data transformations, validation, algorithms → type: tdd
@@ -808,20 +813,22 @@ Every task MUST include these fields — they are NOT optional:
 </quality_gate>
 ```
 
-**If `CHUNKED_MODE` is `false` (default):** Spawn the planner as a single long-lived Task:
+**If `CHUNKED_MODE` is `false` (default):** Use Tasktronaut's named planner tool
+when available; otherwise perform the same planning inline in the current
+context.
 
-```
-Task(
-  prompt=filled_prompt,
-  subagent_type="gsd-planner",
-  model="{planner_model}",
-  description="Plan Phase {phase}"
+```text
+use_subagent_gsd_planner(
+  prompt_1=filled_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_planner`, wait for the result before doing more planning
+> work inline.
 
-**If `CHUNKED_MODE` is `true`:** Skip the Task() call above — proceed to step 8.5 instead.
+**If `CHUNKED_MODE` is `true`:** Skip the single-call planner flow above and
+proceed to step 8.5 instead.
 
 ## 8.5. Chunked Planning Mode
 
@@ -857,25 +864,24 @@ Display:
 Spawn the planner in **outline-only** mode — it must write only the outline manifest, not any
 PLAN.md files:
 
-```javascript
-Task(
-  prompt="{same planning_context as step 8, plus:}
+```text
+use_subagent_gsd_planner(
+  prompt_1="{same planning_context as step 8, plus:}
 
   **Chunked mode: outline-only.**
-  Do NOT write any PLAN.md files in this Task.
+  Do NOT write any PLAN.md files in this call.
   Write only: {PHASE_DIR}/{PADDED_PHASE}-PLAN-OUTLINE.md
 
   The outline must be a markdown table with columns:
   Plan ID | Objective | Wave | Depends On | Requirements
 
-  Return: ## OUTLINE COMPLETE with plan count.",
-  subagent_type="gsd-planner",
-  model="{planner_model}",
-  description="Outline Phase {phase} (chunked)"
+  Return: ## OUTLINE COMPLETE with plan count."
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_planner`, wait for the result before doing outline work
+> inline.
 
 Handle return:
 - **`## OUTLINE COMPLETE`:** Read `PLAN-OUTLINE.md`, extract plan list. Continue to 8.5.2.
@@ -902,9 +908,9 @@ For each plan entry extracted from `PLAN-OUTLINE.md`:
    ```
 
 3. Spawn the planner in **single-plan** mode — it must write exactly one PLAN.md file:
-   ```javascript
-   Task(
-     prompt="{same planning_context as step 8, plus:}
+   ```text
+   use_subagent_gsd_planner(
+     prompt_1="{same planning_context as step 8, plus:}
 
      **Chunked mode: single-plan.**
      Write exactly ONE plan file: {PHASE_DIR}/{plan_id}-PLAN.md
@@ -912,14 +918,13 @@ For each plan entry extracted from `PLAN-OUTLINE.md`:
      Wave: {wave} | Depends on: {depends_on}
      Phase requirement IDs to cover in this plan: {plan_requirements}
 
-     Return: ## PLAN COMPLETE with the plan ID.",
-     subagent_type="gsd-planner",
-     model="{planner_model}",
-     description="Plan {plan_id} (chunked {k}/{N})"
+     Return: ## PLAN COMPLETE with the plan ID."
    )
    ```
 
-   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+   > **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+   > `use_subagent_gsd_planner`, wait for the result before doing per-plan work
+   > inline.
 
 4. **Verify disk:** Check `${PHASE_DIR}/{plan_id}-PLAN.md` exists. If missing: offer 1) Retry, 2) Stop.
 
@@ -942,13 +947,13 @@ to step 9.
 
 ## 9a. Filesystem Fallback (Planner)
 
-**Triggered when:** Task() returns but the return contains no recognized marker (`## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`).
+**Triggered when:** The planner call returns but the return contains no recognized marker (`## PLANNING COMPLETE`, `## PHASE SPLIT RECOMMENDED`, `## ⚠ Source Audit`, `## CHECKPOINT REACHED`, `## PLANNING INCONCLUSIVE`).
 
 ```bash
 DISK_PLANS=$(ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
 ```
 
-**If `DISK_PLANS` > 0:** The planner wrote plans to disk but the Task() return was empty or
+**If `DISK_PLANS` > 0:** The planner wrote plans to disk but the tool return was empty or
 truncated (the Windows stdio hang pattern — the subagent finished but the return never
 arrived). Display:
 
@@ -1068,16 +1073,18 @@ ${AGENT_SKILLS_CHECKER}
 </expected_output>
 ```
 
-```
-Task(
-  prompt=checker_prompt,
-  subagent_type="gsd-plan-checker",
-  model="{checker_model}",
-  description="Verify Phase {phase} plans"
+If `use_subagent_gsd_plan_checker` is available, use it. Otherwise perform the
+same verification inline in the current context.
+
+```text
+use_subagent_gsd_plan_checker(
+  prompt_1=checker_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_plan_checker`, wait for the result before doing more
+> verification work inline.
 
 ## 11. Handle Checker Return
 
@@ -1106,7 +1113,7 @@ If thinking_partner disabled: skip this block entirely.
 
 ## 11a. Filesystem Fallback (Checker)
 
-**Triggered when:** Checker Task() returns but the return contains neither `## VERIFICATION PASSED` nor `## ISSUES FOUND`.
+**Triggered when:** The checker call returns but the return contains neither `## VERIFICATION PASSED` nor `## ISSUES FOUND`.
 
 ```bash
 DISK_PLANS=$(ls "${PHASE_DIR}"/*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
@@ -1183,16 +1190,15 @@ Return what changed.
 </instructions>
 ```
 
-```
-Task(
-  prompt=revision_prompt,
-  subagent_type="gsd-planner",
-  model="{planner_model}",
-  description="Revise Phase {phase} plans"
+```text
+use_subagent_gsd_planner(
+  prompt_1=revision_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_planner`, wait for the result before revising plans
+> inline.
 
 After planner returns -> spawn checker again (step 10), increment iteration_count.
 
@@ -1218,7 +1224,7 @@ Skipping bounce step.
 **Read pass count:**
 ```bash
 BOUNCE_PASSES=$(gsd-sdk query config-get workflow.plan_bounce_passes 2>/dev/null || echo "2")
-BOUNCE_SCRIPT=$(gsd-sdk query config-get workflow.plan_bounce_script 2>/dev/null | jq -r '.' 2>/dev/null || true)
+BOUNCE_SCRIPT=$(gsd-sdk query config-get workflow.plan_bounce_script 2>/dev/null || true)
 ```
 
 Display banner:

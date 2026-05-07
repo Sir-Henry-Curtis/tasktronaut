@@ -227,19 +227,13 @@ AGENT_SKILLS_ROADMAPPER=$(gsd-sdk query agent-skills gsd-roadmapper)
 
 Extract from init JSON: `researcher_model`, `synthesizer_model`, `roadmapper_model`, `commit_docs`, `research_enabled`, `current_milestone`, `project_exists`, `roadmap_exists`, `latest_completed_milestone`, `phase_dir_count`, `phase_archive_path`, `agents_installed`, `missing_agents`.
 
-**If `agents_installed` is false:** Display a warning before proceeding:
-```
-⚠ GSD agents not installed. The following agents are missing from your agents directory:
-  {missing_agents joined with newline}
+**If `missing_agents` is non-empty:** Note which Tasktronaut agents are absent. Prefer
+these named Tasktronaut tools when available:
+- `use_subagent_gsd_project_researcher`
+- `use_subagent_gsd_research_synthesizer`
+- `use_subagent_gsd_roadmapper`
 
-Subagent spawns (gsd-project-researcher, gsd-research-synthesizer, gsd-roadmapper) will fail
-with "agent type not found". Run the installer with --global to make agents available:
-
-  npx get-shit-done-cc@latest --global
-
-Proceeding without research subagents — roadmap will be generated inline.
-```
-Skip the parallel research spawn step and generate the roadmap inline.
+If any named tool is unavailable at runtime, continue with that step inline rather than failing.
 
 ## 7.5 Reset-phase safety (only when `--reset-phase-numbers`)
 
@@ -294,11 +288,31 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 mkdir -p .planning/research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents. Each uses this template with dimension-specific fields:
+Before launching researchers, detect whether both Tasktronaut research tools are available:
+- `use_subagent_gsd_project_researcher`
+- `use_subagent_gsd_research_synthesizer`
+
+**If both tools are available:** Launch the 4 dimension prompts via one batched
+`use_subagent_gsd_project_researcher` call, then run one
+`use_subagent_gsd_research_synthesizer` call for `SUMMARY.md`.
+
+Use the same dimension-specific prompt structure below, but:
+- Use `prompt_1` through `prompt_4` for the 4 dimensions
+- Use `<required_reading>` so each researcher loads project context first
+- Use `.tasktronaut/templates/research-project/{FILE}` for every output
+
+**If either named tool is unavailable:** Perform the same 4 research passes inline
+in the current context, write `STACK.md`, `FEATURES.md`, `ARCHITECTURE.md`,
+and `PITFALLS.md` using `.tasktronaut/templates/research-project/`, then
+synthesize `SUMMARY.md` inline. Do NOT skip research solely because the named
+subagent tools are unavailable.
+
+Dimension-specific prompt template:
 
 **Common structure for all 4 researchers:**
 ```
-Task(prompt="
+use_subagent_gsd_project_researcher(
+  prompt_N="
 <research_type>Project Research — {DIMENSION} for [new features].</research_type>
 
 <milestone_context>
@@ -309,9 +323,9 @@ Focus ONLY on what's needed for the NEW features.
 
 <question>{QUESTION}</question>
 
-<files_to_read>
+<required_reading>
 - .planning/PROJECT.md (Project context)
-</files_to_read>
+</required_reading>
 
 ${AGENT_SKILLS_RESEARCHER}
 
@@ -321,9 +335,10 @@ ${AGENT_SKILLS_RESEARCHER}
 
 <output>
 Write to: .planning/research/{FILE}
-Use template: ~/.claude/get-shit-done/templates/research-project/{FILE}
+Use template: .tasktronaut/templates/research-project/{FILE}
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+"
+)
 ```
 
 **Dimension-specific fields:**
@@ -336,30 +351,37 @@ Use template: ~/.claude/get-shit-done/templates/research-project/{FILE}
 | GATES | Versions current (verify with Context7), rationale explains WHY, integration considered | Categories clear, complexity noted, dependencies identified | Integration points identified, new vs modified explicit, build order considers deps | Pitfalls specific to adding these features, integration pitfalls covered, prevention actionable |
 | FILE | STACK.md | FEATURES.md | ARCHITECTURE.md | PITFALLS.md |
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 researcher Task() calls above, do NOT read research files or synthesize content independently while the subagents are active. Wait for all 4 researchers to complete before spawning the synthesizer. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After launching the batched
+> project researcher tool, do NOT read research files or synthesize
+> independently while the researchers are active. Wait for the aggregated result
+> before continuing.
 
-After all 4 complete, spawn synthesizer:
+After all 4 complete, run the synthesizer:
 
 ```
-Task(prompt="
+use_subagent_gsd_research_synthesizer(
+  prompt_1="
 Synthesize research outputs into SUMMARY.md.
 
-<files_to_read>
+<required_reading>
 - .planning/research/STACK.md
 - .planning/research/FEATURES.md
 - .planning/research/ARCHITECTURE.md
 - .planning/research/PITFALLS.md
-</files_to_read>
+</required_reading>
 
 ${AGENT_SKILLS_SYNTHESIZER}
 
 Write to: .planning/research/SUMMARY.md
-Use template: ~/.claude/get-shit-done/templates/research-project/SUMMARY.md
+Use template: .tasktronaut/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+"
+)
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling the
+> Tasktronaut synthesizer tool, wait for its result before doing more synthesis
+> work in the orchestrator.
 
 Display key findings from SUMMARY.md:
 ```
@@ -454,23 +476,26 @@ gsd-sdk query commit "docs: define milestone v[X.Y] requirements" --files .plann
  GSD ► CREATING ROADMAP
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-◆ Spawning roadmapper...
+◆ Creating roadmap...
 ```
 
 **Starting phase number:**
 - If `--reset-phase-numbers` is active, start at **Phase 1**
 - Otherwise, continue from the previous milestone's last phase number (v1.0 ended at phase 5 → v1.1 starts at phase 6)
 
-```
-Task(prompt="
+If `use_subagent_gsd_roadmapper` is available, use it. Otherwise create the
+roadmap inline in the current context using the same inputs and instructions.
+```text
+use_subagent_gsd_roadmapper(
+  prompt_1="
 <planning_context>
-<files_to_read>
+<required_reading>
 - .planning/PROJECT.md
 - .planning/REQUIREMENTS.md
 - .planning/research/SUMMARY.md (if exists)
 - .planning/config.json
 - .planning/MILESTONES.md
-</files_to_read>
+</required_reading>
 
 ${AGENT_SKILLS_ROADMAPPER}
 
@@ -490,10 +515,14 @@ Create roadmap for milestone v[X.Y]:
 
 Write files first, then return.
 </instructions>
-", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+"
+)
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_roadmapper`, wait for the result before doing roadmap work
+> inline. If the tool is unavailable, perform the roadmap creation inline with
+> the exact same requirements, numbering, coverage, and success-criteria rules.
 
 **Handle return:**
 

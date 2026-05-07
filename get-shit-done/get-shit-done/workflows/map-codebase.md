@@ -127,31 +127,37 @@ Continue to spawn_agents.
 </step>
 
 <step name="detect_runtime_capabilities">
-Before spawning agents, detect whether the current runtime supports the `Task` tool for subagent delegation.
+Before spawning agents, detect whether the current runtime supports the
+Tasktronaut mapper delegation tool `use_subagent_gsd_codebase_mapper`.
 
-**How to detect:** Check if you have access to a `Task` tool (may be capitalized as `Task` or lowercase as `task` depending on runtime). If you do NOT have a `Task`/`task` tool (or only have tools like `browser_subagent` which is for web browsing, NOT code analysis):
+**How to detect:** Check whether `use_subagent_gsd_codebase_mapper` is
+available. If you do NOT have that tool (or only have tools like
+`browser_subagent`, which is for web browsing, NOT code analysis):
 
-→ **Skip `spawn_agents` and `collect_confirmations`** — go directly to `sequential_mapping` instead.
+→ **Skip `spawn_agents`** — go directly to `sequential_mapping` instead.
 
-**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for `Task`. The `browser_subagent` tool is exclusively for web page interaction and will fail for codebase analysis. If `Task` is unavailable, perform the mapping sequentially in-context.
+**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for
+`use_subagent_gsd_codebase_mapper`. The `browser_subagent` tool is exclusively
+for web page interaction and will fail for codebase analysis. If the mapper
+tool is unavailable, perform the mapping sequentially in-context.
 </step>
 
-<step name="spawn_agents" condition="Task tool is available">
+<step name="spawn_agents" condition="use_subagent_gsd_codebase_mapper is available">
 Spawn 4 parallel gsd-codebase-mapper agents.
 
-Use Task tool with `subagent_type="gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true` for parallel execution.
+Use the dedicated `use_subagent_gsd_codebase_mapper` tool once with
+`prompt_1` through `prompt_4` so Tasktronaut fans out 4 parallel mapper runs
+of the same agent type and returns an aggregated result.
 
-**CRITICAL:** Use the dedicated `gsd-codebase-mapper` agent, NOT `Explore` or `browser_subagent`. The mapper agent writes documents directly.
+**CRITICAL:** Use the dedicated `gsd-codebase-mapper` agent via
+`use_subagent_gsd_codebase_mapper`, NOT `Explore` or `browser_subagent`. The
+mapper agent writes documents directly.
 
-**Agent 1: Tech Focus**
+Call:
 
 ```
-Task(
-  subagent_type="gsd-codebase-mapper",
-  model="{mapper_model}",
-  run_in_background=true,
-  description="Map codebase tech stack",
-  prompt="Focus: tech
+use_subagent_gsd_codebase_mapper(
+  prompt_1="Focus: tech
 Today's date: {date}
 
 Analyze this codebase for technology stack and external integrations.
@@ -165,19 +171,8 @@ IMPORTANT: Use {date} for all [YYYY-MM-DD] date placeholders in documents.
 Scope: ${PATH_SCOPE_HINT:-(full repo)} — when --paths is supplied, restrict exploration to those prefixes only.
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
-)
-```
-
-**Agent 2: Architecture Focus**
-
-```
-Task(
-  subagent_type="gsd-codebase-mapper",
-  model="{mapper_model}",
-  run_in_background=true,
-  description="Map codebase architecture",
-  prompt="Focus: arch
+${AGENT_SKILLS_MAPPER}",
+  prompt_2="Focus: arch
 Today's date: {date}
 
 Analyze this codebase architecture and directory structure.
@@ -191,19 +186,8 @@ IMPORTANT: Use {date} for all [YYYY-MM-DD] date placeholders in documents.
 Scope: ${PATH_SCOPE_HINT:-(full repo)} — when --paths is supplied, restrict exploration to those prefixes only.
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
-)
-```
-
-**Agent 3: Quality Focus**
-
-```
-Task(
-  subagent_type="gsd-codebase-mapper",
-  model="{mapper_model}",
-  run_in_background=true,
-  description="Map codebase conventions",
-  prompt="Focus: quality
+${AGENT_SKILLS_MAPPER}",
+  prompt_3="Focus: quality
 Today's date: {date}
 
 Analyze this codebase for coding conventions and testing patterns.
@@ -217,19 +201,8 @@ IMPORTANT: Use {date} for all [YYYY-MM-DD] date placeholders in documents.
 Scope: ${PATH_SCOPE_HINT:-(full repo)} — when --paths is supplied, restrict exploration to those prefixes only.
 
 Explore thoroughly. Write documents directly using templates. Return confirmation only.
-${AGENT_SKILLS_MAPPER}"
-)
-```
-
-**Agent 4: Concerns Focus**
-
-```
-Task(
-  subagent_type="gsd-codebase-mapper",
-  model="{mapper_model}",
-  run_in_background=true,
-  description="Map codebase concerns",
-  prompt="Focus: concerns
+${AGENT_SKILLS_MAPPER}",
+  prompt_4="Focus: concerns
 Today's date: {date}
 
 Analyze this codebase for technical debt, known issues, and areas of concern.
@@ -246,27 +219,14 @@ ${AGENT_SKILLS_MAPPER}"
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling all 4 Task() calls above with `run_in_background=true`, do NOT read any source files, analyze the codebase, or write any mapping documents independently while the subagents are active. Wait for all 4 agents to complete before proceeding to collect_confirmations. This prevents duplicate work and wasted context.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_codebase_mapper` above, do NOT read any source files,
+> analyze the codebase, or write any mapping documents independently while the
+> mapper runs are active. Wait for the aggregated tool result before
+> proceeding. This prevents duplicate work and wasted context.
 
-Continue to collect_confirmations.
-</step>
-
-<step name="collect_confirmations">
-Wait for all 4 agents to complete using TaskOutput tool.
-
-**For each agent task_id returned by the Agent tool calls above:**
-```
-TaskOutput tool:
-  task_id: "{task_id from Agent result}"
-  block: true
-  timeout: {subagent_timeout from init context, default 300000}
-```
-
-> The timeout is configurable via `workflow.subagent_timeout` in `.planning/config.json` (milliseconds). Default: 300000 (5 minutes). Increase for large codebases or slower models.
-
-Call TaskOutput for all 4 agents in parallel (single message with 4 TaskOutput calls).
-
-Once all TaskOutput calls return, read each agent's output file to collect confirmations.
+The tool call returns after all mapper runs finish. Read the aggregated result
+to collect confirmations.
 
 **Expected confirmation format from each agent:**
 ```
@@ -287,10 +247,13 @@ If any agent failed, note the failure and continue with successful documents.
 Continue to verify_output.
 </step>
 
-<step name="sequential_mapping" condition="Task tool is NOT available (e.g. Antigravity, Gemini CLI, Codex)">
-When the `Task` tool is unavailable, perform codebase mapping sequentially in the current context. This replaces `spawn_agents` and `collect_confirmations`.
+<step name="sequential_mapping" condition="use_subagent_gsd_codebase_mapper is NOT available">
+When `use_subagent_gsd_codebase_mapper` is unavailable, perform codebase
+mapping sequentially in the current context. This replaces `spawn_agents`.
 
-**IMPORTANT:** Do NOT use `browser_subagent`, `Explore`, or any browser-based tool. Use only file system tools (Read, Bash, Write, Grep, Glob, list_dir, view_file, grep_search, or equivalent tools available in your runtime).
+**IMPORTANT:** Do NOT use `browser_subagent`, `Explore`, or any browser-based
+tool. Use only file system tools (Read, Bash, Write, Grep, Glob, list_dir,
+view_file, grep_search, or equivalent tools available in your runtime).
 
 **IMPORTANT:** Use `{date}` from init context for all `[YYYY-MM-DD]` date placeholders in documents. NEVER guess the date.
 
@@ -434,8 +397,8 @@ End workflow.
 
 <success_criteria>
 - .planning/codebase/ directory created
-- If Task tool available: 4 parallel gsd-codebase-mapper agents spawned with run_in_background=true
-- If Task tool NOT available: 4 sequential mapping passes performed inline (never using browser_subagent)
+- If `use_subagent_gsd_codebase_mapper` is available: 4 parallel gsd-codebase-mapper runs launched through one batched tool call
+- If `use_subagent_gsd_codebase_mapper` is NOT available: 4 sequential mapping passes performed inline (never using browser_subagent)
 - All 7 codebase documents exist
 - No empty documents (each should have >20 lines)
 - Clear completion summary with line counts

@@ -1,7 +1,7 @@
 <purpose>
 Validate built features through conversational testing with persistent state. Creates UAT.md that tracks test progress, survives /clear, and feeds gaps into /gsd-plan-phase --gaps.
 
-User tests, Claude records. One test at a time. Plain text responses.
+User tests, Tasktronaut records. One test at a time. Plain text responses.
 </purpose>
 
 <available_agent_types>
@@ -21,7 +21,7 @@ No Pass/Fail buttons. No severity questions. Just: "Here's what should happen. D
 </philosophy>
 
 <template>
-@~/.claude/get-shit-done/templates/UAT.md
+@.tasktronaut/templates/UAT.md
 </template>
 
 <process>
@@ -444,7 +444,7 @@ If `SECURITY_CFG` is `false` OR (`SECURITY_FILE` exists AND `threats_open` is `0
 
 Execute the transition workflow inline (do NOT use Task — the orchestrator context already holds the UAT results and phase data needed for accurate transition):
 
-Read and follow `~/.claude/get-shit-done/workflows/transition.md`.
+Read and follow `.tasktronaut/workflows/transition.md`.
 
 After transition completes, present next-step options to the user:
 
@@ -499,7 +499,7 @@ Spawning parallel debug agents to investigate each issue.
 ```
 
 - Load diagnose-issues workflow
-- Follow @~/.claude/get-shit-done/workflows/diagnose-issues.md
+- Follow @.tasktronaut/workflows/diagnose-issues.md
 - Spawn parallel debug agents for each issue
 - Collect root causes
 - Update UAT.md with root causes
@@ -520,11 +520,12 @@ Display:
 ◆ Spawning planner for gap closure...
 ```
 
-Spawn gsd-planner in --gaps mode:
+If `use_subagent_gsd_planner` is available, use it. Otherwise perform the same
+gap-closure planning inline in the current context.
 
-```
-Task(
-  prompt="""
+```text
+use_subagent_gsd_planner(
+  prompt_1="""
 <planning_context>
 
 **Phase:** {phase_number}
@@ -544,14 +545,13 @@ ${AGENT_SKILLS_PLANNER}
 Output consumed by /gsd-execute-phase
 Plans must be executable prompts.
 </downstream_consumer>
-""",
-  subagent_type="gsd-planner",
-  model="{planner_model}",
-  description="Plan gap fixes for Phase {phase}"
+"""
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_planner`, wait for the result before doing more planning
+> work inline.
 
 On return:
 - **PLANNING COMPLETE:** Proceed to `verify_gap_plans`
@@ -572,11 +572,12 @@ Display:
 
 Initialize: `iteration_count = 1`
 
-Spawn gsd-plan-checker:
+If `use_subagent_gsd_plan_checker` is available, use it. Otherwise perform the
+same verification inline in the current context.
 
-```
-Task(
-  prompt="""
+```text
+use_subagent_gsd_plan_checker(
+  prompt_1="""
 <verification_context>
 
 **Phase:** {phase_number}
@@ -595,14 +596,13 @@ Return one of:
 - ## VERIFICATION PASSED — all checks pass
 - ## ISSUES FOUND — structured issue list
 </expected_output>
-""",
-  subagent_type="gsd-plan-checker",
-  model="{checker_model}",
-  description="Verify Phase {phase} fix plans"
+"""
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_plan_checker`, wait for the result before doing more
+> verification work inline.
 
 On return:
 - **VERIFICATION PASSED:** Proceed to `present_ready`
@@ -616,11 +616,12 @@ On return:
 
 Display: `Sending back to planner for revision... (iteration {N}/3)`
 
-Spawn gsd-planner with revision context:
+If `use_subagent_gsd_planner` is available, use it. Otherwise perform the same
+revision inline in the current context.
 
-```
-Task(
-  prompt="""
+```text
+use_subagent_gsd_planner(
+  prompt_1="""
 <revision_context>
 
 **Phase:** {phase_number}
@@ -641,14 +642,12 @@ ${AGENT_SKILLS_PLANNER}
 Read existing PLAN.md files. Make targeted updates to address checker issues.
 Do NOT replan from scratch unless issues are fundamental.
 </instructions>
-""",
-  subagent_type="gsd-planner",
-  model="{planner_model}",
-  description="Revise Phase {phase} plans"
+"""
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_planner`, wait for the result before revising plans inline.
 
 After planner returns → spawn checker again (verify_gap_plans logic)
 Increment iteration_count

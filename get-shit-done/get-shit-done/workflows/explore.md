@@ -6,8 +6,8 @@ offers mid-conversation research when useful, then routes crystallized outputs t
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/get-shit-done/references/questioning.md
-@~/.claude/get-shit-done/references/domain-probes.md
+@.tasktronaut/references/questioning.md
+@.tasktronaut/references/domain-probes.md
 </required_reading>
 
 <available_agent_types>
@@ -58,15 +58,17 @@ This would take ~30 seconds and might surface useful context.
 [Yes, research this] / [No, let's keep exploring]
 ```
 
-If yes, spawn a research agent:
-```
-Task(
-  prompt="Quick research: {specific_question}. Return 3-5 key findings, no more than 200 words.",
-  subagent_type="gsd-phase-researcher"
+If yes, prefer Tasktronaut's named phase researcher tool:
+```text
+use_subagent_gsd_phase_researcher(
+  prompt_1="Quick research: {specific_question}. Return 3-5 key findings, no more than 200 words."
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_phase_researcher`, wait for the result before continuing.
+> If the named tool is unavailable, do the quick research inline in the current
+> context instead of failing.
 
 Share findings and continue the conversation.
 

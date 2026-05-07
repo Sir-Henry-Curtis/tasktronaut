@@ -5,7 +5,7 @@ UI-SPEC.md locks spacing, typography, color, copywriting, and design system deci
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@.tasktronaut/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -123,7 +123,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-researcher.md for instructions.
+Use the bundled `gsd-ui-researcher` Tasktronaut agent instructions.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -143,7 +143,7 @@ ${AGENT_SKILLS_UI}
 
 <output>
 Write to: {phase_dir}/{padded_phase}-UI-SPEC.md
-Template: ~/.claude/get-shit-done/templates/UI-SPEC.md
+Template: .tasktronaut/templates/UI-SPEC.md
 </output>
 
 <config>
@@ -155,16 +155,19 @@ padded_phase: {padded_phase}
 
 Omit null file paths from `<files_to_read>`.
 
-```
-Task(
-  prompt=ui_research_prompt,
-  subagent_type="gsd-ui-researcher",
-  model="{UI_RESEARCHER_MODEL}",
-  description="UI Design Contract Phase {N}"
+If `use_subagent_gsd_ui_researcher` is available, use it. Otherwise perform the
+same UI contract work inline in the current context and write the UI-SPEC
+yourself.
+
+```text
+use_subagent_gsd_ui_researcher(
+  prompt_1=ui_research_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_ui_researcher`, wait for the result before doing more UI
+> contract work inline.
 
 ## 6. Handle Researcher Return
 
@@ -188,7 +191,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-checker.md for instructions.
+Use the bundled `gsd-ui-checker` Tasktronaut agent instructions.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -208,16 +211,18 @@ ui_safety_gate: {ui_safety_gate config value}
 </config>
 ```
 
-```
-Task(
-  prompt=ui_checker_prompt,
-  subagent_type="gsd-ui-checker",
-  model="{UI_CHECKER_MODEL}",
-  description="Verify UI-SPEC Phase {N}"
+If `use_subagent_gsd_ui_checker` is available, use it. Otherwise perform the
+same UI-SPEC verification inline in the current context.
+
+```text
+use_subagent_gsd_ui_checker(
+  prompt_1=ui_checker_prompt
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_ui_checker`, wait for the result before doing more
+> verification work inline.
 
 ## 8. Handle Checker Return
 

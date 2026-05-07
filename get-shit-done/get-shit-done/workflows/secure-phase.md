@@ -3,7 +3,7 @@ Verify threat mitigations for a completed phase. Confirm PLAN.md threat register
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@.tasktronaut/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -82,21 +82,22 @@ Call AskUserQuestion with threat table and options:
 
 ## 5. Spawn gsd-security-auditor
 
-```
-Task(
-  prompt="Read ~/.claude/agents/gsd-security-auditor.md for instructions.\n\n" +
-    "<files_to_read>{PLAN, SUMMARY, impl files, SECURITY.md}</files_to_read>" +
+If `use_subagent_gsd_security_auditor` is available, use it. Otherwise perform
+the same threat-verification work inline in the current context.
+
+```text
+use_subagent_gsd_security_auditor(
+  prompt_1="<files_to_read>{PLAN, SUMMARY, impl files, SECURITY.md}</files_to_read>" +
     "<threat_register>{threat register}</threat_register>" +
     "<config>asvs_level: {SECURITY_ASVS}, block_on: {SECURITY_BLOCK_ON}</config>" +
     "<constraints>Never modify implementation files. Verify mitigations exist — do not scan for new threats. Escalate implementation gaps.</constraints>" +
-    "${AGENT_SKILLS_AUDITOR}",
-  subagent_type="gsd-security-auditor",
-  model="{AUDITOR_MODEL}",
-  description="Verify threat mitigations for Phase {N}"
+    "${AGENT_SKILLS_AUDITOR}"
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_security_auditor`, wait for the result before doing more
+> security-audit work inline.
 
 Handle return:
 - `## SECURED` → record closures → Step 6
@@ -106,7 +107,7 @@ Handle return:
 ## 6. Write/Update SECURITY.md
 
 **State B (create):**
-1. Read template from `~/.claude/get-shit-done/templates/SECURITY.md`
+1. Read template from `.tasktronaut/templates/SECURITY.md`
 2. Fill: frontmatter, threat register, accepted risks, audit trail
 3. Write to `${PHASE_DIR}/${PADDED_PHASE}-SECURITY.md`
 

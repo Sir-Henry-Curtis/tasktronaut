@@ -1,61 +1,36 @@
-# GSD (Get Shit Done) Workflow v1.5
-# Bundled with this extension. No external downloads required.
+# Tasktronaut GSD Adapter
 
-## Overview
-GSD is a spec-driven workflow for AI-assisted development.
-It prevents context rot by using fresh context windows per execution phase.
-State lives in .planning/ at the workspace root.
+Tasktronaut does not maintain a second hand-written copy of the GSD command set.
 
-## Directory Convention
-- .planning/PROJECT.md   — vision, goals, constraints
-- .planning/ROADMAP.md   — phased delivery plan
-- .planning/STATE.md     — current phase / step
-- .planning/PLANS/       — XML task plans per phase
-- .planning/SUMMARIES/   — phase completion summaries
+The canonical workflow catalog for `/gsd-*` commands lives in:
 
-## Slash Commands
-When the user runs a /gsd-* command, execute the matching workflow below.
-Do not apply GSD workflows unless the user explicitly invokes a /gsd-* command.
+- `get-shit-done/get-shit-done/workflows/*.md`
 
-### /gsd-new-project
-1. Ask discovery questions: goals, constraints, tech stack, timeline.
-2. Write .planning/PROJECT.md with vision and constraints.
-3. Write .planning/ROADMAP.md with 3-7 phases.
-4. Write .planning/STATE.md: current_phase: 1, current_step: discuss.
+## How Slash Commands Are Resolved
 
-### /gsd-discuss-phase
-1. Read STATE.md for current phase.
-2. Ask questions: approach, risks, acceptance criteria, dependencies.
-3. Write decisions to .planning/PLANS/phase-N-decisions.md.
-4. Update STATE.md: current_step: plan.
+When a user runs `/gsd-...`:
 
-### /gsd-plan-phase
-1. Read STATE.md, PROJECT.md, ROADMAP.md, and phase decisions.
-2. Scan relevant source directories.
-3. Write .planning/PLANS/phase-N.xml with tasks: id, description, files_affected, acceptance_criteria.
-4. Update STATE.md: current_step: execute.
+1. `.clinerules/hooks/UserPromptSubmit` detects the command.
+2. The hook auto-discovers the vendored workflow files.
+3. The matching workflow markdown is injected into context.
+4. Relevant `.planning/` files are attached when present.
 
-### /gsd-execute-phase
-1. Read STATE.md and phase-N.xml plan.
-2. Group independent tasks into waves; execute each wave.
-3. Commit after each task: git commit -m "task(N.M): description".
-4. Update STATE.md: current_step: verify on completion.
+This keeps the Tasktronaut integration aligned with the vendored GSD library instead of a manually curated subset.
 
-### /gsd-verify-work
-1. Read acceptance criteria from phase-N.xml.
-2. Verify each criterion is met.
-3. On pass: write .planning/SUMMARIES/phase-N.md, advance STATE.md to next phase.
-4. On fail: write fix plan and re-enter execute.
+## Current Compatibility Policy
 
-### /gsd-next
-Read STATE.md and run the appropriate next /gsd-* command automatically.
+- Every workflow file in `get-shit-done/get-shit-done/workflows/` should be invokable as `/gsd-<filename>`.
+- Filenames with underscores also accept dashed aliases where appropriate.
+- Known compatibility alias:
+  - `/gsd-resume-work` resolves to `resume-project.md`
 
-### /gsd-quick
-Run a single task outside the phase workflow. Commit as: quick: description.
+## Brownfield Guidance
 
-## Rules
-- Never skip discuss — decisions made here prevent rework.
-- Plans are immutable once execution starts.
-- One commit per task, no bundling.
-- Verify against original acceptance criteria, not the implementation.
-- On context pressure (>150k tokens), save STATE.md and open a fresh task.
+- Use `/gsd-map-codebase` to analyze an existing repository before initialization.
+- Use `/gsd-new-project` to initialize a new `.planning/` workspace.
+- Use `/gsd-help` to inspect the broader command surface described by the vendored GSD docs.
+
+## Maintenance Rule
+
+If commands are added or removed later, update the vendored workflow catalog first.
+The Tasktronaut hook should derive support from that catalog rather than from this file.
