@@ -10,10 +10,9 @@ const path = require("path")
 const AGENTS_DIR = path.join(__dirname, "..", "get-shit-done", "agents")
 const OUTPUT_FILE = path.join(__dirname, "..", "cline", "src", "gsd-agents-generated.ts")
 
-// Phase-one Tasktronaut support is intentionally limited to research/mapping agents.
-// Worker-style coding agents with Edit/Task semantics will be added in a later milestone.
 const AGENT_TOOL_IDS = {
 	"gsd-codebase-mapper": ["read_file", "write_to_file", "execute_command", "search_files", "list_files"],
+	"gsd-executor": ["read_file", "write_to_file", "replace_in_file", "execute_command", "search_files", "list_files"],
 	"gsd-nyquist-auditor": ["read_file", "write_to_file", "execute_command", "search_files", "list_files"],
 	"gsd-pattern-mapper": ["read_file", "write_to_file", "execute_command", "search_files", "list_files"],
 	"gsd-plan-checker": ["read_file", "execute_command", "search_files", "list_files"],
@@ -49,6 +48,7 @@ const AGENT_TOOL_IDS = {
 		"web_search",
 		"web_fetch",
 	],
+	"gsd-verifier": ["read_file", "write_to_file", "execute_command", "search_files", "list_files"],
 }
 
 const AGENTS_TO_BUNDLE = Object.keys(AGENT_TOOL_IDS)

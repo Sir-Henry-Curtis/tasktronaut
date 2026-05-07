@@ -8,6 +8,7 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 
 <runtime_compatibility>
 **Subagent spawning is runtime-specific:**
+- **Tasktronaut:** Prefer `use_subagent_gsd_executor` and `use_subagent_gsd_verifier` when those named tools are available. If worker isolation is not available in the current runtime, fall back to sequential inline execution.
 - **Claude Code:** Uses `Task(subagent_type="gsd-executor", ...)` — blocks until complete, returns result
 - **Copilot:** Subagent spawning does not reliably return completion signals. **Default to
   sequential inline execution**: read and follow execute-plan.md directly for each plan
@@ -26,13 +27,13 @@ via filesystem and git state.
 <required_reading>
 Read STATE.md before any operation to load project context.
 
-@~/.claude/get-shit-done/references/agent-contracts.md
-@~/.claude/get-shit-done/references/context-budget.md
-@~/.claude/get-shit-done/references/gates.md
+@.tasktronaut/references/agent-contracts.md
+@.tasktronaut/references/context-budget.md
+@.tasktronaut/references/gates.md
 </required_reading>
 
 <available_agent_types>
-These are the valid GSD subagent types registered in .claude/agents/ (or equivalent for your runtime).
+These are the valid GSD subagent types registered in .tasktronaut/agents/ (or equivalent for your runtime).
 Always use the exact name from this list — do not fall back to 'general-purpose' or other built-in types:
 
 - gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
@@ -74,7 +75,9 @@ AGENT_SKILLS=$(gsd-sdk query agent-skills gsd-executor)
 
 Parse JSON for: `executor_model`, `verifier_model`, `commit_docs`, `parallelization`, `branching_strategy`, `branch_name`, `phase_found`, `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `plans`, `incomplete_plans`, `plan_count`, `incomplete_count`, `state_exists`, `roadmap_exists`, `phase_req_ids`, `response_language`.
 
-**Model resolution:** If `executor_model` is `"inherit"`, omit the `model=` parameter from all `Task()` calls — do NOT pass `model="inherit"` to Task. Omitting the `model=` parameter causes Claude Code to inherit the current orchestrator model automatically. Only set `model=` when `executor_model` is an explicit model name (e.g., `"claude-sonnet-4-6"`, `"claude-opus-4-7"`).
+**Model resolution:** If this runtime still uses legacy `Task()` dispatch, omit the `model=`
+parameter whenever `executor_model` is `"inherit"`. Tasktronaut named subagent tools ignore
+that field and inherit their configured runtime behavior automatically.
 
 **If `response_language` is set:** Include `response_language: {value}` in all spawned subagent prompts so any user-facing output stays in the configured language.
 
@@ -112,8 +115,8 @@ When `CONTEXT_WINDOW >= 500000` (1M-class models), subagent prompts include rich
 - This enables cross-phase awareness and history-aware verification
 
 When `CONTEXT_WINDOW < 200000` (sub-200K models), subagent prompts are thinned to reduce static overhead:
-- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @~/.claude/get-shit-done/references/executor-examples.md
-- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @~/.claude/get-shit-done/references/planner-antipatterns.md
+- Executor agents omit extended deviation rule examples and checkpoint examples from inline prompt — load on-demand via @.tasktronaut/references/executor-examples.md
+- Planner agents omit extended anti-pattern lists and specificity examples from inline prompt — load on-demand via @.tasktronaut/references/planner-antipatterns.md
 - Core rules and decision logic remain inline; only verbose examples and edge-case lists are extracted
 - This reduces executor static overhead by ~40% while preserving behavioral correctness
 
@@ -123,13 +126,11 @@ When `CONTEXT_WINDOW < 200000` (sub-200K models), subagent prompts are thinned t
 
 When `parallelization` is false, plans within a wave execute sequentially.
 
-**Runtime detection for Copilot:**
-Check if the current runtime is Copilot by testing for the `@gsd-executor` agent pattern
-or absence of the `Task()` subagent API. If running under Copilot, force sequential inline
-execution regardless of the `parallelization` setting — Copilot's subagent completion
-signals are unreliable (see `<runtime_compatibility>`). Set `COPILOT_SEQUENTIAL=true`
-internally and skip the `execute_waves` step in favor of `check_interactive_mode`'s
-inline path for each plan.
+**Runtime detection for limited subagent environments:**
+If the current runtime lacks worker isolation or reliable completion signals, force sequential
+inline execution regardless of the `parallelization` setting. Tasktronaut should only use
+parallel worker delegation when the named executor/verifier tools are available and the runtime
+can isolate concurrent coding safely.
 
 **REQUIRED — Sync chain flag with intent.** If user invoked manually (no `--auto`), clear the ephemeral chain flag from any previous interrupted `--auto` chain. This prevents stale `_auto_chain_active: true` from causing unwanted auto-advance. This does NOT touch `workflow.auto_advance` (the user's persistent settings preference). You MUST execute this bash block before any config reads:
 ```bash
@@ -193,7 +194,7 @@ checkpoints between tasks. The user can review, modify, or redirect work at any 
 
    b. **If "Review first":** Read and display the full plan file. Ask again: Execute, Modify, Skip.
 
-   c. **If "Execute":** Read and follow `~/.claude/get-shit-done/workflows/execute-plan.md` **inline**
+   c. **If "Execute":** Read and follow `.tasktronaut/workflows/execute-plan.md` **inline**
       (do NOT spawn a subagent). Execute tasks one at a time.
 
    d. **After each task:** Pause briefly. If the user intervenes (types anything), stop and address
@@ -432,7 +433,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
 3. **Spawn executor agents:**
 
    **Emit a plan-start heartbeat (literal line, no tool call) immediately before
-   each `Task()` dispatch (#2410):**
+   each worker delegation dispatch (#2410):**
 
    ```
    [checkpoint] phase {PHASE_NUMBER} wave {N}/{M} plan {plan_id} starting ({P}/{Q} plans done)
@@ -450,31 +451,24 @@ increases monotonically across waves. `{status}` is `complete` (success),
    ```
 
    **Sequential dispatch for parallel execution (waves with 2+ agents):**
-   When spawning multiple agents in a wave, dispatch each `Task()` call **one at a time
-   with `run_in_background: true`** — do NOT send all Task calls in a single message.
+   When spawning multiple agents in a wave, dispatch each delegation call **one at a time** —
+   do NOT send all worker launches in a single message.
    `git worktree add` acquires an exclusive lock on `.git/config.lock`, so simultaneous
    calls race for this lock and fail. Sequential dispatch ensures each worktree finishes
    creation before the next begins (the round-trip latency of each tool call provides
    natural spacing), while all agents still **run in parallel** once created.
 
    ```
-   # CORRECT: dispatch one Task() per message, each with run_in_background: true
+   # CORRECT: dispatch one executor delegation per message
    # → worktrees created sequentially, agents execute in parallel
    #
-   # WRONG: multiple Task() calls in a single message
+   # WRONG: multiple executor launches in a single message
    # → simultaneous git worktree add → .git/config.lock contention → failures
    ```
 
    ```
-   Task(
-     subagent_type="gsd-executor",
-     description="Execute plan {plan_number} of phase {phase_number}",
-     # Only include model= when executor_model is an explicit model name.
-     # When executor_model is "inherit", omit this parameter entirely so
-     # Claude Code inherits the orchestrator model automatically.
-     model="{executor_model}",  # omit this line when executor_model == "inherit"
-     isolation="worktree",
-     prompt="
+   use_subagent_gsd_executor(
+     prompt_1="
        <objective>
        Execute plan {plan_number} of phase {phase_number}-{phase_name}.
        Commit each task atomically. Create SUMMARY.md.
@@ -530,11 +524,11 @@ increases monotonically across waves. `{status}` is `complete` (success),
        </parallel_execution>
 
        <execution_context>
-       @~/.claude/get-shit-done/workflows/execute-plan.md
-       @~/.claude/get-shit-done/templates/summary.md
-       @~/.claude/get-shit-done/references/checkpoints.md
-       @~/.claude/get-shit-done/references/tdd.md
-       ${CONTEXT_WINDOW < 200000 ? '' : '@~/.claude/get-shit-done/references/executor-examples.md'}
+       @.tasktronaut/workflows/execute-plan.md
+       @.tasktronaut/templates/summary.md
+       @.tasktronaut/references/checkpoints.md
+       @.tasktronaut/references/tdd.md
+       ${CONTEXT_WINDOW < 200000 ? '' : '@.tasktronaut/references/executor-examples.md'}
        </execution_context>
 
        <files_to_read>
@@ -549,7 +543,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
        - ${prior_wave_summaries} (SUMMARY.md files from earlier waves in this phase — what was already built)
        ` : ''}
        - ./CLAUDE.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
-       - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
+       - .tasktronaut/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
        </files_to_read>
 
        ${AGENT_SKILLS}
@@ -571,11 +565,15 @@ increases monotonically across waves. `{status}` is `complete` (success),
    )
    ```
 
-   > **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above to spawn executor agent(s), stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+   > **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+   > `use_subagent_gsd_executor`, stop working on that plan immediately. Do not
+   > read more files, edit code, or run tests related to the same plan while the
+   > subagent is active. Wait for the result before resuming orchestration work.
 
    **Sequential mode** (`USE_WORKTREES_FOR_PLAN` is `false` — either project-level `USE_WORKTREES=false`, or per-plan submodule intersection forced it false in step 2.5):
 
-   Omit `isolation="worktree"` from the Task call. Replace the `<parallel_execution>` block with:
+   Omit worktree-specific assumptions from the executor prompt. Replace the
+   `<parallel_execution>` block with:
 
    ```
        <sequential_execution>
@@ -610,7 +608,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
    [checkpoint] phase {PHASE_NUMBER} wave {N}/{M} plan {plan_id} checkpoint ({P}/{Q} plans done)
    ```
 
-   **Completion signal fallback (Copilot and runtimes where Task() may not return):**
+   **Completion signal fallback (Copilot and runtimes where worker delegation may not return):**
 
    If a spawned agent does not return a completion signal but appears to have finished
    its work, do NOT block indefinitely. Instead, verify completion via spot-checks:
@@ -629,7 +627,8 @@ increases monotonically across waves. `{status}` is `complete` (success),
    activity. If commits are still appearing, wait longer. If no activity, report
    the plan as failed and route to the failure handler in step 6.
 
-   **This fallback applies automatically to all runtimes.** Claude Code's Task() normally
+   **This fallback applies automatically to all runtimes.** Legacy Claude-style `Task()`
+   normally
    returns synchronously, but the fallback ensures resilience if it doesn't.
 
 5. **Post-wave hook validation (parallel mode only):**
@@ -1328,9 +1327,8 @@ VERIFIER_SKILLS=$(gsd-sdk query agent-skills gsd-verifier)
 ```
 
 ```
-Task(
-  description="Verify phase {phase_number} goal achievement",
-  prompt="Verify phase {phase_number} goal achievement.
+use_subagent_gsd_verifier(
+  prompt_1="Verify phase {phase_number} goal achievement.
 Phase directory: {phase_dir}
 Phase goal: {goal from ROADMAP.md}
 Phase requirement IDs: {phase_req_ids}
@@ -1347,15 +1345,16 @@ ${CONTEXT_WINDOW >= 500000 ? `- {phase_dir}/*-CONTEXT.md (User decisions — ver
 - {phase_dir}/*-RESEARCH.md (Known pitfalls — check for traps)
 - Prior VERIFICATION.md files from earlier phases (regression check)
 ` : ''}
-</files_to_read>
+ </files_to_read>
 
-${VERIFIER_SKILLS}",
-  subagent_type="gsd-verifier",
-  model="{verifier_model}"
+${VERIFIER_SKILLS}"
 )
 ```
 
-> **ORCHESTRATOR RULE — CODEX RUNTIME**: After calling Task() above, stop working on this task immediately. Do not read more files, edit code, or run tests related to this task while the subagent is active. Wait for the subagent to return its result. This prevents duplicate work, conflicting edits, and wasted context. Only resume when the subagent result is available.
+> **ORCHESTRATOR RULE — TASKTRONAUT RUNTIME**: After calling
+> `use_subagent_gsd_verifier`, stop working on verification immediately. Do not
+> read more files, edit code, or run tests related to the same verification
+> pass while the subagent is active. Wait for the result before resuming.
 
 Read status:
 ```bash
@@ -1608,7 +1607,7 @@ STOP. Do not proceed to auto-advance or transition.
 
 Execute the transition workflow inline (do NOT use Task — orchestrator context is ~10-15%, transition needs phase completion data already in context):
 
-Read and follow `~/.claude/get-shit-done/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
+Read and follow `.tasktronaut/workflows/transition.md`, passing through the `--auto` flag so it propagates to the next phase invocation.
 
 **If neither `--auto` nor `AUTO_MODE` is true:**
 

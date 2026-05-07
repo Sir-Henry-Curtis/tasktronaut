@@ -49,6 +49,14 @@ const ASSETS = [
 		target: "references/agent-contracts.md",
 	},
 	{
+		source: path.join(GSD_ROOT, "references", "context-budget.md"),
+		target: "references/context-budget.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "checkpoints.md"),
+		target: "references/checkpoints.md",
+	},
+	{
 		source: path.join(GSD_ROOT, "references", "gates.md"),
 		target: "references/gates.md",
 	},
@@ -69,12 +77,36 @@ const ASSETS = [
 		target: "references/tdd.md",
 	},
 	{
+		source: path.join(GSD_ROOT, "references", "executor-examples.md"),
+		target: "references/executor-examples.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "ios-scaffold.md"),
+		target: "references/ios-scaffold.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "thinking-models-execution.md"),
+		target: "references/thinking-models-execution.md",
+	},
+	{
 		source: path.join(GSD_ROOT, "references", "thinking-models-planning.md"),
 		target: "references/thinking-models-planning.md",
 	},
 	{
+		source: path.join(GSD_ROOT, "references", "thinking-models-verification.md"),
+		target: "references/thinking-models-verification.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "verification-overrides.md"),
+		target: "references/verification-overrides.md",
+	},
+	{
 		source: path.join(GSD_ROOT, "references", "few-shot-examples", "plan-checker.md"),
 		target: "references/few-shot-examples/plan-checker.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "few-shot-examples", "verifier.md"),
+		target: "references/few-shot-examples/verifier.md",
 	},
 	{
 		source: path.join(GSD_ROOT, "templates", "research-project", "STACK.md"),
