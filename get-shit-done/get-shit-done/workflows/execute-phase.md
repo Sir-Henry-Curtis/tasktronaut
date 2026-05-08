@@ -645,11 +645,26 @@ increases monotonically across waves. `{status}` is `complete` (success),
 
    When executor agents ran in worktree isolation, their commits land on temporary branches in separate working trees. After the wave completes, merge these changes back and clean up:
 
+   In Tasktronaut runtimes, worker runs are also recorded in `.tasktronaut/runtime/subagent-executions.json`
+   with `run_id`, `branch_name`, `worktree_path`, and status metadata. Treat that file as an ownership ledger
+   for executor worktrees; use actual git state as the final source of truth for merge/remove operations.
+
+   Query the ownership ledger first so you know which worker branches belong to this phase/wave:
+
+   ```bash
+   RUN_LEDGER=$(gsd-sdk query subagent-executions --role worker --worktree-only --active-only --phase "${PHASE_NUMBER}")
+   ```
+
+   Use `RUN_LEDGER` to inspect `run_id`, `plan_id`, `branch_name`, `worktree_path`, `status`, and
+   `cleanup_status` before the git merge loop below. If the ledger and `git worktree list` disagree,
+   trust real git state for merge/remove operations but preserve the mismatch in your session notes
+   so the run can be audited later.
+
    ```bash
    # List worktrees created by this wave's agents.
    # Inclusion-based filter (#2774): match ONLY agent-spawned worktrees under
-   # `.claude/worktrees/agent-` (the namespace Claude Code's `isolation="worktree"`
-   # uses). The previous exclusion filter (`grep -v "$(pwd)$"`) destroyed the parent
+   # `.tasktronaut/worktrees/agent-` (the workspace namespace reserved for
+   # Tasktronaut executor worktrees). The previous exclusion filter (`grep -v "$(pwd)$"`) destroyed the parent
    # workspace's `.git` whenever the workspace itself was a worktree (multi-workspace
    # setups, and the cross-drive Windows case where `git worktree list` reports the
    # registry path on a different drive than `$(pwd)`).
@@ -774,7 +789,7 @@ increases monotonically across waves. `{status}` is `complete` (success),
        # Delete the temporary branch
        git branch -D "$WT_BRANCH" 2>/dev/null || true
      fi
-   done < <(git worktree list --porcelain | grep "^worktree " | grep "\.claude/worktrees/agent-" | sed 's/^worktree //')
+   done < <(git worktree list --porcelain | grep "^worktree " | grep "\.tasktronaut/worktrees/agent-" | sed 's/^worktree //')
    ```
 
    **If no plan in this wave used worktree isolation** (project-level `USE_WORKTREES=false` OR every plan in the wave had `USE_WORKTREES_FOR_PLAN=false` — i.e. `WAVE_WORKTREE_PLANS` from step 2.5 is empty): all agents ran on the main working tree — skip this step entirely.

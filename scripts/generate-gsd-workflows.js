@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates cline/src/gsd-workflows-generated.ts from GSD workflow .md files.
+ * Generates tasktronaut/src/gsd-workflows-generated.ts from GSD workflow .md files.
  * Run this script whenever workflow files change.
  */
 
@@ -8,7 +8,7 @@ const fs = require("fs")
 const path = require("path")
 
 const WORKFLOWS_DIR = path.join(__dirname, "..", "get-shit-done", "get-shit-done", "workflows")
-const OUTPUT_FILE = path.join(__dirname, "..", "cline", "src", "gsd-workflows-generated.ts")
+const OUTPUT_FILE = path.join(__dirname, "..", "tasktronaut", "src", "gsd-workflows-generated.ts")
 
 // Mapping from gsd-<command> to workflow filename (without .md).
 // If the key strips to the filename directly, no explicit entry needed.
@@ -77,6 +77,13 @@ function escapeBacktick(str) {
 	return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${")
 }
 
+function normalizeWorkflowContent(content) {
+	return content
+		.replace(/node\s+["']\$HOME\/\.claude\/get-shit-done\/bin\/gsd-tools\.cjs["']?/g, "gsd-tools")
+		.replace(/node\s+["']~\/\.claude\/get-shit-done\/bin\/gsd-tools\.cjs["']?/g, "gsd-tools")
+		.replace(/node\s+["']?\.tasktronaut\/bin\/gsd-tools\.cjs["']?/g, "gsd-tools")
+}
+
 const entries = []
 const skipped = []
 
@@ -89,7 +96,7 @@ for (const cmd of REGISTERED_COMMANDS) {
 		continue
 	}
 
-	const content = fs.readFileSync(mdPath, "utf8")
+	const content = normalizeWorkflowContent(fs.readFileSync(mdPath, "utf8"))
 	entries.push({ name: cmd, content })
 }
 

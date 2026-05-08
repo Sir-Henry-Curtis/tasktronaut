@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+// GSD v1.5 UserPromptSubmit hook — detect /gsd-* commands and inject planning context.
+// Fires when the user submits a prompt.
+// Injects STATE.md and relevant phase artifacts when a /gsd-* command is detected.
+
+const fs = require('fs');
+const path = require('path');
+
+let input = '';
+const timeout = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('end', () => {
+  clearTimeout(timeout);
+  try {
+    const data = JSON.parse(input);
+    const prompt = data.userPromptSubmit?.prompt || '';
+    const cwd = data.cwd || data.workspaceRoots?.[0] || process.cwd();
+
+    // Only activate for /gsd-* commands
+    const gsdMatch = prompt.match(/(^|\s)\/gsd-([a-zA-Z0-9-]+)/);
+    if (!gsdMatch) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    const command = 'gsd-' + gsdMatch[2];
+    const planningDir = path.join(cwd, '.planning');
+
+    let contextModification = '## GSD Context Injection for /' + command + '\n\n';
+
+    // Always inject STATE.md if it exists
+    const statePath = path.join(planningDir, 'STATE.md');
+    let state = '';
+    if (fs.existsSync(statePath)) {
+      state = fs.readFileSync(statePath, 'utf8').trim();
+      contextModification += '### Current State\n```\n' + state + '\n```\n\n';
+    } else if (!command.includes('new-project')) {
+      contextModification += '### No GSD Project\nRun /gsd-new-project to initialize.\n\n';
+    }
+
+    // For execute/plan/verify: inject the current phase plan
+    if (command.includes('execute') || command.includes('plan') || command.includes('verify')) {
+      const phaseMatch = state.match(/current_phase:\s*(\S+)/);
+      if (phaseMatch) {
+        const padded = String(phaseMatch[1]).padStart(2, '0');
+        const planPath = path.join(planningDir, 'PLANS', 'phase-' + padded + '.xml');
+        if (fs.existsSync(planPath)) {
+          const plan = fs.readFileSync(planPath, 'utf8');
+          contextModification += '### Phase ' + phaseMatch[1] + ' Plan\n```xml\n' +
+            plan.slice(0, 4000) + (plan.length > 4000 ? '\n... [truncated]' : '') + '\n```\n\n';
+        }
+      }
+    }
+
+    // For discuss/next/new-project: inject ROADMAP.md if available
+    if (command.includes('discuss') || command.includes('next') || command.includes('new-project')) {
+      const roadmapPath = path.join(planningDir, 'ROADMAP.md');
+      if (fs.existsSync(roadmapPath)) {
+        const roadmap = fs.readFileSync(roadmapPath, 'utf8');
+        contextModification += '### Roadmap\n' + roadmap.slice(0, 2000) +
+          (roadmap.length > 2000 ? '\n... [truncated]' : '') + '\n\n';
+      }
+    }
+
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification }));
+  } catch (_e) {
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+  }
+  process.exit(0);
+});

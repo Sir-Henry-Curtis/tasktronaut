@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+// GSD v1.5 PostToolUse hook — detect stuck loops from repetitive file writes.
+// Fires after each tool use.
+// Tracks per-session file write counts; warns when the same file is written 3+ times.
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+
+const WARN_THRESHOLD = 3; // warn after this many writes to the same file
+
+let input = '';
+const timeout = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('end', () => {
+  clearTimeout(timeout);
+  try {
+    const data = JSON.parse(input);
+    const sessionId = data.session_id;
+
+    // Only track write/edit tool calls
+    const toolName = data.postToolUse?.tool_name || '';
+    const writeTools = ['write_to_file', 'apply_diff', 'str_replace_editor', 'create_file'];
+    if (!writeTools.includes(toolName)) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    const filePath = data.postToolUse?.tool_input?.path ||
+      data.postToolUse?.tool_input?.file_path || '';
+
+    if (!filePath || !sessionId) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    // Reject session IDs with path traversal
+    if (/[/\\]|\.\./.test(sessionId)) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    // Load and update per-session write log
+    const tmpPath = path.join(os.tmpdir(), 'gsd-writes-' + sessionId + '.json');
+    let writes = {};
+    try {
+      if (fs.existsSync(tmpPath)) {
+        writes = JSON.parse(fs.readFileSync(tmpPath, 'utf8'));
+      }
+    } catch (_e) {}
+
+    writes[filePath] = (writes[filePath] || 0) + 1;
+
+    try {
+      fs.writeFileSync(tmpPath, JSON.stringify(writes));
+    } catch (_e) {}
+
+    const count = writes[filePath];
+
+    if (count >= WARN_THRESHOLD) {
+      const contextModification =
+        '## GSD Loop Warning\n\n' +
+        '`' + filePath + '` has been written **' + count + ' times** this session. ' +
+        'This may indicate a stuck loop.\n\n' +
+        '**Recommended actions:**\n' +
+        '1. Pause and verify: Does the current output meet the acceptance criteria?\n' +
+        '2. Run /gsd-verify-work to check against the original criteria.\n' +
+        '3. If blocked: note the blocker in STATE.md and ask the user for input.\n' +
+        '4. Avoid re-writing the same file without a clear reason.';
+
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification }));
+    } else {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+    }
+  } catch (_e) {
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+  }
+  process.exit(0);
+});

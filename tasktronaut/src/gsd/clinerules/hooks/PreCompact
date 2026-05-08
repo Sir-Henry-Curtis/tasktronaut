@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+// GSD v1.5 PreCompact hook — preserve planning state before context compaction.
+// Fires before Cline auto-compacts the context window.
+// Injects a state snapshot so the compacted context retains current phase/step.
+
+const fs = require('fs');
+const path = require('path');
+
+let input = '';
+const timeout = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('end', () => {
+  clearTimeout(timeout);
+  try {
+    const data = JSON.parse(input);
+    const cwd = data.cwd || data.workspaceRoots?.[0] || process.cwd();
+    const statePath = path.join(cwd, '.planning', 'STATE.md');
+
+    if (!fs.existsSync(statePath)) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    const state = fs.readFileSync(statePath, 'utf8').trim();
+
+    // Read PROJECT.md summary if available (first 500 chars)
+    let projectSummary = '';
+    const projectPath = path.join(cwd, '.planning', 'PROJECT.md');
+    if (fs.existsSync(projectPath)) {
+      const project = fs.readFileSync(projectPath, 'utf8');
+      projectSummary = '\n\n### Project Summary\n' + project.slice(0, 500).trim();
+    }
+
+    const contextModification =
+      '## GSD State Checkpoint (saved before compaction)\n\n' +
+      '```\n' + state + '\n```' +
+      projectSummary +
+      '\n\nContinue from the current_step in STATE.md after compaction. ' +
+      'Run /gsd-next if unsure what to do next.';
+
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification }));
+  } catch (_e) {
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+  }
+  process.exit(0);
+});

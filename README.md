@@ -72,7 +72,7 @@ The steady-state deployment model is intentionally narrow:
 
 This workspace currently contains the two upstream foundations for the project:
 
-- [cline](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/cline)
+- [tasktronaut](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/tasktronaut)
 - [get-shit-done](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/get-shit-done)
 
 The root of this repo is the integration layer and documentation surface for the combined system.

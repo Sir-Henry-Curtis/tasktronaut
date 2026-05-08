@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates cline/src/gsd-research-assets-generated.ts from selected GSD
+ * Generates tasktronaut/src/gsd-research-assets-generated.ts from selected GSD
  * reference, template, and workflow files needed by Tasktronaut-native GSD flows.
  * Run this script whenever those source files change.
  */
@@ -9,7 +9,7 @@ const fs = require("fs")
 const path = require("path")
 
 const GSD_ROOT = path.join(__dirname, "..", "get-shit-done", "get-shit-done")
-const OUTPUT_FILE = path.join(__dirname, "..", "cline", "src", "gsd-research-assets-generated.ts")
+const OUTPUT_FILE = path.join(__dirname, "..", "tasktronaut", "src", "gsd-research-assets-generated.ts")
 
 const ASSETS = [
 	{

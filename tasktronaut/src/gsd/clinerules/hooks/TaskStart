@@ -1,0 +1,57 @@
+#!/usr/bin/env node
+// GSD v1.5 TaskStart hook — inject planning context when a new task begins.
+// Fires when the user starts a new Cline task.
+// Reads STATE.md and injects current phase/step so the AI starts oriented.
+
+const fs = require('fs');
+const path = require('path');
+
+let input = '';
+const timeout = setTimeout(() => process.exit(0), 5000);
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', chunk => { input += chunk; });
+process.stdin.on('end', () => {
+  clearTimeout(timeout);
+  try {
+    const data = JSON.parse(input);
+    const cwd = data.cwd || data.workspaceRoots?.[0] || process.cwd();
+    const statePath = path.join(cwd, '.planning', 'STATE.md');
+
+    if (!fs.existsSync(statePath)) {
+      process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+      process.exit(0);
+    }
+
+    const state = fs.readFileSync(statePath, 'utf8').trim();
+
+    // Parse current_phase from state
+    const phaseMatch = state.match(/current_phase:\s*(\S+)/);
+    const stepMatch = state.match(/current_step:\s*(\S+)/);
+    const phase = phaseMatch ? phaseMatch[1] : null;
+    const step = stepMatch ? stepMatch[1] : null;
+
+    // Load current phase plan if in execute/verify step
+    let planContext = '';
+    if (phase && (step === 'execute' || step === 'verify')) {
+      const padded = String(phase).padStart(2, '0');
+      const planPath = path.join(cwd, '.planning', 'PLANS', `phase-${padded}.xml`);
+      if (fs.existsSync(planPath)) {
+        const plan = fs.readFileSync(planPath, 'utf8');
+        planContext = '\n\n### Active Phase Plan (phase-' + padded + '.xml)\n```xml\n' +
+          plan.slice(0, 3000) + (plan.length > 3000 ? '\n... [truncated]' : '') + '\n```';
+      }
+    }
+
+    const contextModification =
+      '## GSD Project Context\n\n' +
+      'A GSD workflow is active for this workspace. Current state:\n\n' +
+      '```\n' + state + '\n```' +
+      planContext +
+      '\n\nUse /gsd-next to advance the workflow, or /gsd-<command> to run a specific step.';
+
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification }));
+  } catch (_e) {
+    process.stdout.write(JSON.stringify({ cancel: false, contextModification: '' }));
+  }
+  process.exit(0);
+});

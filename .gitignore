@@ -1,0 +1,18 @@
+# Root-level generated artifacts and local runtime state
+
+# Tasktronaut workspace-local runtime files
+/.tasktronaut/actors.json
+/.tasktronaut/ipc.jsonl
+/.tasktronaut/leader.json
+/.tasktronaut/runtime/
+/.tasktronaut/worktrees/
+
+# Packaged extension artifacts
+/tasktronaut/dist/*.vsix
+
+# Laika frontend build output
+/prototypes/laika/dist/
+/prototypes/laika/node_modules/
+
+# Laika Tauri/Rust build output
+/prototypes/laika/src-tauri/target/

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Generates cline/src/gsd-agents-generated.ts from GSD agent .md files.
+ * Generates tasktronaut/src/gsd-agents-generated.ts from GSD agent .md files.
  * Run this script whenever agent files change.
  */
 
@@ -8,7 +8,7 @@ const fs = require("fs")
 const path = require("path")
 
 const AGENTS_DIR = path.join(__dirname, "..", "get-shit-done", "agents")
-const OUTPUT_FILE = path.join(__dirname, "..", "cline", "src", "gsd-agents-generated.ts")
+const OUTPUT_FILE = path.join(__dirname, "..", "tasktronaut", "src", "gsd-agents-generated.ts")
 
 const AGENT_TOOL_IDS = {
 	"gsd-codebase-mapper": ["read_file", "write_to_file", "execute_command", "search_files", "list_files"],
@@ -52,6 +52,10 @@ const AGENT_TOOL_IDS = {
 }
 
 const AGENTS_TO_BUNDLE = Object.keys(AGENT_TOOL_IDS)
+const AGENT_RUNTIME_CONFIG = {
+	"gsd-executor": { role: "worker", isolation: "worktree" },
+	"gsd-verifier": { role: "worker", isolation: "inherit" },
+}
 
 function escapeBacktick(str) {
 	return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${")
@@ -94,12 +98,17 @@ function normalizeBody(body) {
 		.replace(/"\$HOME\/\.claude\/get-shit-done\/bin\/gsd-tools\.cjs"/g, '".tasktronaut/bin/gsd-tools.cjs"')
 		.replace(/~\/\.claude\/get-shit-done\/bin\/gsd-tools\.cjs/g, ".tasktronaut/bin/gsd-tools.cjs")
 		.replace(/\$HOME\/\.claude\/get-shit-done\/bin\/gsd-tools\.cjs/g, ".tasktronaut/bin/gsd-tools.cjs")
+		.replace(/node\s+["']?\.tasktronaut\/bin\/gsd-tools\.cjs["']?/g, "gsd-tools")
 }
 
 function buildTasktronautAgentContent(agentName, sourceContent) {
 	const { value: parsedName, body } = parseFrontmatter(sourceContent, "name")
 	const { value: description } = parseFrontmatter(sourceContent, "description")
 	const toolIds = AGENT_TOOL_IDS[agentName]
+	const runtimeConfig = AGENT_RUNTIME_CONFIG[agentName] ?? {
+		role: toolIds.some((toolId) => toolId === "write_to_file" || toolId === "replace_in_file") ? "worker" : "research",
+		isolation: "inherit",
+	}
 
 	if (!toolIds || toolIds.length === 0) {
 		throw new Error(`No Tasktronaut tool mapping configured for ${agentName}`)
@@ -109,6 +118,8 @@ function buildTasktronautAgentContent(agentName, sourceContent) {
 		"---",
 		`name: ${JSON.stringify(parsedName)}`,
 		`description: ${JSON.stringify(description)}`,
+		`role: ${runtimeConfig.role}`,
+		`isolation: ${runtimeConfig.isolation}`,
 		"tools:",
 		...toolIds.map((toolId) => `  - ${toolId}`),
 		"---",
