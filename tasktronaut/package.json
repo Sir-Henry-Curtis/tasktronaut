@@ -1,8 +1,8 @@
 {
 	"name": "tasktronaut",
 	"displayName": "Tasktronaut",
-	"description": "Mission-ready coding assistant for structured engineering workflows, with file editing, terminal execution, browser tools, and human approval gates built into VS Code.",
-	"version": "0.15.10",
+	"description": "Mission-ready coding assistant for structured engineering workflows, with file editing, terminal execution, controlled URL fetch, and human approval gates built into VS Code.",
+	"version": "1.1.3",
 	"icon": "assets/icons/icon.png",
 	"workspaces": [
 		".",
@@ -155,6 +155,12 @@
 				"title": "GSD: Toggle Auto Mode",
 				"category": "GSD",
 				"icon": "$(sync)"
+			},
+			{
+				"command": "tasktronaut.gsd.verifyManagedAssets",
+				"title": "GSD: Verify Managed Assets",
+				"category": "GSD",
+				"icon": "$(verified)"
 			},
 			{
 				"command": "tasktronaut.dev.createTestTasks",
@@ -387,7 +393,7 @@
 		"watch": "npx npm-run-all -p watch:*",
 		"watch:esbuild": "node esbuild.mjs --watch",
 		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-		"package": "npm run check-types && npm run build:webview && npm run lint && node esbuild.mjs --production",
+		"package": "npm run check:gsd-sdk-shim && npm run check-types && npm run build:webview && npm run lint && node esbuild.mjs --production",
 		"prevscode:prepublish": "rm -f dist/*.vsix",
 		"protos": "node scripts/build-proto.mjs",
 		"protos-python": "node scripts/build-python-proto.mjs",
@@ -399,6 +405,7 @@
 		"compile-tests": "node ./scripts/build-tests.js",
 		"watch-tests": "tsc -p . -w --outDir out",
 		"check-types": "npm run protos && npx tsc --noEmit && cd webview-ui && npx tsc --noEmit && cd ../cli && npx tsc --noEmit",
+		"check:gsd-sdk-shim": "node scripts/check-gsd-sdk-shim.cjs",
 		"lint": "biome lint --no-errors-on-unmatched --files-ignore-unknown=true --diagnostic-level=error && npm run lint:proto",
 		"lint:proto": "bash ./scripts/proto-lint.sh",
 		"format": "biome format --changed --no-errors-on-unmatched --files-ignore-unknown=true --diagnostic-level=error",
@@ -408,7 +415,8 @@
 		"ci:build": "npm run protos && npm run build:webview && node esbuild.mjs && npm run compile-tests",
 		"pretest": "npm run compile && npm run compile-tests && npm run compile-standalone && npm run lint",
 		"test": "npx npm-run-all test:unit test:integration",
-		"test:integration": "vscode-test",
+		"test:integration": "node scripts/prepare-test-workspace.mjs && vscode-test",
+		"test:integration:managed-assets:update": "node scripts/prepare-test-workspace.mjs --seed-stale-managed-assets && vscode-test --grep \"repairs stale managed GSD assets during extension activation\" --fail-zero",
 		"test:unit": "cross-env TS_NODE_PROJECT=./tsconfig.unit-test.json node ./scripts/run-unit-tests.cjs",
 		"test:coverage": "vscode-test --coverage",
 		"test:sca-server": "npx tsx watch scripts/test-standalone-core-api-server.ts",
