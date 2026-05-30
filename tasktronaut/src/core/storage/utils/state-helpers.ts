@@ -94,6 +94,7 @@ async function handleComputedProperties(result: any, stateValues: Map<string, an
 	// 1. API Provider logic - set defaults based on existing values
 	result.planModeApiProvider = coerceSupportedApiProvider(result.planModeApiProvider || DEFAULT_API_PROVIDER)
 	result.actModeApiProvider = coerceSupportedApiProvider(result.actModeApiProvider || DEFAULT_API_PROVIDER)
+	result.kissModeApiProvider = coerceSupportedApiProvider(result.kissModeApiProvider || DEFAULT_API_PROVIDER)
 
 	// 2. Plan/Act separate models setting with special logic
 	const planActSeparateModelsSettingRaw = stateValues.get("planActSeparateModelsSetting")

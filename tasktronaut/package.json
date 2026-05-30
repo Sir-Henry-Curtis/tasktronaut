@@ -2,7 +2,7 @@
 	"name": "tasktronaut",
 	"displayName": "Tasktronaut",
 	"description": "Mission-ready coding assistant for structured engineering workflows, with file editing, terminal execution, controlled URL fetch, and human approval gates built into VS Code.",
-	"version": "1.2.30",
+	"version": "1.2.32",
 	"icon": "assets/icons/icon.png",
 	"workspaces": [
 		".",
@@ -14,7 +14,7 @@
 	"author": {
 		"name": "Tasktronaut"
 	},
-	"license": "Apache-2.0",
+	"license": "Apache-2.0 AND MIT",
 	"publisher": "tasktronaut",
 	"repository": {
 		"type": "git",

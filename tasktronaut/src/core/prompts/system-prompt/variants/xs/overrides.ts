@@ -43,7 +43,7 @@ const XS_TOOLS_OVERRIDE = (context: SystemPromptContext) =>
 	context.enableNativeToolCalls
 		? `TOOLS
 
-You have access to a set of tools that you are expected to use to resolve the task.`
+You have access to a set of tools you may call when the task genuinely requires it. For simple questions or conversation, respond directly without calling any tools.`
 		: `TOOLS
 
 **execute_command** — Run CLI in {{CWD}}.  

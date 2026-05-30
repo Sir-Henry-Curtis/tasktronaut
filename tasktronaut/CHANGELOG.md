@@ -1,5 +1,39 @@
 # Tasktronaut Changelog
 
+## [1.2.31] - 2026-05-30
+
+### Fixed
+
+- **`kissModeApiProvider` not coerced at state load time** — `state-helpers.ts` coerced `planModeApiProvider` and `actModeApiProvider` through `coerceSupportedApiProvider()` on every startup, but `kissModeApiProvider` was missing from the same step. If the value was stored as a non-supported provider string (e.g. `"openai-compatible"` from a prior session or backup), it would fall through to `AnthropicHandler` at runtime despite all settings-update paths coercing it correctly. Added the missing coercion so all three mode providers are normalized consistently at load time.
+
+## [1.2.30] - 2026-05-30
+
+### Fixed
+
+- **`parallel_tool_calls` 400 error with Ollama/LiteLLM — second fix** — v1.2.29 set `enableParallelToolCalling: false` in KISS mode, but `getOpenAIToolParams()` always included the `parallel_tool_calls` field in the request payload regardless of its value. Ollama (and LiteLLM proxying Ollama) rejects the parameter entirely — even when `false`. Fixed by changing `getOpenAIToolParams()` to omit the field from the payload when `enableParallelToolCalls` is false, so it is only included when explicitly `true`.
+
+## [1.2.29] - 2026-05-30
+
+### Fixed
+
+- **`parallel_tool_calls` 400 error with Ollama/LiteLLM** — Once native tool calling was active in KISS mode, the extension began sending `parallel_tool_calls: true` to the API. Ollama does not support this OpenAI parameter and returns a 400 error. Fixed by forcing `enableParallelToolCalling: false` when in KISS mode so the parameter is not forwarded.
+
+## [1.2.28] - 2026-05-30
+
+### Fixed
+
+- **xs variant not selected for `openai-compatible` provider in KISS mode** — The xs (compact) variant matcher required `isLocalModel()` to be true in addition to `customPrompt === "compact"`. `isLocalModel()` only returns true for `"lmstudio"` and `"ollama"` — `"openai-compatible"` fails the check, so KISS mode never activated the xs variant and fell back to the generic prompt. Removed the `isLocalModel` guard: `customPrompt === "compact"` is now sufficient to select xs, regardless of provider type.
+
+## [1.2.27] - 2026-05-30
+
+### Fixed
+
+- **KISS mode MCP tool calling — full end-to-end fix** — MCP tools were not reachable in KISS mode due to several layered gates, each independently blocking native tool calling:
+  - **MCP hub stripped** — `mcpHub` was set to `undefined` when building the prompt context in KISS mode. MCP servers never appeared in the tool list. Fixed by removing the KISS mode guard so `mcpHub` is always passed.
+  - **System prompt stripped** — KISS mode overrode `systemPrompt` to an empty string, discarding the variant-generated prompt and all tool definitions. Fixed by removing the conditional override.
+  - **Native tool calls never enabled** — `enableNativeToolCalls` was not forced true in KISS mode, so the xs variant's `use_native_tools` label had no effect. Fixed by OR-ing `isKissMode` into the `enableNativeToolCalls` condition.
+  - **xs variant not selected** — The prompt context did not signal `customPrompt: "compact"` in KISS mode, so the variant selector never chose xs. Fixed by building an `effectiveProviderInfo` override in KISS mode that injects `customPrompt: "compact"`, ensuring the xs variant (and its native-tool-calling label) is always selected.
+
 ## [1.2.26] - 2026-05-22
 
 ### Fixed

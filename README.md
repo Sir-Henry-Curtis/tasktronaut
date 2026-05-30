@@ -32,9 +32,9 @@ The current direction is a lightweight hybrid model referred to in the design no
 - use **GSD v1** as the workflow layer
 - add a small programmatic bridge where prompt-only orchestration is not sufficient
 
-For the multi-agent orchestration layer, the current recommendation is a **standalone Tauri desktop app** rather than a VS Code webview. The prototype work that informed this direction is intentionally kept outside the shareable repository history.
-
 This approach was chosen over a standalone orchestration replacement because it keeps the integration surface smaller, fits better with the existing extension model, and aligns with a controlled deployment environment.
+
+The canonical architecture note lives in [docs/architecture.md](./docs/architecture.md). KISS mode is documented separately in [docs/kiss-mode-design.md](./docs/kiss-mode-design.md).
 
 ### Bridge Layer Responsibilities
 
@@ -77,6 +77,12 @@ This workspace currently contains the two upstream foundations for the project:
 
 The root of this repo is the integration layer and documentation surface for the combined system.
 
+## Project Docs
+
+- [Architecture](./docs/architecture.md)
+- [KISS Mode Design](./docs/kiss-mode-design.md)
+- [KISS Mode Future Cleanup](./docs/kiss-mode-future-cleanup.md)
+
 ## Near-Term Work
 
 1. Harden the Cline fork for internal deployment.
@@ -95,3 +101,5 @@ Tasktronaut builds on upstream open-source projects that should remain clearly c
 
 - **Cline**, licensed under Apache 2.0
 - **Get Shit Done**, licensed under MIT
+
+See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md) for source, copyright, and license details.

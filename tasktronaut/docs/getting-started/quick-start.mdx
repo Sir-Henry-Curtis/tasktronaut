@@ -1,101 +1,99 @@
 ---
 title: "Quick Start"
 sidebarTitle: "Quick Start"
-description: "Get Cline running in under 2 minutes."
+description: "Install and configure Tasktronaut for a controlled internal workflow."
 ---
 
-Cline is an AI-powered coding assistant that works directly inside your editor. You describe what you want in plain text, and Cline writes code, creates files, runs terminal commands, and even tests web apps in a browser, all while asking for your permission before making any changes.
+Tasktronaut is a controlled VS Code coding assistant for internal engineering workflows. You describe what you want in plain text, and Tasktronaut can read files, edit files, run terminal commands, fetch approved URLs, and use configured MCP tools while preserving human approval gates.
 
-Think of it as pair programming with an AI that can actually touch your files and run your tools, but only when you say so.
+Think of it as pair programming with an AI that can touch your workspace and run your tools, but only inside the deployment boundary you configure.
 
-This guide gets you from zero to working code in under 2 minutes.
+This guide gets a developer from a packaged Tasktronaut build to a first approved task.
 
 <Info>
   **What You'll Need:**
-  - One of: **VS Code**, **Cursor**, **Windsurf**, **Antigravity**, a **JetBrains IDE**, or **Node.js 20+** (for CLI)
-  - An internet connection (Cline connects to AI models in the cloud)
-  - ~2 minutes
+  - VS Code or a compatible VS Code-based editor
+  - A Tasktronaut VSIX or approved internal extension source
+  - An approved model endpoint and credential, or an approved local model host
+  - A workspace under version control
 </Info>
 
 ## 1. Install
 
-<Tabs>
-  <Tab title="VS Code / Cursor / Windsurf / Antigravity">
-    Open Extensions (`Cmd+Shift+X` on Mac, `Ctrl+Shift+X` on Windows/Linux), search **Cline**, click **Install**.
-  </Tab>
-  <Tab title="JetBrains">
-    Go to **Settings > Plugins > Marketplace**, search **Cline**, click **Install**, then restart your IDE.
-  </Tab>
-  <Tab title="CLI">
-    ```bash
-    npm install -g cline
-    ```
-  </Tab>
-</Tabs>
+Install the approved Tasktronaut package using your organization's normal extension distribution path.
 
-<Tip>
-For detailed installation instructions including troubleshooting, see the [full installation guide](/getting-started/installing-cline).
-</Tip>
+For a local VSIX, open the Extensions view, choose **Install from VSIX...**, and select the packaged Tasktronaut build. Reload VS Code when prompted.
 
-## 2. Authenticate
+## 2. Configure the Model Endpoint
 
-Click the Cline icon in your editor's sidebar, then click **Sign Up**. You'll authenticate at [app.cline.bot](https://app.cline.bot) and return to your editor ready to go.
+Open the Tasktronaut panel and go to settings. Configure the approved provider for each mode you plan to use:
 
-Authenticating gives you access to multiple AI models without managing separate API keys. Your account includes both free and paid models. Free models are labeled **FREE** in the model selector. For paid models, you can add credits in your [account dashboard](https://app.cline.bot/dashboard). You're always in control of which model you use.
+- **Plan** for investigation and strategy
+- **Act** for tool-using implementation
+- **KISS** for lightweight conversational local models
 
-Send any message to confirm you're connected, then move on to building something.
+Tasktronaut's baseline internal deployment does not require a hosted Cline account. Credentials should point at the endpoint approved for your environment.
 
 <Note>
-**CLI users:** Run `cline auth` to authenticate from your terminal.
+Use the provider and model settings supplied by your administrator or project lead. Avoid adding personal cloud providers unless they are approved for the workspace.
 </Note>
 
-## 3. Build Something
+## 3. Choose a Mode
 
-Now let's have Cline write some code. Open any folder in your editor, then paste this:
+Use the mode control at the bottom of the chat input:
+
+- **Plan** when you want Tasktronaut to inspect, explain, or propose a strategy before changing files
+- **Act** when you are ready for Tasktronaut to edit files, run commands, or use tools
+- **KISS** when you want a minimal conversational prompt for a small local model
+
+## 4. Run a First Task
+
+Open a version-controlled workspace, then paste:
 
 ```text
 Create a Python function that checks if a string is a palindrome. Include tests.
 ```
 
-Cline will analyze your request, create a new file, and ask for your approval before writing anything to disk. Click **Approve** to create the file.
+In Act mode, Tasktronaut analyzes the request, proposes file changes, and asks for approval before writing. Approve the edits you want, reject anything that does not fit, and let it run tests only when the command is appropriate for the workspace.
 
 That's it. You have working code with tests.
 
 <Note>
-**Not seeing file changes?** You might be in **Plan Mode**, where Cline discusses the approach without modifying files. Look for the **Plan/Act toggle** at the bottom of the Cline panel and switch to **Act** to let Cline start writing code. [Learn more about Plan & Act →](/core-workflows/plan-and-act)
+**Not seeing file changes?** You may be in Plan mode or KISS mode. Switch to Act when you want Tasktronaut to modify files.
 </Note>
 
-## 4. You're All Set
+## 5. You're All Set
 
 Let's recap what you just did:
 
-1. **Installed Cline** in your editor
-2. **Authenticated** to connect to AI models
-3. **Built working code**: Cline wrote it, you approved it
+1. Installed Tasktronaut in your editor
+2. Configured an approved model endpoint
+3. Chose the right mode for the task
+4. Built working code with approval gates
 
-Every step of the way, Cline showed you exactly what it planned to do and waited for your approval. This is Cline's **human-in-the-loop** model: every file edit, terminal command, and external URL fetch is shown to you first and only happens after you click Approve. You can review exactly what's changing, reject anything you don't want, and stay fully in control of your codebase. Nothing happens behind your back.
+Every step of the way, Tasktronaut shows what it plans to do and waits for approval unless you explicitly enable broader auto-approval. You can review file edits, terminal commands, URL fetches, and MCP tool calls before they run.
 
-## What Else Can Cline Do?
+## What Else Can Tasktronaut Do?
 
-The palindrome example is just the beginning. Here are some prompts to explore Cline's full capabilities:
+The palindrome example is just the beginning. Try:
 
-- `Read my project and explain the architecture`: Cline navigates and analyzes your codebase
-- `Find and fix the bug in src/utils.ts`: Cline reads files, proposes edits, and can run tests
-- `Run my test suite and fix any failures`: Cline executes terminal commands and iterates on problems
-- `Open a browser and test my app at localhost:3000`: Cline launches a browser and interacts with pages
-- `Set up an MCP server for my database`: Cline can connect to external tools and APIs
+- `Read my project and explain the architecture`
+- `Find and fix the bug in the parser module`
+- `Run my test suite and summarize any failures`
+- `Fetch the official docs URL I pasted and compare it with this implementation`
+- `Start a GSD planning workflow for this feature`
 
-Cline works best when you give it clear, specific instructions. The more context you provide about what you want, the better the results.
+Tasktronaut works best when you give it clear, specific instructions and keep the workspace under version control.
 
 <AccordionGroup>
-  <Accordion title="How does Cline work under the hood?">
-    Cline runs entirely in your editor (or terminal). When you send a message, it goes to the AI model you've selected (like Claude, GPT-4, or Gemini). The model's response is parsed into actions (file edits, terminal commands, browser interactions) which Cline presents to you for approval. Your code never passes through Cline's servers. It goes directly from your machine to your chosen AI provider.
+  <Accordion title="How does Tasktronaut work under the hood?">
+    Tasktronaut runs in your editor. When you send a message, it goes to the configured model endpoint. The model response is parsed into actions such as file edits, terminal commands, controlled URL fetches, or MCP tool calls. Tasktronaut presents consequential actions for approval before running them.
   </Accordion>
 </AccordionGroup>
 
 ## Next Steps
 
-- [What is Cline?](/getting-started/what-is-cline): Understand Cline's full capabilities and how it works
-- [Build Your First Project](/getting-started/your-first-project): Hands-on tutorial building a complete todo app
-- [Select Your Model](/getting-started/authorizing-with-cline): Connect Claude, GPT-4, Gemini, DeepSeek, or local models
-- [Core Workflows](/core-workflows/task-management): Learn the patterns you'll use daily with Cline
+- [Plan and Act](/core-workflows/plan-and-act): Learn when to discuss and when to execute
+- [Auto Approve](/features/auto-approve): Configure approval behavior
+- [Running Models Locally](/running-models-locally/overview): Use approved local model hosts
+- [Core Workflows](/core-workflows/task-management): Learn daily task patterns

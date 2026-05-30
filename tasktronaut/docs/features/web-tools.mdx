@@ -6,9 +6,9 @@ description: "Fetch content from URLs directly within Tasktronaut"
 
 Web Tools give Tasktronaut the ability to fetch content from specific URLs during your tasks. This is useful when you already know the documentation page, changelog, or reference URL you want to inspect.
 
-<Warning>
-	Web Tools require the **Cline provider**. They are not available when using other providers like OpenRouter, Anthropic, AWS Bedrock, etc.
-</Warning>
+<Note>
+	Web Tools are part of Tasktronaut's controlled external-context path. Availability depends on the deployed provider, policy, and enabled tool surface.
+</Note>
 
 ## How Web Tools Work
 
@@ -20,11 +20,11 @@ When Tasktronaut determines that a known URL would help complete your task, it c
 
 ## Enabling Web Tools
 
-Web Tools are available when using the Cline provider. To use them:
+To use Web Tools:
 
-1. Make sure you're signed in to Cline
-2. Ensure you're using the Cline provider
-3. Enable the Web Tools toggle in the Feature Settings menu
+1. Confirm external URL fetching is allowed for your workspace
+2. Use an approved provider and endpoint
+3. Enable the Web Tools toggle in the Feature Settings menu if it is exposed by your deployment
 
 <Note>
 	Web tools can be auto-approved using the "Fetch external URLs" setting in [Auto Approve](/features/auto-approve). In Tasktronaut's current product boundary, that setting governs built-in `web_fetch`, not a general browser automation capability.

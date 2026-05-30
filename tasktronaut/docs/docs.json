@@ -1,8 +1,8 @@
 {
 	"$schema": "https://mintlify.com/docs.json",
 	"theme": "mint",
-	"name": "Cline",
-	"description": "AI-powered coding agent for complex work",
+	"name": "Tasktronaut",
+	"description": "Controlled AI coding workflows for internal engineering environments",
 	"colors": {
 		"primary": "#9D4EDD",
 		"light": "#F0E6FF",
@@ -37,20 +37,15 @@
 	"navbar": {
 		"links": [
 			{
-				"label": "GitHub",
+				"label": "Repository",
 				"icon": "github",
-				"href": "https://github.com/cline/cline"
-			},
-			{
-				"label": "Discord",
-				"icon": "discord",
-				"href": "https://discord.gg/cline"
+				"href": "https://git.sethlans.io/jlbrian7/tasktronaut"
 			}
 		],
 		"primary": {
 			"type": "button",
-			"label": "Install Cline",
-			"href": "https://cline.bot/install?utm_source=website&utm_medium=header"
+			"label": "Quick Start",
+			"href": "/getting-started/quick-start"
 		}
 	},
 	"navigation": {
@@ -60,10 +55,18 @@
 				"icon": "square-terminal",
 				"groups": [
 					{
+						"group": "Tasktronaut",
+						"pages": [
+							"getting-started/quick-start",
+							"features/auto-approve",
+							"features/web-tools",
+							"tools-reference/browser-automation"
+						]
+					},
+					{
 						"group": "Home",
 						"pages": [
-							"home",
-							"getting-started/quick-start"
+							"home"
 						]
 					},
 					{
@@ -97,7 +100,7 @@
 						]
 					},
 					{
-						"group": "Cline CLI",
+						"group": "Tasktronaut CLI",
 						"pages": [
 							"cline-cli/overview",
 							"cline-cli/installation",
@@ -212,7 +215,7 @@
 						]
 					},
 					{
-						"group": "MCP (Extending Cline)",
+						"group": "MCP (Extending Tasktronaut)",
 						"pages": [
 							"mcp/mcp-overview",
 							"mcp/mcp-marketplace",
@@ -299,7 +302,7 @@
 								]
 							},
 							{
-								"group": "Control Other Cline Features",
+								"group": "Control Other Tasktronaut Features",
 								"pages": [
 									"enterprise-solutions/configuration/infrastructure-configuration/control-other-cline-features/yolo-mode",
 									"enterprise-solutions/configuration/infrastructure-configuration/control-other-cline-features/mcp-marketplace"
@@ -326,7 +329,7 @@
 				"icon": "code",
 				"groups": [
 					{
-						"group": "Cline API",
+						"group": "Tasktronaut API",
 						"pages": [
 							"api/overview",
 							"api/getting-started",
@@ -354,7 +357,7 @@
 				"icon": "table-columns",
 				"groups": [
 					{
-						"group": "Cline Kanban",
+						"group": "Kanban",
 						"pages": [
 							"kanban/overview",
 							"kanban/getting-started",
@@ -366,17 +369,15 @@
 				]
 			},
 			{
-				"tab": "Learn",
+				"tab": "Start",
 				"icon": "graduation-cap",
-				"href": "https://cline.bot/learn"
+				"href": "/getting-started/quick-start"
 			}
 		]
 	},
 	"footer": {
 		"socials": {
-			"x": "https://x.com/cline",
-			"github": "https://github.com/cline/cline",
-			"discord": "https://discord.gg/cline"
+			"github": "https://git.sethlans.io/jlbrian7/tasktronaut"
 		}
 	},
 	"anchors": [
@@ -677,6 +678,6 @@
 		}
 	],
 	"search": {
-		"prompt": "Search Cline documentation..."
+		"prompt": "Search Tasktronaut documentation..."
 	}
 }

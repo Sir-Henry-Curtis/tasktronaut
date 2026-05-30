@@ -24,6 +24,8 @@ The current direction is a lightweight hybrid model:
 - a bundled workflow layer
 - a thin bridge that preserves planning state and execution context across long-running tasks
 
+The canonical architecture note for this fork lives in the repository root at `docs/architecture.md`. KISS mode design notes live beside it in `docs/kiss-mode-design.md`.
+
 ## Product Direction
 
 - Rebrand the extension surface around Tasktronaut
@@ -45,4 +47,6 @@ Tasktronaut is a derivative work based on Cline by Cline Bot Inc. (github.com/cl
 
 Tasktronaut also includes and adapts workflow, agent, hook, and SDK-shim concepts from GSD / Get Shit Done (`get-shit-done-cc` and `@gsd-build/sdk`) by Lex Christopherson and contributors (github.com/gsd-build/get-shit-done), licensed under the MIT License.
 
-Modifications from upstream work are documented in `CHANGELOG.md`.
+Modifications from upstream work are documented in `CHANGELOG.md`. Fork-level architecture and operating-mode decisions are documented in the root `docs/` directory.
+
+See `THIRD_PARTY_NOTICES.md` for source, copyright, and license details for bundled/adapted upstream work.
