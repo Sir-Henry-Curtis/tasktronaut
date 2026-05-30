@@ -719,6 +719,9 @@ Planner prompt:
 ```markdown
 <planning_context>
 **Phase:** {phase_number}
+**Padded phase:** {padded_phase}
+**Phase slug:** {phase_slug}
+**Phase directory:** {phase_dir}
 **Mode:** {standard | gap_closure | reviews}
 
 <files_to_read>

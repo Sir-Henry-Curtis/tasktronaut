@@ -632,72 +632,6 @@ describe("translateMessage - say messages", () => {
 		})
 	})
 
-	describe("browser action messages", () => {
-		it("should translate say:browser_action_launch to tool_call", () => {
-			const actionInfo = {
-				action: "launch",
-				url: "https://example.com",
-			}
-			const message = createClineMessage({
-				type: "say",
-				say: "browser_action_launch",
-				text: JSON.stringify(actionInfo),
-			})
-
-			const result = translateMessage(message, sessionState)
-
-			const toolCall = result.updates.find((u) => u.sessionUpdate === "tool_call")
-			expect(toolCall).toBeDefined()
-			assertValidToolCall(toolCall!)
-
-			const call = toolCall as acp.ToolCall & { sessionUpdate: "tool_call" }
-			expect(call.kind).toBe("execute")
-			expect(call.title).toContain("launch")
-		})
-
-		it("should translate say:browser_action to tool_call", () => {
-			const actionInfo = {
-				action: "click",
-				coordinate: [100, 200],
-			}
-			const message = createClineMessage({
-				type: "say",
-				say: "browser_action",
-				text: JSON.stringify(actionInfo),
-			})
-
-			const result = translateMessage(message, sessionState)
-
-			const toolCall = result.updates.find((u) => u.sessionUpdate === "tool_call")
-			expect(toolCall).toBeDefined()
-
-			const call = toolCall as acp.ToolCall & { sessionUpdate: "tool_call" }
-			expect(call.title).toContain("click")
-		})
-
-		it("should translate say:browser_action_result to tool_call_update", () => {
-			sessionState.currentToolCallId = "browser-tool-123"
-
-			const resultInfo = {
-				screenshot: "base64data...",
-				success: true,
-			}
-			const message = createClineMessage({
-				type: "say",
-				say: "browser_action_result",
-				text: JSON.stringify(resultInfo),
-			})
-
-			const result = translateMessage(message, sessionState)
-
-			const toolUpdate = result.updates.find((u) => u.sessionUpdate === "tool_call_update")
-			expect(toolUpdate).toBeDefined()
-
-			const update = toolUpdate as acp.ToolCallUpdate & { sessionUpdate: "tool_call_update" }
-			expect(update.status).toBe("completed")
-		})
-	})
-
 	describe("MCP server messages", () => {
 		it("should translate say:mcp_server_request_started to tool_call", () => {
 			const mcpInfo = {
@@ -1067,28 +1001,6 @@ describe("translateMessage - ask messages", () => {
 
 			const update = toolUpdate as acp.ToolCallUpdate & { sessionUpdate: "tool_call_update" }
 			expect(update.toolCallId).toBe("pre-existing-id-123")
-		})
-	})
-
-	describe("browser action permissions", () => {
-		it("should translate ask:browser_action_launch to tool_call with permission", () => {
-			const message = createClineMessage({
-				type: "ask",
-				ask: "browser_action_launch",
-				text: "https://suspicious-site.com",
-			})
-
-			const result = translateMessage(message, sessionState)
-
-			const toolCall = result.updates.find((u) => u.sessionUpdate === "tool_call")
-			expect(toolCall).toBeDefined()
-
-			// Should require permission
-			expect(result.requiresPermission).toBe(true)
-
-			// Browser actions have restricted options (no "always allow")
-			expect(result.permissionRequest!.options).toHaveLength(2)
-			expect(result.permissionRequest!.options.map((o) => o.kind)).not.toContain("allow_always")
 		})
 	})
 

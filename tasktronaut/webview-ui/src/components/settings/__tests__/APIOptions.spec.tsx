@@ -56,6 +56,6 @@ describe("ApiOptions", () => {
 
 		expect(screen.getByText("Model Configuration")).toBeInTheDocument()
 		expect(screen.getByText("Reasoning Effort")).toBeInTheDocument()
-		expect(screen.getByText(/Tasktronaut relies on long prompts/i)).toBeInTheDocument()
+		expect(screen.getByText(/This warning exists so failures can be diagnosed/i)).toBeInTheDocument()
 	})
 })

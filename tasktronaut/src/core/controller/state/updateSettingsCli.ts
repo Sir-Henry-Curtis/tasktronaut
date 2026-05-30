@@ -48,7 +48,6 @@ export async function updateSettingsCli(controller: Controller, request: UpdateS
 				worktreesEnabled,
 				subagentsEnabled,
 				focusChainSettings,
-				browserSettings,
 				...simpleSettings
 			} = request.settings
 
@@ -172,36 +171,6 @@ export async function updateSettingsCli(controller: Controller, request: UpdateS
 				if (wasEnabled !== isEnabled) {
 					telemetryService.captureFocusChainToggle(isEnabled)
 				}
-			}
-
-			// Update browser settings (requires careful merging to avoid protobuf defaults)
-			if (browserSettings !== undefined) {
-				const currentSettings = controller.stateManager.getGlobalSettingsKey("browserSettings")
-
-				const newBrowserSettings = {
-					...currentSettings,
-					viewport: {
-						width: browserSettings.viewport?.width || currentSettings.viewport.width,
-						height: browserSettings.viewport?.height || currentSettings.viewport.height,
-					},
-					...(browserSettings.remoteBrowserEnabled !== undefined && {
-						remoteBrowserEnabled: browserSettings.remoteBrowserEnabled,
-					}),
-					...(browserSettings.remoteBrowserHost !== undefined && {
-						remoteBrowserHost: browserSettings.remoteBrowserHost,
-					}),
-					...(browserSettings.chromeExecutablePath !== undefined && {
-						chromeExecutablePath: browserSettings.chromeExecutablePath,
-					}),
-					...(browserSettings.disableToolUse !== undefined && {
-						disableToolUse: browserSettings.disableToolUse,
-					}),
-					...(browserSettings.customArgs !== undefined && {
-						customArgs: browserSettings.customArgs,
-					}),
-				}
-
-				controller.stateManager.setGlobalState("browserSettings", newBrowserSettings)
 			}
 		}
 

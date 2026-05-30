@@ -4,10 +4,8 @@ import { ClineEnv } from "@/config"
 import { Controller } from "@/core/controller"
 import { StateManager } from "@/core/storage/StateManager"
 import { HostInfo, HostRegistryInfo } from "@/registry"
-import { fetch } from "@/shared/net"
 import { FeatureFlag } from "@/shared/services/feature-flags/feature-flags"
 import { Logger } from "@/shared/services/Logger"
-import { buildBasicClineHeaders } from "../EnvUtils"
 import { featureFlagsService } from "../feature-flags"
 
 const DEFAULT_CACHE_DURATION_MS = 24 * 60 * 60 * 1000
@@ -243,35 +241,8 @@ export class BannerService {
 		}
 	}
 
-	public async sendBannerEvent(bannerId: string, eventType: "dismiss"): Promise<void> {
-		try {
-			const url = new URL("/banners/v2/messages", ClineEnv.config().apiBaseUrl).toString()
-			const ideType = this.getIdeType()
-			const surface = ideType === "cli" ? "cli" : ideType === "jetbrains" ? "jetbrains" : "vscode"
-
-			const controller = new AbortController()
-			const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
-
-			await fetch(url, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					...(await buildBasicClineHeaders()),
-				},
-				body: JSON.stringify({
-					banner_id: bannerId,
-					instance_id: this.hostInfo.distinctId,
-					surface,
-					event_type: eventType,
-				}),
-				signal: controller.signal,
-			})
-
-			clearTimeout(timeoutId)
-			Logger.log(`[BannerService] Sent ${eventType} event for banner ${bannerId}`)
-		} catch (error) {
-			Logger.error("[BannerService] Error sending banner event", error)
-		}
+	public async sendBannerEvent(_bannerId: string, _eventType: "dismiss"): Promise<void> {
+		// FORK MOD: ITAR/network-isolated build — banner event reporting (api.cline.bot) disabled.
 	}
 
 	public isBannerDismissed(bannerId: string): boolean {

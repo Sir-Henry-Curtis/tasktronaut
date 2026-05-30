@@ -483,7 +483,7 @@ describe("getProviderModelIdKey", () => {
 		huggingface: "HuggingFaceModelId",
 	}
 
-	function getProviderModelIdKey(provider: string, mode: "act" | "plan"): string | null {
+	function getProviderModelIdKey(provider: string, mode: "act" | "plan" | "kiss"): string | null {
 		const prefix = mode === "act" ? "actMode" : "planMode"
 		const keySuffix = providerKeyMap[provider]
 		if (keySuffix) {

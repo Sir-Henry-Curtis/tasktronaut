@@ -1,7 +1,26 @@
+import type { HistoryItem } from "@shared/HistoryItem"
 import { GetTaskHistoryRequest, TaskHistoryArray } from "@shared/proto/cline/task"
 import { Logger } from "@/shared/services/Logger"
 import { arePathsEqual, getWorkspacePath } from "../../../utils/path"
 import { Controller } from ".."
+
+export function historyItemMatchesWorkspace(item: HistoryItem, workspacePath: string | undefined): boolean {
+	if (!workspacePath) {
+		return false
+	}
+
+	// Newer tasks record the real cwd used when the task started.
+	if (item.cwdOnTaskInitialization && arePathsEqual(item.cwdOnTaskInitialization, workspacePath)) {
+		return true
+	}
+
+	// Older checkpointed tasks only have the shadow worktree path.
+	if (item.shadowGitConfigWorkTree && arePathsEqual(item.shadowGitConfigWorkTree, workspacePath)) {
+		return true
+	}
+
+	return false
+}
 
 /**
  * Gets filtered task history
@@ -31,26 +50,8 @@ export async function getTaskHistory(controller: Controller, request: GetTaskHis
 			}
 
 			// Apply current workspace filter if requested
-			if (currentWorkspaceOnly) {
-				let isInWorkspace = false
-
-				// First check the cwdOnTaskInitialization property - Only present on tasks from this change forward
-				if (item.cwdOnTaskInitialization) {
-					if (arePathsEqual(item.cwdOnTaskInitialization, workspacePath)) {
-						isInWorkspace = true
-					}
-				}
-
-				// For tasks without cwdOnTaskInitialization, check the older shadowGitConfigWorkTree property
-				if (!isInWorkspace && item.shadowGitConfigWorkTree) {
-					if (arePathsEqual(item.shadowGitConfigWorkTree, workspacePath)) {
-						isInWorkspace = true
-					}
-				}
-
-				if (!isInWorkspace) {
-					return false
-				}
+			if (currentWorkspaceOnly && !historyItemMatchesWorkspace(item, workspacePath)) {
+				return false
 			}
 
 			return true

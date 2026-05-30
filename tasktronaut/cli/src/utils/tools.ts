@@ -73,16 +73,12 @@ export const TOOL_DESCRIPTIONS: Record<string, { ask: string; say: string }> = {
 	// Command execution
 	execute_command: { ask: "wants to execute this command", say: "executed this command" },
 
-	// Browser
-	browser_action: { ask: "wants to use the browser", say: "used the browser" },
-
 	// MCP
 	use_mcp_tool: { ask: "wants to use an MCP tool", say: "used an MCP tool" },
 	access_mcp_resource: { ask: "wants to access an MCP resource", say: "accessed an MCP resource" },
 
 	// Web
 	web_fetch: { ask: "wants to fetch content from this URL", say: "fetched content from this URL" },
-	web_search: { ask: "wants to search the web", say: "searched the web" },
 
 	// Other
 	ask_followup_question: { ask: "wants to ask a question", say: "asked a question" },

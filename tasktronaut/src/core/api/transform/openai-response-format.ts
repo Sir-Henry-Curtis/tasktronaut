@@ -80,6 +80,9 @@ export function convertToOpenAIResponsesInput(
 } {
 	// Chain from the latest stored Responses API assistant message when available.
 	// When chaining, only send new items after that assistant turn.
+	// If the latest assistant boundary would strand tool results without a provable
+	// originating function call, fall back to full-context mode instead of sending
+	// orphaned function_call_output items that the Responses API will reject.
 	let previousResponseId: string | undefined
 	let messages = _messages
 	if (options?.usePreviousResponseId) {
@@ -89,8 +92,11 @@ export function convertToOpenAIResponsesInput(
 			// Set to 23 hours to account for any potential delays in processing.
 			const isLessThan23HoursOld = msg.ts ? Date.now() - msg.ts < 23 * 60 * 60 * 1000 : false
 			if (msg.role === "assistant" && msg.id && isLessThan23HoursOld) {
-				previousResponseId = msg.id
-				messages = _messages.slice(i + 1)
+				const candidateMessages = _messages.slice(i + 1)
+				if (canChainFromAssistantBoundary(msg, candidateMessages)) {
+					previousResponseId = msg.id
+					messages = candidateMessages
+				}
 				break
 			}
 		}
@@ -109,39 +115,38 @@ export function convertToOpenAIResponsesInput(
 			// For assistant messages, we must ensure reasoning items are IMMEDIATELY followed
 			// by their corresponding message or function_call. Process the entire assistant
 			// turn and ensure proper pairing.
-			const assistantItems: any[] = []
+			//
+			// Two-pass approach:
+			//   Pass 1 — collect all candidate items, tagging reasoning items as pending.
+			//   Pass 2 — include a pending reasoning item only when the next item is a
+			//             function_call or message, preventing both error types:
+			//               • "function_call provided without its required reasoning item"
+			//                 (happens when we drop reasoning that preceded a function_call)
+			//               • "reasoning provided without its required following item"
+			//                 (happens when reasoning is orphaned at end of turn)
+			type PendingReasoning = { __pending_reasoning: true; item: ResponseReasoningItem }
+			const assistantItems: Array<any | PendingReasoning> = []
 
 			for (const part of m.content) {
 				switch (part.type) {
-					case "thinking":
-						// Only include reasoning item if it has actual content (thinking text or summary)
-						// Empty reasoning items cause API errors: "Item 'rs_...' of type 'reasoning' was provided without its required following item"
-						const hasThinkingContent = part.thinking && part.thinking.trim().length > 0
-						const hasSummaryContent = part.summary && Array.isArray(part.summary) && part.summary.length > 0
-
-						if (part.call_id && part.call_id.length > 0 && (hasThinkingContent || hasSummaryContent)) {
-							// Use summary if available, otherwise use thinking text
+					case "thinking": {
+						if (part.call_id && part.call_id.length > 0) {
+							const hasThinkingContent = part.thinking && part.thinking.trim().length > 0
+							const hasSummaryContent = part.summary && Array.isArray(part.summary) && part.summary.length > 0
 							let summary: any[] = []
 							if (hasSummaryContent) {
-								// part.summary is already in the correct format from OpenAI Responses API
 								summary = part.summary as any[]
 							} else if (hasThinkingContent) {
-								// Convert thinking text to summary format
-								summary = [
-									{
-										type: "summary_text",
-										text: part.thinking,
-									},
-								]
+								summary = [{ type: "summary_text", text: part.thinking }]
 							}
-
+							// Tag as pending — pass 2 decides whether to keep or drop
 							assistantItems.push({
-								id: part.call_id,
-								type: "reasoning",
-								summary,
-							} as ResponseReasoningItem)
+								__pending_reasoning: true,
+								item: { id: part.call_id, type: "reasoning", summary } as ResponseReasoningItem,
+							} as PendingReasoning)
 						}
 						break
+					}
 					case "redacted_thinking":
 						// Include reasoning item with encrypted content if it has a call_id
 						// Even if data is missing, we need to maintain the reasoning-function_call pairing
@@ -155,38 +160,38 @@ export function convertToOpenAIResponsesInput(
 							if (part.data) {
 								reasoningItem.encrypted_content = part.data
 							}
-							assistantItems.push(reasoningItem as ResponseReasoningItem)
+							// Tag as pending — same pass-2 gate as thinking
+							assistantItems.push({
+								__pending_reasoning: true,
+								item: reasoningItem as ResponseReasoningItem,
+							} as PendingReasoning)
 						}
 						break
-					case "text":
-						// Message ID goes at the message level, not in the content
-						// The reasoning item and message can have different IDs - they just need to be adjacent
+					case "text": {
 						const messageItem: any = {
 							type: "message",
 							role: "assistant",
 							content: [{ type: "output_text", text: part.text }],
 						}
-						// Set message-level id if available
 						if (part.call_id) {
 							messageItem.id = part.call_id
 						}
 						assistantItems.push(messageItem)
 						break
-					case "image":
-						// Message ID goes at the message level, not in the content
+					}
+					case "image": {
 						const imageItem: any = {
 							type: "message",
 							role: "assistant",
 							content: [{ type: "output_text", text: `[image:${part.source.media_type}]` }],
 						}
-						// Set message-level id if available (though images typically don't have call_id)
 						if (part.call_id) {
 							imageItem.id = part.call_id
 						}
 						assistantItems.push(imageItem)
 						break
+					}
 					case "tool_use": {
-						// Function calls use call_id, not related to reasoning item ID
 						const call_id = part.call_id || part.id
 						if (part.call_id) {
 							toolUseIdToCallId.set(part.id, part.call_id)
@@ -204,7 +209,22 @@ export function convertToOpenAIResponsesInput(
 				}
 			}
 
-			allItems.push(...assistantItems)
+			// Pass 2 — resolve pending reasoning items.
+			// A reasoning item is included iff the immediately following item is a
+			// function_call or message (i.e. it is not orphaned).
+			for (let i = 0; i < assistantItems.length; i++) {
+				const item = assistantItems[i] as any
+				if (item.__pending_reasoning) {
+					const next = assistantItems[i + 1] as any | undefined
+					const nextIsAnchor = next && !next.__pending_reasoning && (next.type === "function_call" || next.type === "message")
+					if (nextIsAnchor) {
+						allItems.push(item.item)
+					}
+					// Drop orphaned reasoning items — no following function_call or message
+				} else {
+					allItems.push(item)
+				}
+			}
 		} else {
 			// User messages - collect all content
 			const messageContent: ResponseInputMessageContentList = []
@@ -246,4 +266,59 @@ export function convertToOpenAIResponsesInput(
 	}
 
 	return { input: allItems, previousResponseId }
+}
+
+function canChainFromAssistantBoundary(assistantMessage: ClineStorageMessage, followingMessages: ClineStorageMessage[]): boolean {
+	const toolResults = collectToolResults(followingMessages)
+	if (toolResults.length === 0) {
+		return true
+	}
+
+	const assistantCallIds = collectAssistantCallIds(assistantMessage)
+	if (assistantCallIds.size === 0) {
+		return false
+	}
+
+	return toolResults.every((toolResult) => {
+		const callId = typeof toolResult.call_id === "string" ? toolResult.call_id.trim() : ""
+		return callId.length > 0 && assistantCallIds.has(callId)
+	})
+}
+
+function collectAssistantCallIds(message: ClineStorageMessage): Set<string> {
+	const callIds = new Set<string>()
+	if (!Array.isArray(message.content)) {
+		return callIds
+	}
+
+	for (const part of message.content) {
+		if (part.type !== "tool_use") {
+			continue
+		}
+
+		const callId =
+			typeof part.call_id === "string" && part.call_id.trim().length > 0
+				? part.call_id.trim()
+				: typeof part.id === "string" && part.id.startsWith("call_")
+					? part.id.trim()
+					: ""
+
+		if (callId.length > 0) {
+			callIds.add(callId)
+		}
+	}
+
+	return callIds
+}
+
+function collectToolResults(messages: ClineStorageMessage[]) {
+	return messages.flatMap((message) => {
+		if (!Array.isArray(message.content)) {
+			return []
+		}
+
+		return message.content.filter((part): part is Extract<(typeof message.content)[number], { type: "tool_result" }> => {
+			return part.type === "tool_result"
+		})
+	})
 }

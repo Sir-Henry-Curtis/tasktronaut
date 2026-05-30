@@ -71,14 +71,14 @@ setTimeout(() => {
 
 		// Create temporary directory for test hooks
 		baseTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "hook-test-"))
-		// Create .clinerules/hooks subdirectory structure
-		tempDir = path.join(baseTempDir, ".clinerules", "hooks")
+		// Create .tasktronautrules/hooks subdirectory structure
+		tempDir = path.join(baseTempDir, ".tasktronautrules", "hooks")
 		await fs.mkdir(tempDir, { recursive: true })
 		testHandler = createTestHandler()
 		mockMessages = []
 
 		// Mock StateManager to return baseTempDir as workspace root
-		// This allows HookFactory to find hooks in baseTempDir/.clinerules/hooks/
+		// This allows HookFactory to find hooks in baseTempDir/.tasktronautrules/hooks/
 		stateManagerStub = sinon.stub(StateManager, "get").returns({
 			getGlobalStateKey: (key: string) => {
 				if (key === "workspaceRoots") {
@@ -405,6 +405,130 @@ setTimeout(() => {
 	})
 
 	describe("Message State Updates", () => {
+		it("should remove no-op hook messages and streamed output from chat", async function () {
+			this.timeout(5000)
+
+			const scriptPath = path.join(tempDir, hookFileName("PostToolUse"))
+			const scriptContent = isWindows
+				? `Write-Output ''
+Write-Output '{"cancel":false,"contextModification":""}'
+exit 0
+`
+				: `#!/usr/bin/env node
+console.log("");
+console.log(${JSON.stringify('{"cancel":false,"contextModification":""}')});
+process.exit(0);
+`
+			await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 })
+
+			const messages: ClineMessage[] = []
+			const mockHandler = {
+				...testHandler,
+				getClineMessages: () => messages,
+				updateClineMessage: async (index: number, updates: Partial<ClineMessage>) => {
+					if (messages[index]) {
+						Object.assign(messages[index], updates)
+					}
+				},
+				deleteClineMessage: async (index: number) => {
+					messages.splice(index, 1)
+				},
+			} as any
+
+			const result = await executeHook({
+				hookName: "PostToolUse",
+				hookInput: {
+					postToolUse: {
+						toolName: "write_to_file",
+						parameters: {},
+						result: "",
+						success: true,
+						executionTimeMs: 1,
+					},
+				},
+				isCancellable: true,
+				say: async (type: any, text?: string) => {
+					const msg: ClineMessage = {
+						ts: Date.now() + messages.length,
+						type: "say",
+						say: type,
+						text,
+					}
+					messages.push(msg)
+					return msg.ts
+				},
+				messageStateHandler: mockHandler,
+				taskId: "test-task",
+				hooksEnabled: true,
+				toolName: "write_to_file",
+			})
+
+			result.should.deepEqual({ wasCancelled: false })
+			should.equal(messages.find((m) => m.say === "hook_status"), undefined)
+			should.equal(messages.find((m) => m.say === "hook_output_stream"), undefined)
+		})
+
+		it("should not stream hook JSON protocol responses into chat", async function () {
+			this.timeout(5000)
+
+			const scriptPath = path.join(tempDir, hookFileName("UserPromptSubmit"))
+			const protocolJson = JSON.stringify({
+				cancel: false,
+				contextModification: "GSD context",
+				errorMessage: "",
+			})
+			const scriptContent = isWindows
+				? `Write-Output 'GSD debug line'
+Write-Output '${protocolJson.replace(/'/g, "''")}'
+exit 0
+`
+				: `#!/usr/bin/env node
+console.log("GSD debug line");
+console.log(${JSON.stringify(protocolJson)});
+process.exit(0);
+`
+			await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 })
+
+			const messages: ClineMessage[] = []
+			const mockHandler = {
+				...testHandler,
+				getClineMessages: () => messages,
+				updateClineMessage: async (index: number, updates: Partial<ClineMessage>) => {
+					if (messages[index]) {
+						Object.assign(messages[index], updates)
+					}
+				},
+			} as any
+
+			const result = await executeHook({
+				hookName: "UserPromptSubmit",
+				hookInput: {
+					userPromptSubmit: {
+						prompt: "/gsd-new-project",
+						attachments: [],
+					},
+				},
+				isCancellable: true,
+				say: async (type: any, text?: string) => {
+					const msg: ClineMessage = {
+						ts: Date.now() + messages.length,
+						type: "say",
+						say: type,
+						text,
+					}
+					messages.push(msg)
+					return msg.ts
+				},
+				messageStateHandler: mockHandler,
+				taskId: "test-task",
+				hooksEnabled: true,
+			})
+
+			result.contextModification!.should.equal("GSD context")
+			const streamedOutput = messages.filter((m) => m.say === "hook_output_stream").map((m) => m.text)
+			streamedOutput.should.deepEqual(["[workspace stdout .tasktronautrules/hooks/UserPromptSubmit] GSD debug line"])
+		})
+
 		it("should create hook message with running status", async function () {
 			this.timeout(5000)
 

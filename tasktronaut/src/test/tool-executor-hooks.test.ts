@@ -245,9 +245,9 @@ describe("Tool Executor Hooks", () => {
 				hookName: "PostToolUse",
 				hookInput: {
 					postToolUse: {
-						toolName: "browser_action",
-						parameters: { action: "launch", url: "https://example.com" },
-						result: "Browser launched",
+						toolName: "web_fetch",
+						parameters: { url: "https://example.com" },
+						result: "Fetched https://example.com",
 						success: true,
 						executionTimeMs: 1200,
 					},
@@ -259,7 +259,7 @@ describe("Tool Executor Hooks", () => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: false,
-				toolName: "browser_action",
+				toolName: "web_fetch",
 			})
 
 			result.wasCancelled.should.equal(false)

@@ -26,13 +26,13 @@ export class GsdOrchestrator {
 
 	constructor(private readonly context: vscode.ExtensionContext) {
 		this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 50)
-		this.statusBar.command = "gsd.toggleAutoMode"
+		this.statusBar.command = "tasktronaut.gsd.toggleAutoMode"
 		context.subscriptions.push(this.statusBar)
 	}
 
 	activate(): void {
 		this.context.subscriptions.push(
-			vscode.commands.registerCommand("gsd.toggleAutoMode", () => this.toggleAutoMode()),
+			vscode.commands.registerCommand("tasktronaut.gsd.toggleAutoMode", () => this.toggleAutoMode()),
 		)
 
 		this.context.subscriptions.push(
@@ -45,6 +45,7 @@ export class GsdOrchestrator {
 
 	private startWatcher(): void {
 		this.stateWatcher?.dispose()
+		this.stateWatcher = undefined
 
 		const workspaceFolders = vscode.workspace.workspaceFolders
 		if (!workspaceFolders || workspaceFolders.length === 0) return
@@ -52,11 +53,10 @@ export class GsdOrchestrator {
 		const primaryRoot = workspaceFolders[0].uri.fsPath
 		const pattern = new vscode.RelativePattern(primaryRoot, ".planning/STATE.md")
 
-		this.stateWatcher = vscode.workspace.createFileSystemWatcher(pattern)
-		this.context.subscriptions.push(this.stateWatcher)
-
-		this.stateWatcher.onDidChange(() => this.onStateChange(primaryRoot))
-		this.stateWatcher.onDidCreate(() => this.onStateChange(primaryRoot))
+		const watcher = vscode.workspace.createFileSystemWatcher(pattern)
+		watcher.onDidChange(() => this.onStateChange(primaryRoot))
+		watcher.onDidCreate(() => this.onStateChange(primaryRoot))
+		this.stateWatcher = watcher
 
 		this.checkCurrentState(primaryRoot)
 	}
@@ -67,6 +67,15 @@ export class GsdOrchestrator {
 			const content = readFileSync(statePath, "utf8")
 			this.lastKnownState = content
 			this.updateStatusBar(this.parseState(content))
+			this.broadcastStateToWebview(content)
+		}
+	}
+
+	private broadcastStateToWebview(content: string | null): void {
+		try {
+			WebviewProvider.getVisibleInstance()?.postRawMessageToWebview({ type: "gsdState", content })
+		} catch (_) {
+			// webview not yet initialized — the view will request state on mount
 		}
 	}
 
@@ -80,6 +89,7 @@ export class GsdOrchestrator {
 
 		const state = this.parseState(content)
 		this.updateStatusBar(state)
+		this.broadcastStateToWebview(content)
 
 		if (!state || !this.autoModeEnabled) return
 
@@ -123,14 +133,28 @@ export class GsdOrchestrator {
 	private async sendGsdCommand(command: string): Promise<void> {
 		try {
 			await vscode.commands.executeCommand("tasktronaut.plusButtonClicked")
-			await new Promise((resolve) => setTimeout(resolve, 500))
 
-			const instance = WebviewProvider.getInstance()
+			// Poll until the webview controller is ready (up to 5s) instead of a fixed sleep.
+			const instance = await this.waitForWebviewInstance(5000)
+			if (!instance) {
+				Logger.warn("[GSD] Webview did not become ready in time; skipping auto-advance")
+				return
+			}
 			await instance.controller.initTask(command)
 			Logger.info(`[GSD] Auto-advanced with command: ${command}`)
 		} catch (error) {
 			Logger.warn("[GSD] Failed to send command: " + (error instanceof Error ? error.message : String(error)))
 		}
+	}
+
+	private async waitForWebviewInstance(timeoutMs: number): Promise<WebviewProvider | null> {
+		const start = Date.now()
+		while (Date.now() - start < timeoutMs) {
+			const instance = WebviewProvider.getInstance()
+			if (instance?.controller) return instance
+			await new Promise((resolve) => setTimeout(resolve, 100))
+		}
+		return WebviewProvider.getInstance() ?? null
 	}
 
 	private toggleAutoMode(): void {
@@ -148,6 +172,11 @@ export class GsdOrchestrator {
 		vscode.window.showInformationMessage(
 			this.autoModeEnabled ? "GSD Auto Mode ON — will prompt to advance on state changes." : "GSD Auto Mode OFF",
 		)
+	}
+
+	dispose(): void {
+		this.stateWatcher?.dispose()
+		this.stateWatcher = undefined
 	}
 
 	private updateStatusBar(state?: GsdState | null): void {

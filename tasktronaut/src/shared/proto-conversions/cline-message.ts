@@ -19,7 +19,6 @@ function convertClineAskToProtoEnum(ask: AppClineAsk | undefined): ClineAsk | un
 		resume_task: ClineAsk.RESUME_TASK,
 		resume_completed_task: ClineAsk.RESUME_COMPLETED_TASK,
 		mistake_limit_reached: ClineAsk.MISTAKE_LIMIT_REACHED,
-		browser_action_launch: ClineAsk.BROWSER_ACTION_LAUNCH,
 		use_mcp_server: ClineAsk.USE_MCP_SERVER,
 		new_task: ClineAsk.NEW_TASK,
 		condense: ClineAsk.CONDENSE,
@@ -40,7 +39,7 @@ function convertProtoEnumToClineAsk(ask: ClineAsk): AppClineAsk | undefined {
 		return undefined
 	}
 
-	const mapping: Record<Exclude<ClineAsk, ClineAsk.UNRECOGNIZED>, AppClineAsk> = {
+	const mapping: Partial<Record<Exclude<ClineAsk, ClineAsk.UNRECOGNIZED>, AppClineAsk>> = {
 		[ClineAsk.FOLLOWUP]: "followup",
 		[ClineAsk.PLAN_MODE_RESPOND]: "plan_mode_respond",
 		[ClineAsk.ACT_MODE_RESPOND]: "act_mode_respond",
@@ -52,7 +51,6 @@ function convertProtoEnumToClineAsk(ask: ClineAsk): AppClineAsk | undefined {
 		[ClineAsk.RESUME_TASK]: "resume_task",
 		[ClineAsk.RESUME_COMPLETED_TASK]: "resume_completed_task",
 		[ClineAsk.MISTAKE_LIMIT_REACHED]: "mistake_limit_reached",
-		[ClineAsk.BROWSER_ACTION_LAUNCH]: "browser_action_launch",
 		[ClineAsk.USE_MCP_SERVER]: "use_mcp_server",
 		[ClineAsk.NEW_TASK]: "new_task",
 		[ClineAsk.CONDENSE]: "condense",
@@ -84,9 +82,6 @@ function convertClineSayToProtoEnum(say: AppClineSay | undefined): ClineSay | un
 		command: ClineSay.COMMAND_SAY,
 		command_output: ClineSay.COMMAND_OUTPUT_SAY,
 		tool: ClineSay.TOOL_SAY,
-		browser_action_launch: ClineSay.BROWSER_ACTION_LAUNCH_SAY,
-		browser_action: ClineSay.BROWSER_ACTION,
-		browser_action_result: ClineSay.BROWSER_ACTION_RESULT,
 		mcp_server_request_started: ClineSay.MCP_SERVER_REQUEST_STARTED,
 		mcp_server_response: ClineSay.MCP_SERVER_RESPONSE,
 		mcp_notification: ClineSay.MCP_NOTIFICATION,
@@ -120,7 +115,7 @@ function convertProtoEnumToClineSay(say: ClineSay): AppClineSay | undefined {
 		return undefined
 	}
 
-	const mapping: Record<Exclude<ClineSay, ClineSay.UNRECOGNIZED>, AppClineSay> = {
+	const mapping: Partial<Record<Exclude<ClineSay, ClineSay.UNRECOGNIZED>, AppClineSay>> = {
 		[ClineSay.TASK]: "task",
 		[ClineSay.ERROR]: "error",
 		[ClineSay.API_REQ_STARTED]: "api_req_started",
@@ -135,9 +130,6 @@ function convertProtoEnumToClineSay(say: ClineSay): AppClineSay | undefined {
 		[ClineSay.COMMAND_OUTPUT_SAY]: "command_output",
 		[ClineSay.TOOL_SAY]: "tool",
 		[ClineSay.SHELL_INTEGRATION_WARNING]: "info",
-		[ClineSay.BROWSER_ACTION_LAUNCH_SAY]: "browser_action_launch",
-		[ClineSay.BROWSER_ACTION]: "browser_action",
-		[ClineSay.BROWSER_ACTION_RESULT]: "browser_action_result",
 		[ClineSay.MCP_SERVER_REQUEST_STARTED]: "mcp_server_request_started",
 		[ClineSay.MCP_SERVER_RESPONSE]: "mcp_server_response",
 		[ClineSay.MCP_NOTIFICATION]: "mcp_notification",

@@ -5,6 +5,8 @@ import os from "node:os"
 import path from "node:path"
 import { promisify } from "node:util"
 import { afterEach, describe, it } from "mocha"
+import { GlobalFileNames } from "@/core/storage/disk"
+import { setVscodeHostProviderMock } from "@/test/host-provider-test-utils"
 import {
 	bindCardExecutionTaskHistory,
 	finalizeSubagentExecution,
@@ -12,6 +14,7 @@ import {
 	listSubagentExecutions,
 	queueCardExecutionRequest,
 	reconcileSubagentExecutionRegistry,
+	recordCardExecutionDeliveryEvent,
 	registerSubagentExecution,
 	setCardExecutionLifecycleState,
 	updateSubagentExecutionProgress,
@@ -287,6 +290,8 @@ describe("SubagentExecutionRegistry", () => {
 		assert.equal(record.status, "ready_for_review")
 		assert.equal(record.review_note, "Executor believes acceptance evidence is complete.")
 		assert.ok(record.review_requested_at_unix_ms)
+		assert.equal(record.review_history?.at(-1)?.event, "ready_for_review")
+		assert.equal(record.review_history?.at(-1)?.run_id, undefined)
 
 		await setCardExecutionLifecycleState({
 			workspaceRoot,
@@ -299,6 +304,117 @@ describe("SubagentExecutionRegistry", () => {
 		assert.equal(record.status, "verified")
 		assert.ok(record.verified_at_unix_ms)
 		assert.equal(record.review_note, "Executor believes acceptance evidence is complete.")
+		assert.equal(record.review_history?.at(-1)?.event, "verified")
+	})
+
+	it("records a changes-requested review state with reviewer feedback", async () => {
+		const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "tasktronaut-subagent-registry-"))
+		createdWorkspaces.push(workspaceRoot)
+
+		await queueCardExecutionRequest({
+			workspaceRoot,
+			cardId: "phase-5b",
+			board: "roadmap",
+			actorId: "actor-5",
+			phaseNumber: "5",
+			wave: 5,
+			command: "/gsd-execute-phase 5",
+			sourceRef: ".planning/ROADMAP.md",
+			eventId: "evt-phase-5b",
+		})
+
+		await setCardExecutionLifecycleState({
+			workspaceRoot,
+			cardId: "phase-5b",
+			board: "roadmap",
+			status: "changes_requested",
+			reviewNote: "Please tighten the acceptance evidence and revisit the failing edge case.",
+		})
+
+		const [record] = await listCardExecutionRecords(workspaceRoot)
+		assert.equal(record.status, "changes_requested")
+		assert.equal(record.review_note, "Please tighten the acceptance evidence and revisit the failing edge case.")
+		assert.equal(record.review_history?.at(-1)?.event, "changes_requested")
+	})
+
+	it("records file-scoped review comment history on the owned execution", async () => {
+		const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "tasktronaut-subagent-registry-"))
+		createdWorkspaces.push(workspaceRoot)
+
+		await queueCardExecutionRequest({
+			workspaceRoot,
+			cardId: "phase-5c",
+			board: "roadmap",
+			actorId: "actor-5",
+			phaseNumber: "5",
+			wave: 5,
+			command: "/gsd-execute-phase 5",
+			sourceRef: ".planning/ROADMAP.md",
+			eventId: "evt-phase-5c",
+		})
+
+		await setCardExecutionLifecycleState({
+			workspaceRoot,
+			cardId: "phase-5c",
+			board: "roadmap",
+			status: "review",
+			reviewEvent: "review_comment",
+			reviewNote: "Please simplify this branch and tighten the guard.",
+			reviewFilePath: "src/main.ts",
+			reviewStartLine: 12,
+			reviewEndLine: 18,
+		})
+
+		const [record] = await listCardExecutionRecords(workspaceRoot)
+		assert.equal(record.review_history?.at(-1)?.event, "review_comment")
+		assert.equal(record.review_history?.at(-1)?.note, "Please simplify this branch and tighten the guard.")
+		assert.equal(record.review_history?.at(-1)?.file_path, "src/main.ts")
+		assert.equal(record.review_history?.at(-1)?.start_line, 12)
+		assert.equal(record.review_history?.at(-1)?.end_line, 18)
+	})
+
+	it("records delivery request history on the owned execution", async () => {
+		const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "tasktronaut-subagent-registry-"))
+		createdWorkspaces.push(workspaceRoot)
+
+		await queueCardExecutionRequest({
+			workspaceRoot,
+			cardId: "phase-5d",
+			board: "roadmap",
+			actorId: "actor-5",
+			phaseNumber: "5",
+			wave: 5,
+			command: "/gsd-execute-phase 5",
+			sourceRef: ".planning/ROADMAP.md",
+			eventId: "evt-phase-5d",
+		})
+
+	await recordCardExecutionDeliveryEvent({
+		workspaceRoot,
+		cardId: "phase-5d",
+		board: "roadmap",
+		deliveryEvent: "pr_requested",
+		deliveryNote: "Opened the existing pull request for tasktronaut/phase-5 after human confirmation.",
+		branchName: "tasktronaut/phase-5",
+		worktreePath: path.join(workspaceRoot, ".tasktronaut", "worktrees", "phase-5"),
+		deliveryReadiness: "clean",
+		pullRequestNumber: 42,
+		pullRequestUrl: "https://github.com/example/tasktronaut/pull/42",
+		pullRequestState: "OPEN",
+		pullRequestMergeStatus: "CLEAN",
+		pullRequestIsDraft: false,
+	})
+
+	const [record] = await listCardExecutionRecords(workspaceRoot)
+	assert.equal(record.delivery_note, "Opened the existing pull request for tasktronaut/phase-5 after human confirmation.")
+	assert.equal(record.delivery_history?.at(-1)?.event, "pr_requested")
+	assert.equal(record.delivery_history?.at(-1)?.branch_name, "tasktronaut/phase-5")
+	assert.equal(record.delivery_history?.at(-1)?.readiness, "clean")
+	assert.equal(record.pull_request_number, 42)
+	assert.equal(record.pull_request_url, "https://github.com/example/tasktronaut/pull/42")
+	assert.equal(record.pull_request_state, "OPEN")
+	assert.equal(record.pull_request_merge_status, "CLEAN")
+	assert.equal(record.pull_request_is_draft, false)
 	})
 
 	it("captures changed files and diff summary from the owned worktree", async function () {
@@ -355,7 +471,59 @@ describe("SubagentExecutionRegistry", () => {
 		const [record] = await listCardExecutionRecords(workspaceRoot)
 		assert.ok(record.changed_files?.includes("tracked.txt"))
 		assert.ok(record.changed_files?.includes("notes.md"))
+		assert.ok(record.file_diffs?.some((file) => file.path === "tracked.txt" && /modified|changed/u.test(file.status)))
+		assert.ok(record.file_diffs?.some((file) => file.path === "notes.md" && /added|untracked/u.test(file.status)))
+		assert.ok((record.file_diffs?.find((file) => file.path === "tracked.txt")?.start_line ?? -1) >= 0)
+		assert.ok(
+			(record.file_diffs?.find((file) => file.path === "tracked.txt")?.end_line ?? -1) >=
+				(record.file_diffs?.find((file) => file.path === "tracked.txt")?.start_line ?? 0),
+		)
+		assert.equal(record.file_diffs?.find((file) => file.path === "notes.md")?.start_line, 0)
+		assert.match(record.file_diffs?.find((file) => file.path === "tracked.txt")?.diff_excerpt || "", /tracked\.txt|changed/i)
+		assert.match(record.file_diffs?.find((file) => file.path === "notes.md")?.diff_excerpt || "", /New file preview|review me/i)
 		assert.match(record.diff_summary || "", /file|insertions?|deletions?|changed/i)
 		assert.match(record.diff_excerpt || "", /tracked\.txt|changed/i)
+	})
+
+	it("captures native checkpoint identity from the bound task history", async () => {
+		const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), "tasktronaut-subagent-registry-"))
+		const globalStorageRoot = await fs.mkdtemp(path.join(os.tmpdir(), "tasktronaut-global-storage-"))
+		createdWorkspaces.push(workspaceRoot, globalStorageRoot)
+		setVscodeHostProviderMock({ globalStorageFsPath: globalStorageRoot })
+
+		await queueCardExecutionRequest({
+			workspaceRoot,
+			cardId: "phase-4",
+			board: "stage",
+			actorId: "actor-4",
+			phaseNumber: "4",
+			wave: 4,
+			command: "/gsd-execute-phase 4",
+			sourceRef: ".planning/PLANS/04-EXECUTE.md",
+			eventId: "evt-phase-4",
+		})
+
+		const taskHistoryId = "task-checkpointed"
+		const taskDir = path.join(globalStorageRoot, "tasks", taskHistoryId)
+		await fs.mkdir(taskDir, { recursive: true })
+		await fs.writeFile(
+			path.join(taskDir, GlobalFileNames.uiMessages),
+			JSON.stringify([
+				{ ts: 1000, type: "say", say: "text", text: "No checkpoint yet." },
+				{ ts: 2345, type: "say", say: "checkpoint_created", lastCheckpointHash: "abc123hash" },
+			]),
+		)
+
+		await bindCardExecutionTaskHistory({
+			workspaceRoot,
+			cardId: "phase-4",
+			board: "stage",
+			taskHistoryId,
+		})
+
+		const [record] = await listCardExecutionRecords(workspaceRoot)
+		assert.equal(record.task_history_id, taskHistoryId)
+		assert.equal(record.native_checkpoint_hash, "abc123hash")
+		assert.equal(record.native_checkpoint_message_ts, 2345)
 	})
 })

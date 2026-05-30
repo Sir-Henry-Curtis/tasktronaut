@@ -9,7 +9,7 @@
  */
 
 import type * as acp from "@agentclientprotocol/sdk"
-import type { ClineMessage, ClineSayBrowserAction, ClineSayTool } from "@shared/ExtensionMessage"
+import type { ClineMessage, ClineSayTool } from "@shared/ExtensionMessage"
 import type { AcpSessionState, TranslatedMessage } from "./types.js"
 import { AcpSessionStatus } from "./types.js"
 
@@ -32,18 +32,6 @@ const TOOL_KIND_MAP: Record<string, acp.ToolKind> = {
 	// Other
 	summarizeTask: "think",
 	useSkill: "other",
-}
-
-/**
- * Maps browser actions to ACP ToolKind values.
- */
-const BROWSER_ACTION_KIND_MAP: Record<string, acp.ToolKind> = {
-	launch: "execute",
-	click: "execute",
-	type: "execute",
-	scroll_down: "execute",
-	scroll_up: "execute",
-	close: "execute",
 }
 
 /**
@@ -257,26 +245,6 @@ function translateSayMessage(
 					toolCallId: sessionState.currentToolCallId,
 					status: "failed",
 					rawOutput: { error: message.text },
-				})
-				sessionState.currentToolCallId = undefined
-			}
-			break
-
-		case "browser_action_launch":
-		case "browser_action":
-			// Browser actions → tool_call (kind: execute)
-			updates.push(...translateBrowserActionMessage(message, sessionState))
-			break
-
-		case "browser_action_result":
-			// Browser action result → tool_call_update
-			if (sessionState.currentToolCallId) {
-				const result = message.text ? JSON.parse(message.text) : {}
-				updates.push({
-					sessionUpdate: "tool_call_update",
-					toolCallId: sessionState.currentToolCallId,
-					status: "completed",
-					rawOutput: result,
 				})
 				sessionState.currentToolCallId = undefined
 			}
@@ -547,37 +515,6 @@ function translateAskMessage(
 			}
 			break
 
-		case "browser_action_launch":
-			// Browser launch permission
-			{
-				const toolCallId = generateToolCallId()
-				sessionState.currentToolCallId = toolCallId
-
-				const toolCall: acp.ToolCall = {
-					toolCallId,
-					title: "Launch browser",
-					kind: "execute",
-					status: "pending",
-					rawInput: { url: message.text },
-				}
-
-				updates.push({
-					sessionUpdate: "tool_call",
-					...toolCall,
-				})
-
-				sessionState.pendingToolCalls.set(toolCallId, toolCall)
-				requiresPermission = true
-				permissionRequest = {
-					toolCall,
-					options: [
-						{ kind: "allow_once", optionId: "allow_once", name: "Allow Once" },
-						{ kind: "reject_once", optionId: "reject_once", name: "Reject" },
-					],
-				}
-			}
-			break
-
 		case "use_mcp_server":
 			// MCP server usage permission
 			{
@@ -797,41 +734,6 @@ function translateCommandOutputMessage(message: ClineMessage, sessionState: AcpS
 				content: { type: "text", text: `Output:\n${message.text}` },
 			})
 		}
-	}
-
-	return updates
-}
-
-/**
- * Translate browser action to ACP tool_call.
- */
-function translateBrowserActionMessage(message: ClineMessage, sessionState: AcpSessionState): acp.SessionUpdate[] {
-	const updates: acp.SessionUpdate[] = []
-
-	try {
-		const action = message.text ? (JSON.parse(message.text) as ClineSayBrowserAction) : null
-		const toolCallId = sessionState.currentToolCallId || generateToolCallId()
-
-		if (!sessionState.currentToolCallId) {
-			sessionState.currentToolCallId = toolCallId
-		}
-
-		const title = action ? `Browser: ${action.action}` : "Browser action"
-		const kind = action ? BROWSER_ACTION_KIND_MAP[action.action] || "execute" : "execute"
-
-		updates.push({
-			sessionUpdate: "tool_call",
-			toolCallId,
-			title,
-			kind,
-			status: message.partial ? "in_progress" : "completed",
-			rawInput: action,
-		})
-	} catch {
-		updates.push({
-			sessionUpdate: "agent_message_chunk",
-			content: { type: "text", text: message.text || "Browser action" },
-		})
 	}
 
 	return updates

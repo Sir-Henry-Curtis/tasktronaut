@@ -102,7 +102,7 @@ const FEATURE_SETTINGS = {
 		stateKey: "clineWebToolsEnabled",
 		default: true,
 		label: "Web tools",
-		description: "Enable web search and fetch tools",
+		description: "Enable the built-in web fetch tool for URL retrieval",
 	},
 	strictPlanMode: {
 		stateKey: "strictPlanModeEnabled",
@@ -616,10 +616,10 @@ export const SettingsPanelContent: React.FC<SettingsPanelContentProps> = ({
 				result.push(
 					{
 						key: "useBrowser",
-						label: "Use the browser",
+						label: "Fetch external URLs",
 						type: "checkbox",
 						value: actions.useBrowser,
-						description: "Browse and interact with web pages",
+						description: "Allow built-in web_fetch requests to external URLs",
 					},
 					{
 						key: "useMcp",
@@ -745,7 +745,7 @@ export const SettingsPanelContent: React.FC<SettingsPanelContentProps> = ({
 	}, [controller, stateManager])
 
 	const setReasoningEffortForMode = useCallback(
-		(mode: "act" | "plan", effort: OpenaiReasoningEffort) => {
+		(mode: "act" | "plan" | "kiss", effort: OpenaiReasoningEffort) => {
 			if (mode === "act") {
 				setActReasoningEffort(effort)
 				stateManager.setGlobalState("actModeReasoningEffort", effort)
@@ -1656,7 +1656,7 @@ export const SettingsPanelContent: React.FC<SettingsPanelContentProps> = ({
 					<Text color="white">Sign in to access Cline features:</Text>
 					<Box flexDirection="column" marginTop={1}>
 						<Text color="gray"> - Free access to frontier AI models</Text>
-						<Text color="gray"> - Built-in web search capabilities</Text>
+						<Text color="gray"> - Built-in URL fetch capabilities</Text>
 						<Text color="gray"> - Team management and shared billing</Text>
 					</Box>
 					<Box marginTop={1}>

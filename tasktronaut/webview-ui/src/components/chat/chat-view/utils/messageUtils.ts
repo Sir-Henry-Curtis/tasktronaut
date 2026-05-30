@@ -4,7 +4,7 @@
 
 import { combineApiRequests } from "@shared/combineApiRequests"
 import { combineCommandSequences } from "@shared/combineCommandSequences"
-import type { ClineMessage, ClineSayBrowserAction, ClineSayTool } from "@shared/ExtensionMessage"
+import type { ClineMessage, ClineSayTool } from "@shared/ExtensionMessage"
 import { FileIcon, FolderOpenDotIcon, FolderOpenIcon, SearchIcon, ShapesIcon, WrenchIcon } from "lucide-react"
 
 /**
@@ -110,92 +110,10 @@ export function filterVisibleMessages(messages: ClineMessage[]): ClineMessage[] 
 }
 
 /**
- * Check if a message is part of a browser session
- */
-export function isBrowserSessionMessage(message: ClineMessage): boolean {
-	if (message.type === "ask") {
-		return ["browser_action_launch"].includes(message.ask!)
-	}
-	if (message.type === "say") {
-		return [
-			"browser_action_launch",
-			"api_req_started",
-			"text",
-			"browser_action",
-			"browser_action_result",
-			"checkpoint_created",
-			"reasoning",
-			"error_retry",
-		].includes(message.say!)
-	}
-	return false
-}
-
-/**
- * Group messages, combining browser session messages into arrays
+ * Group messages for rendering.
  */
 export function groupMessages(visibleMessages: ClineMessage[]): (ClineMessage | ClineMessage[])[] {
-	const result: (ClineMessage | ClineMessage[])[] = []
-	let currentGroup: ClineMessage[] = []
-	let isInBrowserSession = false
-
-	const endBrowserSession = () => {
-		if (currentGroup.length > 0) {
-			result.push([...currentGroup])
-			currentGroup = []
-			isInBrowserSession = false
-		}
-	}
-
-	for (const message of visibleMessages) {
-		if (message.ask === "browser_action_launch" || message.say === "browser_action_launch") {
-			// complete existing browser session if any
-			endBrowserSession()
-			// start new
-			isInBrowserSession = true
-			currentGroup.push(message)
-		} else if (isInBrowserSession) {
-			// end session if api_req_started is cancelled
-			if (message.say === "api_req_started") {
-				// get last api_req_started in currentGroup to check if it's cancelled
-				const lastApiReqStarted = [...currentGroup].reverse().find((m) => m.say === "api_req_started")
-				if (lastApiReqStarted?.text != null) {
-					const info = JSON.parse(lastApiReqStarted.text)
-					const isCancelled = info.cancelReason != null
-					if (isCancelled) {
-						endBrowserSession()
-						result.push(message)
-						continue
-					}
-				}
-			}
-
-			if (isBrowserSessionMessage(message)) {
-				currentGroup.push(message)
-
-				// Check if this is a close action
-				if (message.say === "browser_action") {
-					const browserAction = JSON.parse(message.text || "{}") as ClineSayBrowserAction
-					if (browserAction.action === "close") {
-						endBrowserSession()
-					}
-				}
-			} else {
-				// complete existing browser session if any
-				endBrowserSession()
-				result.push(message)
-			}
-		} else {
-			result.push(message)
-		}
-	}
-
-	// Handle case where browser session is the last group
-	if (currentGroup.length > 0) {
-		result.push([...currentGroup])
-	}
-
-	return result
+	return visibleMessages
 }
 
 /**

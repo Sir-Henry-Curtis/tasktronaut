@@ -109,6 +109,34 @@ const ASSETS = [
 		target: "references/few-shot-examples/verifier.md",
 	},
 	{
+		source: path.join(GSD_ROOT, "references", "continuation-format.md"),
+		target: "references/continuation-format.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "scout-codebase.md"),
+		target: "references/scout-codebase.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "sketch-interactivity.md"),
+		target: "references/sketch-interactivity.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "sketch-theme-system.md"),
+		target: "references/sketch-theme-system.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "sketch-tooling.md"),
+		target: "references/sketch-tooling.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "sketch-variant-patterns.md"),
+		target: "references/sketch-variant-patterns.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "universal-anti-patterns.md"),
+		target: "references/universal-anti-patterns.md",
+	},
+	{
 		source: path.join(GSD_ROOT, "templates", "research-project", "STACK.md"),
 		target: "templates/research-project/STACK.md",
 	},
@@ -149,6 +177,26 @@ const ASSETS = [
 		target: "templates/UAT.md",
 	},
 	{
+		source: path.join(GSD_ROOT, "templates", "retrospective.md"),
+		target: "templates/retrospective.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "templates", "roadmap.md"),
+		target: "templates/roadmap.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "templates", "state.md"),
+		target: "templates/state.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "git-integration.md"),
+		target: "references/git-integration.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "references", "user-profiling.md"),
+		target: "references/user-profiling.md",
+	},
+	{
 		source: path.join(GSD_ROOT, "workflows", "diagnose-issues.md"),
 		target: "workflows/diagnose-issues.md",
 	},
@@ -160,10 +208,24 @@ const ASSETS = [
 		source: path.join(GSD_ROOT, "workflows", "execute-plan.md"),
 		target: "workflows/execute-plan.md",
 	},
+	{
+		source: path.join(GSD_ROOT, "workflows", "next.md"),
+		target: "workflows/next.md",
+	},
+	{
+		source: path.join(GSD_ROOT, "workflows", "graduation.md"),
+		target: "workflows/graduation.md",
+	},
 ]
 
 function escapeBacktick(str) {
 	return str.replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$\{/g, "\\${")
+}
+
+function normalizeContent(str) {
+	return str
+		.replace(/~\/\.claude\/get-shit-done\//g, ".tasktronaut/")
+		.replace(/~\/\.claude\/agents\/gsd-/g, ".tasktronaut/agents/gsd-")
 }
 
 const lines = [
@@ -182,7 +244,7 @@ for (const asset of ASSETS) {
 		throw new Error(`Missing research asset source: ${asset.source}`)
 	}
 
-	const content = fs.readFileSync(asset.source, "utf8")
+	const content = normalizeContent(fs.readFileSync(asset.source, "utf8"))
 	lines.push(`\t{`)
 	lines.push(`\t\ttargetPath: ${JSON.stringify(asset.target)},`)
 	lines.push(`\t\tcontent: \`${escapeBacktick(content)}\`,`)

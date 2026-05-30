@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-const { execSync } = require("child_process")
+const { execFileSync } = require("child_process")
 const esbuild = require("esbuild")
 const fs = require("fs")
+const path = require("path")
 
 const watch = process.argv.includes("--watch")
 
@@ -55,7 +56,9 @@ async function main() {
 }
 
 fs.rmSync("out", { recursive: true, force: true })
-execSync("tsc -p ./tsconfig.test.json --outDir out", { encoding: "utf-8" })
+execFileSync(process.execPath, [path.join("node_modules", "typescript", "bin", "tsc"), "-p", "./tsconfig.test.json", "--outDir", "out"], {
+	stdio: "inherit",
+})
 
 main().catch((e) => {
 	console.error(e)

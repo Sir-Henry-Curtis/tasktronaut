@@ -33,7 +33,7 @@ export const MAX_SYSTEM_PROMPT_LENGTH = 65536
 export async function* runClaudeCode(options: ClaudeCodeOptions): AsyncGenerator<ClaudeCodeMessage | string> {
 	const isSystemPromptTooLong = options.systemPrompt.length > MAX_SYSTEM_PROMPT_LENGTH
 	const uniqueId = crypto.randomUUID()
-	const tempFilePath = path.join(os.tmpdir(), `cline-system-prompt-${uniqueId}.txt`)
+	const tempFilePath = path.join(os.tmpdir(), `tasktronaut-system-prompt-${uniqueId}.txt`)
 	if (os.platform() === "win32" || isSystemPromptTooLong) {
 		// Use a temporary file to prevent ENAMETOOLONG and E2BIG errors
 		// https://github.com/anthropics/claude-code/issues/3411#issuecomment-3082068547
@@ -173,7 +173,6 @@ const claudeCodeTools = [
 	"NotebookEdit",
 	"WebFetch",
 	"TodoWrite",
-	"WebSearch",
 	"TaskStop",
 	"AskUserQuestion",
 	"Skill",

@@ -2,6 +2,7 @@ import { Empty, StringArrayRequest } from "@shared/proto/cline/common"
 import fs from "fs/promises"
 import path from "path"
 import { HostProvider } from "@/hosts/host-provider"
+import { getCheckpointRootCandidates } from "@/integrations/checkpoints/CheckpointUtils"
 import { ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
 import { fileExistsAtPath } from "../../../utils/fs"
@@ -82,13 +83,14 @@ async function deleteTaskWithId(controller: Controller, id: string): Promise<voi
 		// If no tasks remain, clean up everything
 		if (updatedTaskHistory.length === 0) {
 			const taskDirPath = path.join(HostProvider.get().globalStorageFsPath, "tasks")
-			const checkpointsDirPath = path.join(HostProvider.get().globalStorageFsPath, "checkpoints")
 
 			if (await fileExistsAtPath(taskDirPath)) {
 				await fs.rm(taskDirPath, { recursive: true, force: true })
 			}
-			if (await fileExistsAtPath(checkpointsDirPath)) {
-				await fs.rm(checkpointsDirPath, { recursive: true, force: true })
+			for (const checkpointsDirPath of getCheckpointRootCandidates()) {
+				if (await fileExistsAtPath(checkpointsDirPath)) {
+					await fs.rm(checkpointsDirPath, { recursive: true, force: true })
+				}
 			}
 		}
 	} catch (error) {

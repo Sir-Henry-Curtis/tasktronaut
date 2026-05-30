@@ -1,24 +1,119 @@
-import { access, constants, mkdir } from "fs/promises"
+import { access, constants, cp, mkdir, readdir, rename, rm } from "fs/promises"
 import os from "os"
 import * as path from "path"
 import { HostProvider } from "@/hosts/host-provider"
+import { fileExistsAtPath } from "@/utils/fs"
 import { getCwd, getDesktopDir } from "@/utils/path"
 
 /**
- * Gets the path to the shadow Git repository in globalStorage.
+ * Gets Tasktronaut's checkpoint storage root outside IDE-managed globalStorage.
+ *
+ * Shadow Git repositories can contain many high-churn object files. Keeping
+ * them in host globalStorage has caused Theia to broadcast huge file-change
+ * payloads and destabilize its extension-host protocol.
+ */
+export function getCheckpointStorageRoot(): string {
+	if (process.env.TASKTRONAUT_CHECKPOINTS_DIR) {
+		return path.resolve(process.env.TASKTRONAUT_CHECKPOINTS_DIR)
+	}
+
+	const baseDir =
+		process.platform === "win32"
+			? process.env.APPDATA || path.join(os.homedir(), "AppData", "Roaming")
+			: process.platform === "darwin"
+				? path.join(os.homedir(), "Library", "Application Support")
+				: process.env.XDG_STATE_HOME || path.join(os.homedir(), ".local", "state")
+
+	return path.join(baseDir, "tasktronaut")
+}
+
+export function getCheckpointWorkspacePath(cwdHash: string): string {
+	return path.join(getCheckpointStorageRoot(), "checkpoints", cwdHash)
+}
+
+export function getLegacyCheckpointWorkspacePath(cwdHash: string): string {
+	return path.join(HostProvider.get().globalStorageFsPath, "checkpoints", cwdHash)
+}
+
+export function getCheckpointRootCandidates(): string[] {
+	return [
+		path.join(getCheckpointStorageRoot(), "checkpoints"),
+		path.join(HostProvider.get().globalStorageFsPath, "checkpoints"),
+	]
+}
+
+export async function migrateLegacyCheckpointRoot(): Promise<{ migrated: number; failed: number }> {
+	const legacyRoot = path.join(HostProvider.get().globalStorageFsPath, "checkpoints")
+	const targetRoot = path.join(getCheckpointStorageRoot(), "checkpoints")
+	const result = { migrated: 0, failed: 0 }
+
+	if (!(await fileExistsAtPath(legacyRoot))) {
+		return result
+	}
+
+	await mkdir(targetRoot, { recursive: true })
+
+	for (const entry of await readdir(legacyRoot, { withFileTypes: true })) {
+		if (!entry.isDirectory()) {
+			continue
+		}
+
+		const legacyDir = path.join(legacyRoot, entry.name)
+		const targetDir = path.join(targetRoot, entry.name)
+
+		try {
+			if (await fileExistsAtPath(targetDir)) {
+				continue
+			}
+
+			try {
+				await rename(legacyDir, targetDir)
+			} catch (_error) {
+				await cp(legacyDir, targetDir, { recursive: true, force: true })
+				await rm(legacyDir, { recursive: true, force: true })
+			}
+			result.migrated += 1
+		} catch (_error) {
+			result.failed += 1
+		}
+	}
+
+	return result
+}
+
+async function migrateLegacyCheckpointWorkspace(cwdHash: string, checkpointsDir: string): Promise<void> {
+	const legacyDir = getLegacyCheckpointWorkspacePath(cwdHash)
+
+	if ((await fileExistsAtPath(checkpointsDir)) || !(await fileExistsAtPath(legacyDir))) {
+		return
+	}
+
+	await mkdir(path.dirname(checkpointsDir), { recursive: true })
+
+	try {
+		await rename(legacyDir, checkpointsDir)
+	} catch (_error) {
+		await cp(legacyDir, checkpointsDir, { recursive: true, force: true })
+		await rm(legacyDir, { recursive: true, force: true })
+	}
+}
+
+/**
+ * Gets the path to the shadow Git repository in Tasktronaut-managed storage.
  *
  * Checkpoints path structure:
- * globalStorage/
+ * tasktronaut-data/
  *   checkpoints/
  *     {cwdHash}/
  *       .git/
  *
  * @param cwdHash - Hash of the working directory path
  * @returns Promise<string> The absolute path to the shadow git directory
- * @throws Error if global storage path is invalid
+ * @throws Error if checkpoint storage path is invalid
  */
 export async function getShadowGitPath(cwdHash: string): Promise<string> {
-	const checkpointsDir = path.join(HostProvider.get().globalStorageFsPath, "checkpoints", cwdHash)
+	const checkpointsDir = getCheckpointWorkspacePath(cwdHash)
+	await migrateLegacyCheckpointWorkspace(cwdHash, checkpointsDir)
 	await mkdir(checkpointsDir, { recursive: true })
 	const gitPath = path.join(checkpointsDir, ".git")
 	return gitPath

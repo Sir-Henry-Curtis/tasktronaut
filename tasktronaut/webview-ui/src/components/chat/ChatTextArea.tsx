@@ -45,6 +45,9 @@ import ClineRulesToggleModal from "../cline-rules/ClineRulesToggleModal"
 import ServersToggleModal from "./ServersToggleModal"
 
 const { MAX_IMAGES_AND_FILES_PER_MESSAGE } = CHAT_CONSTANTS
+const SUPPORTED_IMAGE_DROP_TYPES = ["png", "jpeg", "webp"]
+const SUPPORTED_FILE_DROP_EXTENSIONS = new Set(["xml", "json", "txt", "log", "md", "docx", "ipynb", "pdf", "xlsx", "csv"])
+const MAX_DROPPED_FILE_BYTES = 20 * 1000 * 1000
 
 const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: number }> => {
 	return new Promise((resolve, reject) => {
@@ -64,6 +67,25 @@ const getImageDimensions = (dataUrl: string): Promise<{ width: number; height: n
 	})
 }
 
+type DroppedFileWithPath = File & {
+	path?: string
+}
+
+const getDroppedFilePath = (file: File): string | undefined => {
+	const filePath = (file as DroppedFileWithPath).path
+	return typeof filePath === "string" && filePath.trim().length > 0 ? filePath : undefined
+}
+
+const getDroppedFileExtension = (file: File): string => {
+	const name = file.name || getDroppedFilePath(file) || ""
+	const extension = name.split(".").pop()
+	return extension ? extension.toLowerCase() : ""
+}
+
+export const isSupportedDroppedAttachment = (file: File): boolean => {
+	return SUPPORTED_FILE_DROP_EXTENSIONS.has(getDroppedFileExtension(file))
+}
+
 // Set to "File" option by default
 const DEFAULT_CONTEXT_MENU_OPTION = getContextMenuOptionIndex(ContextMenuOptionType.File)
 
@@ -78,6 +100,7 @@ interface ChatTextAreaProps {
 	setSelectedImages: React.Dispatch<React.SetStateAction<string[]>>
 	setSelectedFiles: React.Dispatch<React.SetStateAction<string[]>>
 	onSend: () => void
+	onQueueMessage?: () => void
 	onSelectFilesAndImages: () => void
 	shouldDisableFilesAndImages: boolean
 	onHeightChange?: (height: number) => void
@@ -93,6 +116,7 @@ interface GitCommit {
 
 const PLAN_MODE_COLOR = "var(--vscode-activityWarningBadge-background)"
 const ACT_MODE_COLOR = "var(--vscode-focusBorder)"
+const KISS_MODE_COLOR = "var(--vscode-charts-green)"
 
 const SwitchContainer = styled.div<{ disabled: boolean }>`
 	display: flex;
@@ -110,14 +134,17 @@ const SwitchContainer = styled.div<{ disabled: boolean }>`
 `
 
 const Slider = styled.div.withConfig({
-	shouldForwardProp: (prop) => !["isAct", "isPlan"].includes(prop),
-})<{ isAct: boolean; isPlan?: boolean }>`
+	shouldForwardProp: (prop) => prop !== "modeIndex",
+})<{ modeIndex: number }>`
 	position: absolute;
 	height: 100%;
-	width: 50%;
-	background-color: ${(props) => (props.isPlan ? PLAN_MODE_COLOR : ACT_MODE_COLOR)};
-	transition: transform 0.2s ease;
-	transform: translateX(${(props) => (props.isAct ? "100%" : "0%")});
+	width: 33.33%;
+	background-color: ${(props) =>
+		props.modeIndex === 0 ? PLAN_MODE_COLOR : props.modeIndex === 1 ? ACT_MODE_COLOR : KISS_MODE_COLOR};
+	transition:
+		transform 0.2s ease,
+		background-color 0.2s ease;
+	transform: translateX(${(props) => props.modeIndex * 100}%);
 `
 
 const ButtonGroup = styled.div`
@@ -205,6 +232,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			setSelectedImages,
 			setSelectedFiles,
 			onSend,
+			onQueueMessage,
 			onSelectFilesAndImages,
 			shouldDisableFilesAndImages,
 			onHeightChange,
@@ -251,6 +279,9 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		const [pendingInsertions, setPendingInsertions] = useState<string[]>([])
 		const _shiftHoldTimerRef = useRef<NodeJS.Timeout | null>(null)
 		const [showUnsupportedFileError, setShowUnsupportedFileError] = useState(false)
+		const [unsupportedFileErrorMessage, setUnsupportedFileErrorMessage] = useState(
+			"Unsupported file type or file path unavailable",
+		)
 		const unsupportedFileTimerRef = useRef<NodeJS.Timeout | null>(null)
 		const [showDimensionError, setShowDimensionError] = useState(false)
 		const dimensionErrorTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -572,6 +603,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					if (!sendingDisabled) {
 						setIsTextAreaFocused(false)
 						onSend()
+					} else if (onQueueMessage) {
+						onQueueMessage()
 					}
 				}
 
@@ -845,10 +878,9 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					return
 				}
 
-				const acceptedTypes = ["png", "jpeg", "webp"] // supported by anthropic and openrouter (jpg is just a file extension but the image will be recognized as jpeg)
 				const imageItems = Array.from(items).filter((item) => {
 					const [type, subtype] = item.type.split("/")
-					return type === "image" && acceptedTypes.includes(subtype)
+					return type === "image" && SUPPORTED_IMAGE_DROP_TYPES.includes(subtype)
 				})
 				if (!shouldDisableFilesAndImages && imageItems.length > 0) {
 					e.preventDefault()
@@ -990,28 +1022,38 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			[updateCursorPosition],
 		)
 
+		const onModeSelect = useCallback(
+			(targetMode: "plan" | "act" | "kiss") => {
+				void (async () => {
+					const convertedProtoMode =
+						targetMode === "plan" ? PlanActMode.PLAN : targetMode === "act" ? PlanActMode.ACT : PlanActMode.KISS
+					const response = await StateServiceClient.togglePlanActModeProto(
+						TogglePlanActModeRequest.create({
+							mode: convertedProtoMode,
+							chatContent: {
+								message: inputValue.trim() ? inputValue : undefined,
+								images: selectedImages,
+								files: selectedFiles,
+							},
+						}),
+					)
+					// Focus the textarea after mode toggle with slight delay
+					setTimeout(() => {
+						if (response.value) {
+							setInputValue("")
+						}
+						textAreaRef.current?.focus()
+					}, 100)
+				})()
+			},
+			[inputValue, selectedImages, selectedFiles, setInputValue],
+		)
+
 		const onModeToggle = useCallback(() => {
-			void (async () => {
-				const convertedProtoMode = mode === "plan" ? PlanActMode.ACT : PlanActMode.PLAN
-				const response = await StateServiceClient.togglePlanActModeProto(
-					TogglePlanActModeRequest.create({
-						mode: convertedProtoMode,
-						chatContent: {
-							message: inputValue.trim() ? inputValue : undefined,
-							images: selectedImages,
-							files: selectedFiles,
-						},
-					}),
-				)
-				// Focus the textarea after mode toggle with slight delay
-				setTimeout(() => {
-					if (response.value) {
-						setInputValue("")
-					}
-					textAreaRef.current?.focus()
-				}, 100)
-			})()
-		}, [mode, inputValue, selectedImages, selectedFiles, setInputValue])
+			// Cycle: plan → act → kiss → plan
+			const next = mode === "plan" ? "act" : mode === "act" ? "kiss" : "plan"
+			onModeSelect(next)
+		}, [mode, onModeSelect])
 
 		useShortcut(usePlatform().togglePlanActKeys, onModeToggle, { disableTextInputs: false }) // important that we don't disable the text input here
 
@@ -1104,7 +1146,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		}, [apiConfiguration, mode])
 
 		// Function to show error message for unsupported files for drag and drop
-		const showUnsupportedFileErrorMessage = () => {
+		const showUnsupportedFileErrorMessage = (message = "Unsupported file type or file path unavailable") => {
+			setUnsupportedFileErrorMessage(message)
 			// Show error message for unsupported files
 			setShowUnsupportedFileError(true)
 
@@ -1126,18 +1169,23 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 			// Check if files are being dragged
 			if (e.dataTransfer.types.includes("Files")) {
-				// Check if any of the files are not images
+				// Warn only for files that neither image preview nor file attachment handling supports.
 				const items = Array.from(e.dataTransfer.items)
-				const hasNonImageFile = items.some((item) => {
+				const hasUnsupportedFile = items.some((item) => {
 					if (item.kind === "file") {
-						const type = item.type.split("/")[0]
-						return type !== "image"
+						const [type, subtype] = item.type.split("/")
+						if (type === "image") {
+							return !SUPPORTED_IMAGE_DROP_TYPES.includes(subtype)
+						}
+
+						const file = item.getAsFile()
+						return file ? !isSupportedDroppedAttachment(file) : false
 					}
 					return false
 				})
 
-				if (hasNonImageFile) {
-					showUnsupportedFileErrorMessage()
+				if (hasUnsupportedFile) {
+					showUnsupportedFileErrorMessage("Unsupported file type")
 				}
 			}
 		}
@@ -1249,32 +1297,72 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				return
 			}
 
-			// --- 3. Image Drop Handling ---
-			// Only proceed if it wasn't a VSCode resource or plain text drop
+			// --- 3. File/Image Drop Handling ---
+			// Only proceed if it wasn't a VSCode resource or plain text drop.
 			const files = Array.from(e.dataTransfer.files)
-			const acceptedTypes = ["png", "jpeg", "webp"]
 			const imageFiles = files.filter((file) => {
 				const [type, subtype] = file.type.split("/")
-				return type === "image" && acceptedTypes.includes(subtype)
+				return type === "image" && SUPPORTED_IMAGE_DROP_TYPES.includes(subtype)
+			})
+			const attachmentFiles = files.filter((file) => {
+				const [type] = file.type.split("/")
+				return type !== "image" && isSupportedDroppedAttachment(file)
 			})
 
-			if (shouldDisableFilesAndImages || imageFiles.length === 0) {
+			if (shouldDisableFilesAndImages) {
+				showUnsupportedFileErrorMessage(`Maximum of ${MAX_IMAGES_AND_FILES_PER_MESSAGE} attachments reached`)
 				return
 			}
 
-			const imageDataArray = await readImageFiles(imageFiles)
-			const dataUrls = imageDataArray.filter((dataUrl): dataUrl is string => dataUrl !== null)
+			if (imageFiles.length === 0 && attachmentFiles.length === 0) {
+				if (files.length > 0) {
+					showUnsupportedFileErrorMessage("Unsupported file type")
+				}
+				return
+			}
 
-			if (dataUrls.length > 0) {
-				const filesAndImagesLength = selectedImages.length + selectedFiles.length
-				const availableSlots = MAX_IMAGES_AND_FILES_PER_MESSAGE - filesAndImagesLength
+			const filesAndImagesLength = selectedImages.length + selectedFiles.length
+			let availableSlots = MAX_IMAGES_AND_FILES_PER_MESSAGE - filesAndImagesLength
 
-				if (availableSlots > 0) {
+			if (imageFiles.length > 0 && availableSlots > 0) {
+				const imageDataArray = await readImageFiles(imageFiles)
+				const dataUrls = imageDataArray.filter((dataUrl): dataUrl is string => dataUrl !== null)
+
+				if (dataUrls.length > 0) {
 					const imagesToAdd = Math.min(dataUrls.length, availableSlots)
 					setSelectedImages((prevImages) => [...prevImages, ...dataUrls.slice(0, imagesToAdd)])
+					availableSlots -= imagesToAdd
+				} else {
+					console.warn("No valid images were processed")
 				}
-			} else {
-				console.warn("No valid images were processed")
+			}
+
+			if (attachmentFiles.length > 0 && availableSlots > 0) {
+				const acceptedFilePaths: string[] = []
+
+				for (const file of attachmentFiles) {
+					if (acceptedFilePaths.length >= availableSlots) {
+						break
+					}
+					if (file.size > MAX_DROPPED_FILE_BYTES) {
+						showUnsupportedFileErrorMessage(`${file.name || "File"} is larger than 20MB`)
+						continue
+					}
+
+					const filePath = getDroppedFilePath(file)
+					if (!filePath) {
+						showUnsupportedFileErrorMessage(
+							"Could not read that dropped file path. Use the + attachment picker or drag from the Explorer.",
+						)
+						continue
+					}
+
+					acceptedFilePaths.push(filePath)
+				}
+
+				if (acceptedFilePaths.length > 0) {
+					setSelectedFiles((prevFiles) => [...prevFiles, ...acceptedFilePaths])
+				}
 			}
 		}
 
@@ -1351,7 +1439,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					)}
 					{showUnsupportedFileError && (
 						<div className="absolute inset-2.5 bg-[rgba(var(--vscode-errorForeground-rgb),0.1)] border-2 border-error rounded-xs flex items-center justify-center z-10 pointer-events-none">
-							<span className="text-error font-bold text-xs">Files other than images are currently disabled</span>
+							<span className="text-error font-bold text-xs text-center px-2">{unsupportedFileErrorMessage}</span>
 						</div>
 					)}
 					{showSlashCommandsMenu && (
@@ -1478,7 +1566,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 								isDraggingOver && !showUnsupportedFileError // Only show drag outline if not showing error
 									? "2px dashed var(--vscode-focusBorder)"
 									: isTextAreaFocused
-										? `1px solid ${mode === "plan" ? PLAN_MODE_COLOR : "var(--vscode-focusBorder)"}`
+										? `1px solid ${mode === "plan" ? PLAN_MODE_COLOR : mode === "kiss" ? KISS_MODE_COLOR : ACT_MODE_COLOR}`
 										: "none",
 							outlineOffset: isDraggingOver && !showUnsupportedFileError ? "1px" : "0px", // Add offset for drag-over outline
 						}}
@@ -1511,12 +1599,18 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						style={{ height: textAreaBaseHeight }}>
 						<div className="flex flex-row items-center">
 							<div
-								className={cn("input-icon-button", { disabled: sendingDisabled }, "codicon codicon-send text-sm")}
+								className={cn(
+									"input-icon-button",
+									{ disabled: sendingDisabled && !onQueueMessage },
+									"codicon codicon-send text-sm",
+								)}
 								data-testid="send-button"
 								onClick={() => {
 									if (!sendingDisabled) {
 										setIsTextAreaFocused(false)
 										onSend()
+									} else if (onQueueMessage) {
+										onQueueMessage()
 									}
 								}}
 							/>
@@ -1583,33 +1677,40 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							</ModelContainer>
 						</ButtonGroup>
 					</div>
-					{/* Tooltip for Plan/Act toggle remains outside the conditional rendering */}
+					{/* Tooltip for Plan/Act/KISS toggle remains outside the conditional rendering */}
 					<Tooltip>
 						<TooltipContent
 							className="text-xs px-2 flex flex-col gap-1"
 							hidden={shownTooltipMode === null}
 							side="top">
-							{`In ${shownTooltipMode === "act" ? "Act" : "Plan"}  mode, Tasktronaut will ${shownTooltipMode === "act" ? "complete the task immediately" : "gather information to architect a plan"}`}
+							{shownTooltipMode === "kiss"
+								? "In KISS mode, Tasktronaut uses a minimal prompt with no codebase context — ideal for lightweight local models"
+								: `In ${shownTooltipMode === "act" ? "Act" : "Plan"} mode, Tasktronaut will ${shownTooltipMode === "act" ? "complete the task immediately" : "gather information to architect a plan"}`}
 							<p className="text-description/80 text-xs mb-0">
-								Toggle w/ <kbd className="text-muted-foreground mx-1">{togglePlanActKeys}</kbd>
+								Cycle w/ <kbd className="text-muted-foreground mx-1">{togglePlanActKeys}</kbd>
 							</p>
 						</TooltipContent>
 						<TooltipTrigger>
-							<SwitchContainer data-testid="mode-switch" disabled={false} onClick={onModeToggle}>
-								<Slider isAct={mode === "act"} isPlan={mode === "plan"} />
-								{["Plan", "Act"].map((m) => (
-									<div
-										aria-checked={mode === m.toLowerCase()}
-										className={cn(
-											"pt-0.5 pb-px px-2 z-10 text-xs w-1/2 text-center bg-transparent",
-											mode === m.toLowerCase() ? "text-white" : "text-input-foreground",
-										)}
-										onMouseLeave={() => setShownTooltipMode(null)}
-										onMouseOver={() => setShownTooltipMode(m.toLowerCase() === "plan" ? "plan" : "act")}
-										role="switch">
-										{m}
-									</div>
-								))}
+							<SwitchContainer data-testid="mode-switch" disabled={false}>
+								<Slider modeIndex={mode === "plan" ? 0 : mode === "act" ? 1 : 2} />
+								{(["Plan", "Act", "KISS"] as const).map((m) => {
+									const mKey = m.toLowerCase() as "plan" | "act" | "kiss"
+									return (
+										<div
+											key={m}
+											aria-checked={mode === mKey}
+											className={cn(
+												"pt-0.5 pb-px px-2 z-10 text-xs w-1/3 text-center bg-transparent",
+												mode === mKey ? "text-white" : "text-input-foreground",
+											)}
+											onClick={() => onModeSelect(mKey)}
+											onMouseLeave={() => setShownTooltipMode(null)}
+											onMouseOver={() => setShownTooltipMode(mKey)}
+											role="switch">
+											{m}
+										</div>
+									)
+								})}
 							</SwitchContainer>
 						</TooltipTrigger>
 					</Tooltip>

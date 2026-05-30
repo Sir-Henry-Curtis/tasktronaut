@@ -98,8 +98,8 @@ export interface ClineAcpSession {
 	sessionId: SessionID
 	/** Working directory for the session */
 	cwd: string
-	/** Current mode (plan/act) */
-	mode: "plan" | "act"
+	/** Current mode (plan/act/kiss) */
+	mode: "plan" | "act" | "kiss"
 	/** MCP servers passed from the client */
 	mcpServers: acp.McpServer[]
 	/** Timestamp when session was created */

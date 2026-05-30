@@ -1,5 +1,7 @@
 import { sendShowWebviewEvent } from "@core/controller/ui/subscribeToShowWebview"
 import { WebviewProvider } from "@core/webview"
+import { existsSync, readFileSync } from "fs"
+import path from "node:path"
 import * as vscode from "vscode"
 import { handleGrpcRequest, handleGrpcRequestCancel } from "@/core/controller/grpc-handler"
 import { HostProvider } from "@/hosts/host-provider"
@@ -42,6 +44,17 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 
 	public getWebview(): vscode.WebviewView | undefined {
 		return this.webview
+	}
+
+	public override postRawMessageToWebview(message: Record<string, unknown>): void {
+		void this.webview?.webview.postMessage(message)
+	}
+
+	private readGsdStateContent(): string | null {
+		const folders = vscode.workspace.workspaceFolders
+		if (!folders?.[0]) return null
+		const statePath = path.join(folders[0].uri.fsPath, ".planning", "STATE.md")
+		return existsSync(statePath) ? readFileSync(statePath, "utf8") : null
 	}
 
 	/**
@@ -172,6 +185,10 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 				if (message.grpc_request_cancel) {
 					await handleGrpcRequestCancel(postMessageToWebview, message.grpc_request_cancel)
 				}
+				break
+			}
+			case "requestGsdState": {
+				void this.webview?.webview.postMessage({ type: "gsdState", content: this.readGsdStateContent() })
 				break
 			}
 			default: {

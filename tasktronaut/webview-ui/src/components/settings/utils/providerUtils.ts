@@ -184,10 +184,10 @@ export function normalizeApiConfiguration(
 ): NormalizedApiConfig {
 	const provider =
 		coerceSupportedApiProvider(
-			(currentMode === "plan" ? apiConfiguration?.planModeApiProvider : apiConfiguration?.actModeApiProvider) || "openai",
+			(currentMode === "plan" ? apiConfiguration?.planModeApiProvider : currentMode === "kiss" ? apiConfiguration?.kissModeApiProvider : apiConfiguration?.actModeApiProvider) || "openai",
 		)
 
-	const modelId = currentMode === "plan" ? apiConfiguration?.planModeApiModelId : apiConfiguration?.actModeApiModelId
+	const modelId = currentMode === "plan" ? apiConfiguration?.planModeApiModelId : currentMode === "kiss" ? apiConfiguration?.kissModeApiModelId : apiConfiguration?.actModeApiModelId
 
 	const getProviderData = (models: Record<string, ModelInfo>, defaultId: string) => {
 		let selectedModelId: string
@@ -215,12 +215,16 @@ export function normalizeApiConfiguration(
 			const awsBedrockCustomSelected =
 				currentMode === "plan"
 					? apiConfiguration?.planModeAwsBedrockCustomSelected
-					: apiConfiguration?.actModeAwsBedrockCustomSelected
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeAwsBedrockCustomSelected
+						: apiConfiguration?.actModeAwsBedrockCustomSelected
 			if (awsBedrockCustomSelected) {
 				const baseModelId =
 					currentMode === "plan"
 						? apiConfiguration?.planModeAwsBedrockCustomModelBaseId
-						: apiConfiguration?.actModeAwsBedrockCustomModelBaseId
+						: currentMode === "kiss"
+							? apiConfiguration?.kissModeAwsBedrockCustomModelBaseId
+							: apiConfiguration?.actModeAwsBedrockCustomModelBaseId
 
 				return {
 					selectedProvider: provider,
@@ -256,11 +260,13 @@ export function normalizeApiConfiguration(
 			return getProviderData(askSageModels, askSageDefaultModelId)
 		case "openrouter":
 			const openRouterModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeOpenRouterModelId : apiConfiguration?.actModeOpenRouterModelId
+				currentMode === "plan" ? apiConfiguration?.planModeOpenRouterModelId : currentMode === "kiss" ? apiConfiguration?.kissModeOpenRouterModelId : apiConfiguration?.actModeOpenRouterModelId
 			const openRouterModelInfo =
 				currentMode === "plan"
 					? apiConfiguration?.planModeOpenRouterModelInfo
-					: apiConfiguration?.actModeOpenRouterModelInfo
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeOpenRouterModelInfo
+						: apiConfiguration?.actModeOpenRouterModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: openRouterModelId || openRouterDefaultModelId,
@@ -268,9 +274,9 @@ export function normalizeApiConfiguration(
 			}
 		case "requesty":
 			const requestyModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeRequestyModelId : apiConfiguration?.actModeRequestyModelId
+				currentMode === "plan" ? apiConfiguration?.planModeRequestyModelId : currentMode === "kiss" ? apiConfiguration?.kissModeRequestyModelId : apiConfiguration?.actModeRequestyModelId
 			const requestyModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeRequestyModelInfo : apiConfiguration?.actModeRequestyModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeRequestyModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeRequestyModelInfo : apiConfiguration?.actModeRequestyModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: requestyModelId || requestyDefaultModelId,
@@ -278,17 +284,19 @@ export function normalizeApiConfiguration(
 			}
 		case "cline":
 			const fallbackOpenRouterModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeOpenRouterModelId : apiConfiguration?.actModeOpenRouterModelId
+				currentMode === "plan" ? apiConfiguration?.planModeOpenRouterModelId : currentMode === "kiss" ? apiConfiguration?.kissModeOpenRouterModelId : apiConfiguration?.actModeOpenRouterModelId
 			const fallbackOpenRouterModelInfo =
 				currentMode === "plan"
 					? apiConfiguration?.planModeOpenRouterModelInfo
-					: apiConfiguration?.actModeOpenRouterModelInfo
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeOpenRouterModelInfo
+						: apiConfiguration?.actModeOpenRouterModelInfo
 			const clineModelId =
-				(currentMode === "plan" ? apiConfiguration?.planModeClineModelId : apiConfiguration?.actModeClineModelId) ||
+				(currentMode === "plan" ? apiConfiguration?.planModeClineModelId : currentMode === "kiss" ? apiConfiguration?.kissModeClineModelId : apiConfiguration?.actModeClineModelId) ||
 				fallbackOpenRouterModelId ||
 				openRouterDefaultModelId
 			const clineModelInfo =
-				(currentMode === "plan" ? apiConfiguration?.planModeClineModelInfo : apiConfiguration?.actModeClineModelInfo) ||
+				(currentMode === "plan" ? apiConfiguration?.planModeClineModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeClineModelInfo : apiConfiguration?.actModeClineModelInfo) ||
 				fallbackOpenRouterModelInfo ||
 				openRouterDefaultModelInfo
 			return {
@@ -298,9 +306,9 @@ export function normalizeApiConfiguration(
 			}
 		case "openai":
 			const openAiModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeOpenAiModelId : apiConfiguration?.actModeOpenAiModelId
+				currentMode === "plan" ? apiConfiguration?.planModeOpenAiModelId : currentMode === "kiss" ? apiConfiguration?.kissModeOpenAiModelId : apiConfiguration?.actModeOpenAiModelId
 			const openAiModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeOpenAiModelInfo : apiConfiguration?.actModeOpenAiModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeOpenAiModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeOpenAiModelInfo : apiConfiguration?.actModeOpenAiModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: openAiModelId || "",
@@ -308,7 +316,7 @@ export function normalizeApiConfiguration(
 			}
 		case "hicap":
 			const hicapModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeHicapModelId : apiConfiguration?.actModeHicapModelId
+				currentMode === "plan" ? apiConfiguration?.planModeHicapModelId : currentMode === "kiss" ? apiConfiguration?.kissModeHicapModelId : apiConfiguration?.actModeHicapModelId
 			return {
 				selectedProvider: provider,
 				selectedModelId: hicapModelId || "",
@@ -316,7 +324,7 @@ export function normalizeApiConfiguration(
 			}
 		case "ollama":
 			const ollamaModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeOllamaModelId : apiConfiguration?.actModeOllamaModelId
+				currentMode === "plan" ? apiConfiguration?.planModeOllamaModelId : currentMode === "kiss" ? apiConfiguration?.kissModeOllamaModelId : apiConfiguration?.actModeOllamaModelId
 			return {
 				selectedProvider: provider,
 				selectedModelId: ollamaModelId || "",
@@ -327,7 +335,7 @@ export function normalizeApiConfiguration(
 			}
 		case "lmstudio":
 			const lmStudioModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeLmStudioModelId : apiConfiguration?.actModeLmStudioModelId
+				currentMode === "plan" ? apiConfiguration?.planModeLmStudioModelId : currentMode === "kiss" ? apiConfiguration?.kissModeLmStudioModelId : apiConfiguration?.actModeLmStudioModelId
 			return {
 				selectedProvider: provider,
 				selectedModelId: lmStudioModelId || "",
@@ -340,7 +348,9 @@ export function normalizeApiConfiguration(
 			const vsCodeLmModelSelector =
 				currentMode === "plan"
 					? apiConfiguration?.planModeVsCodeLmModelSelector
-					: apiConfiguration?.actModeVsCodeLmModelSelector
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeVsCodeLmModelSelector
+						: apiConfiguration?.actModeVsCodeLmModelSelector
 			return {
 				selectedProvider: provider,
 				selectedModelId: vsCodeLmModelSelector ? `${vsCodeLmModelSelector.vendor}/${vsCodeLmModelSelector.family}` : "",
@@ -351,9 +361,9 @@ export function normalizeApiConfiguration(
 			}
 		case "litellm": {
 			const liteLlmModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeLiteLlmModelId : apiConfiguration?.actModeLiteLlmModelId
+				currentMode === "plan" ? apiConfiguration?.planModeLiteLlmModelId : currentMode === "kiss" ? apiConfiguration?.kissModeLiteLlmModelId : apiConfiguration?.actModeLiteLlmModelId
 			const liteLlmModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeLiteLlmModelInfo : apiConfiguration?.actModeLiteLlmModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeLiteLlmModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeLiteLlmModelInfo : apiConfiguration?.actModeLiteLlmModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: liteLlmModelId || "",
@@ -368,11 +378,15 @@ export function normalizeApiConfiguration(
 			const huggingFaceModelId =
 				currentMode === "plan"
 					? apiConfiguration?.planModeHuggingFaceModelId
-					: apiConfiguration?.actModeHuggingFaceModelId
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeHuggingFaceModelId
+						: apiConfiguration?.actModeHuggingFaceModelId
 			const huggingFaceModelInfo =
 				currentMode === "plan"
 					? apiConfiguration?.planModeHuggingFaceModelInfo
-					: apiConfiguration?.actModeHuggingFaceModelInfo
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeHuggingFaceModelInfo
+						: apiConfiguration?.actModeHuggingFaceModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: huggingFaceModelId || huggingFaceDefaultModelId,
@@ -388,9 +402,9 @@ export function normalizeApiConfiguration(
 			return getProviderData(cerebrasModels, cerebrasDefaultModelId)
 		case "groq":
 			const groqModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeGroqModelId : apiConfiguration?.actModeGroqModelId
+				currentMode === "plan" ? apiConfiguration?.planModeGroqModelId : currentMode === "kiss" ? apiConfiguration?.kissModeGroqModelId : apiConfiguration?.actModeGroqModelId
 			const groqModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeGroqModelInfo : apiConfiguration?.actModeGroqModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeGroqModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeGroqModelInfo : apiConfiguration?.actModeGroqModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: groqModelId || groqDefaultModelId,
@@ -398,9 +412,9 @@ export function normalizeApiConfiguration(
 			}
 		case "baseten": {
 			const basetenModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeBasetenModelId : apiConfiguration?.actModeBasetenModelId
+				currentMode === "plan" ? apiConfiguration?.planModeBasetenModelId : currentMode === "kiss" ? apiConfiguration?.kissModeBasetenModelId : apiConfiguration?.actModeBasetenModelId
 			const basetenModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeBasetenModelInfo : apiConfiguration?.actModeBasetenModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeBasetenModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeBasetenModelInfo : apiConfiguration?.actModeBasetenModelInfo
 			const finalBasetenModelId = basetenModelId || basetenDefaultModelId
 			return {
 				selectedProvider: provider,
@@ -418,11 +432,15 @@ export function normalizeApiConfiguration(
 			const huaweiCloudMaasModelId =
 				currentMode === "plan"
 					? apiConfiguration?.planModeHuaweiCloudMaasModelId
-					: apiConfiguration?.actModeHuaweiCloudMaasModelId
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeHuaweiCloudMaasModelId
+						: apiConfiguration?.actModeHuaweiCloudMaasModelId
 			const huaweiCloudMaasModelInfo =
 				currentMode === "plan"
 					? apiConfiguration?.planModeHuaweiCloudMaasModelInfo
-					: apiConfiguration?.actModeHuaweiCloudMaasModelInfo
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeHuaweiCloudMaasModelInfo
+						: apiConfiguration?.actModeHuaweiCloudMaasModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: huaweiCloudMaasModelId || huaweiCloudMaasDefaultModelId,
@@ -447,11 +465,15 @@ export function normalizeApiConfiguration(
 			const vercelModelId =
 				currentMode === "plan"
 					? apiConfiguration?.planModeVercelAiGatewayModelId
-					: apiConfiguration?.actModeVercelAiGatewayModelId
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeVercelAiGatewayModelId
+						: apiConfiguration?.actModeVercelAiGatewayModelId
 			const vercelModelInfo =
 				currentMode === "plan"
 					? apiConfiguration?.planModeVercelAiGatewayModelInfo
-					: apiConfiguration?.actModeVercelAiGatewayModelInfo
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeVercelAiGatewayModelInfo
+						: apiConfiguration?.actModeVercelAiGatewayModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: vercelModelId || "",
@@ -464,7 +486,7 @@ export function normalizeApiConfiguration(
 			return getProviderData(zaiModels, zaiDefaultId)
 		case "fireworks":
 			const fireworksModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeFireworksModelId : apiConfiguration?.actModeFireworksModelId
+				currentMode === "plan" ? apiConfiguration?.planModeFireworksModelId : currentMode === "kiss" ? apiConfiguration?.kissModeFireworksModelId : apiConfiguration?.actModeFireworksModelId
 			return {
 				selectedProvider: provider,
 				selectedModelId: fireworksModelId || fireworksDefaultModelId,
@@ -474,9 +496,9 @@ export function normalizeApiConfiguration(
 						: fireworksModels[fireworksDefaultModelId],
 			}
 		case "oca":
-			const ocaModelId = currentMode === "plan" ? apiConfiguration?.planModeOcaModelId : apiConfiguration?.actModeOcaModelId
+			const ocaModelId = currentMode === "plan" ? apiConfiguration?.planModeOcaModelId : currentMode === "kiss" ? apiConfiguration?.kissModeOcaModelId : apiConfiguration?.actModeOcaModelId
 			const ocaModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeOcaModelInfo : apiConfiguration?.actModeOcaModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeOcaModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeOcaModelInfo : apiConfiguration?.actModeOcaModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: ocaModelId || "",
@@ -484,9 +506,9 @@ export function normalizeApiConfiguration(
 			}
 		case "aihubmix":
 			const aihubmixModelId =
-				currentMode === "plan" ? apiConfiguration?.planModeAihubmixModelId : apiConfiguration?.actModeAihubmixModelId
+				currentMode === "plan" ? apiConfiguration?.planModeAihubmixModelId : currentMode === "kiss" ? apiConfiguration?.kissModeAihubmixModelId : apiConfiguration?.actModeAihubmixModelId
 			const aihubmixModelInfo =
-				currentMode === "plan" ? apiConfiguration?.planModeAihubmixModelInfo : apiConfiguration?.actModeAihubmixModelInfo
+				currentMode === "plan" ? apiConfiguration?.planModeAihubmixModelInfo : currentMode === "kiss" ? apiConfiguration?.kissModeAihubmixModelInfo : apiConfiguration?.actModeAihubmixModelInfo
 			return {
 				selectedProvider: provider,
 				selectedModelId: aihubmixModelId || "",
@@ -498,7 +520,9 @@ export function normalizeApiConfiguration(
 			const nousResearchModelId =
 				currentMode === "plan"
 					? apiConfiguration?.planModeNousResearchModelId
-					: apiConfiguration?.actModeNousResearchModelId
+					: currentMode === "kiss"
+						? apiConfiguration?.kissModeNousResearchModelId
+						: apiConfiguration?.actModeNousResearchModelId
 			return {
 				selectedProvider: provider,
 				selectedModelId: nousResearchModelId || nousResearchDefaultModelId,
@@ -570,91 +594,99 @@ export function getModeSpecificFields(apiConfiguration: ApiConfiguration | undef
 	}
 
 	const openRouterModelId =
-		mode === "plan" ? apiConfiguration.planModeOpenRouterModelId : apiConfiguration.actModeOpenRouterModelId
+		mode === "plan" ? apiConfiguration.planModeOpenRouterModelId : mode === "kiss" ? apiConfiguration.kissModeOpenRouterModelId : apiConfiguration.actModeOpenRouterModelId
 	const openRouterModelInfo =
-		mode === "plan" ? apiConfiguration.planModeOpenRouterModelInfo : apiConfiguration.actModeOpenRouterModelInfo
+		mode === "plan" ? apiConfiguration.planModeOpenRouterModelInfo : mode === "kiss" ? apiConfiguration.kissModeOpenRouterModelInfo : apiConfiguration.actModeOpenRouterModelInfo
 
 	// Backward compatibility: Cline previously stored model selection in OpenRouter keys.
 	const clineModelId =
-		(mode === "plan" ? apiConfiguration.planModeClineModelId : apiConfiguration.actModeClineModelId) || openRouterModelId
+		(mode === "plan" ? apiConfiguration.planModeClineModelId : mode === "kiss" ? apiConfiguration.kissModeClineModelId : apiConfiguration.actModeClineModelId) || openRouterModelId
 	const clineModelInfo =
-		(mode === "plan" ? apiConfiguration.planModeClineModelInfo : apiConfiguration.actModeClineModelInfo) ||
+		(mode === "plan" ? apiConfiguration.planModeClineModelInfo : mode === "kiss" ? apiConfiguration.kissModeClineModelInfo : apiConfiguration.actModeClineModelInfo) ||
 		openRouterModelInfo
 
 	return {
 		// Core fields
 		apiProvider: coerceSupportedApiProvider(
-			mode === "plan" ? apiConfiguration.planModeApiProvider : apiConfiguration.actModeApiProvider,
+			mode === "plan" ? apiConfiguration.planModeApiProvider : mode === "kiss" ? apiConfiguration.kissModeApiProvider : apiConfiguration.actModeApiProvider,
 		),
-		apiModelId: mode === "plan" ? apiConfiguration.planModeApiModelId : apiConfiguration.actModeApiModelId,
+		apiModelId: mode === "plan" ? apiConfiguration.planModeApiModelId : mode === "kiss" ? apiConfiguration.kissModeApiModelId : apiConfiguration.actModeApiModelId,
 
 		// Provider-specific model IDs
-		togetherModelId: mode === "plan" ? apiConfiguration.planModeTogetherModelId : apiConfiguration.actModeTogetherModelId,
-		fireworksModelId: mode === "plan" ? apiConfiguration.planModeFireworksModelId : apiConfiguration.actModeFireworksModelId,
-		lmStudioModelId: mode === "plan" ? apiConfiguration.planModeLmStudioModelId : apiConfiguration.actModeLmStudioModelId,
-		ollamaModelId: mode === "plan" ? apiConfiguration.planModeOllamaModelId : apiConfiguration.actModeOllamaModelId,
-		liteLlmModelId: mode === "plan" ? apiConfiguration.planModeLiteLlmModelId : apiConfiguration.actModeLiteLlmModelId,
-		requestyModelId: mode === "plan" ? apiConfiguration.planModeRequestyModelId : apiConfiguration.actModeRequestyModelId,
-		openAiModelId: mode === "plan" ? apiConfiguration.planModeOpenAiModelId : apiConfiguration.actModeOpenAiModelId,
+		togetherModelId: mode === "plan" ? apiConfiguration.planModeTogetherModelId : mode === "kiss" ? apiConfiguration.kissModeTogetherModelId : apiConfiguration.actModeTogetherModelId,
+		fireworksModelId: mode === "plan" ? apiConfiguration.planModeFireworksModelId : mode === "kiss" ? apiConfiguration.kissModeFireworksModelId : apiConfiguration.actModeFireworksModelId,
+		lmStudioModelId: mode === "plan" ? apiConfiguration.planModeLmStudioModelId : mode === "kiss" ? apiConfiguration.kissModeLmStudioModelId : apiConfiguration.actModeLmStudioModelId,
+		ollamaModelId: mode === "plan" ? apiConfiguration.planModeOllamaModelId : mode === "kiss" ? apiConfiguration.kissModeOllamaModelId : apiConfiguration.actModeOllamaModelId,
+		liteLlmModelId: mode === "plan" ? apiConfiguration.planModeLiteLlmModelId : mode === "kiss" ? apiConfiguration.kissModeLiteLlmModelId : apiConfiguration.actModeLiteLlmModelId,
+		requestyModelId: mode === "plan" ? apiConfiguration.planModeRequestyModelId : mode === "kiss" ? apiConfiguration.kissModeRequestyModelId : apiConfiguration.actModeRequestyModelId,
+		openAiModelId: mode === "plan" ? apiConfiguration.planModeOpenAiModelId : mode === "kiss" ? apiConfiguration.kissModeOpenAiModelId : apiConfiguration.actModeOpenAiModelId,
 		openRouterModelId,
 		clineModelId,
-		groqModelId: mode === "plan" ? apiConfiguration.planModeGroqModelId : apiConfiguration.actModeGroqModelId,
-		basetenModelId: mode === "plan" ? apiConfiguration.planModeBasetenModelId : apiConfiguration.actModeBasetenModelId,
+		groqModelId: mode === "plan" ? apiConfiguration.planModeGroqModelId : mode === "kiss" ? apiConfiguration.kissModeGroqModelId : apiConfiguration.actModeGroqModelId,
+		basetenModelId: mode === "plan" ? apiConfiguration.planModeBasetenModelId : mode === "kiss" ? apiConfiguration.kissModeBasetenModelId : apiConfiguration.actModeBasetenModelId,
 		huggingFaceModelId:
-			mode === "plan" ? apiConfiguration.planModeHuggingFaceModelId : apiConfiguration.actModeHuggingFaceModelId,
+			mode === "plan" ? apiConfiguration.planModeHuggingFaceModelId : mode === "kiss" ? apiConfiguration.kissModeHuggingFaceModelId : apiConfiguration.actModeHuggingFaceModelId,
 		huaweiCloudMaasModelId:
-			mode === "plan" ? apiConfiguration.planModeHuaweiCloudMaasModelId : apiConfiguration.actModeHuaweiCloudMaasModelId,
-		ocaModelId: mode === "plan" ? apiConfiguration.planModeOcaModelId : apiConfiguration.actModeOcaModelId,
-		hicapModelId: mode === "plan" ? apiConfiguration.planModeHicapModelId : apiConfiguration.actModeHicapModelId,
-		aihubmixModelId: mode === "plan" ? apiConfiguration.planModeAihubmixModelId : apiConfiguration.actModeAihubmixModelId,
+			mode === "plan" ? apiConfiguration.planModeHuaweiCloudMaasModelId : mode === "kiss" ? apiConfiguration.kissModeHuaweiCloudMaasModelId : apiConfiguration.actModeHuaweiCloudMaasModelId,
+		ocaModelId: mode === "plan" ? apiConfiguration.planModeOcaModelId : mode === "kiss" ? apiConfiguration.kissModeOcaModelId : apiConfiguration.actModeOcaModelId,
+		hicapModelId: mode === "plan" ? apiConfiguration.planModeHicapModelId : mode === "kiss" ? apiConfiguration.kissModeHicapModelId : apiConfiguration.actModeHicapModelId,
+		aihubmixModelId: mode === "plan" ? apiConfiguration.planModeAihubmixModelId : mode === "kiss" ? apiConfiguration.kissModeAihubmixModelId : apiConfiguration.actModeAihubmixModelId,
 		nousResearchModelId:
-			mode === "plan" ? apiConfiguration.planModeNousResearchModelId : apiConfiguration.actModeNousResearchModelId,
+			mode === "plan" ? apiConfiguration.planModeNousResearchModelId : mode === "kiss" ? apiConfiguration.kissModeNousResearchModelId : apiConfiguration.actModeNousResearchModelId,
 		vercelAiGatewayModelId:
-			mode === "plan" ? apiConfiguration.planModeVercelAiGatewayModelId : apiConfiguration.actModeVercelAiGatewayModelId,
+			mode === "plan" ? apiConfiguration.planModeVercelAiGatewayModelId : mode === "kiss" ? apiConfiguration.kissModeVercelAiGatewayModelId : apiConfiguration.actModeVercelAiGatewayModelId,
 
 		// Model info objects
-		openAiModelInfo: mode === "plan" ? apiConfiguration.planModeOpenAiModelInfo : apiConfiguration.actModeOpenAiModelInfo,
-		liteLlmModelInfo: mode === "plan" ? apiConfiguration.planModeLiteLlmModelInfo : apiConfiguration.actModeLiteLlmModelInfo,
+		openAiModelInfo: mode === "plan" ? apiConfiguration.planModeOpenAiModelInfo : mode === "kiss" ? apiConfiguration.kissModeOpenAiModelInfo : apiConfiguration.actModeOpenAiModelInfo,
+		liteLlmModelInfo: mode === "plan" ? apiConfiguration.planModeLiteLlmModelInfo : mode === "kiss" ? apiConfiguration.kissModeLiteLlmModelInfo : apiConfiguration.actModeLiteLlmModelInfo,
 		openRouterModelInfo,
 		clineModelInfo,
 		requestyModelInfo:
-			mode === "plan" ? apiConfiguration.planModeRequestyModelInfo : apiConfiguration.actModeRequestyModelInfo,
-		groqModelInfo: mode === "plan" ? apiConfiguration.planModeGroqModelInfo : apiConfiguration.actModeGroqModelInfo,
-		basetenModelInfo: mode === "plan" ? apiConfiguration.planModeBasetenModelInfo : apiConfiguration.actModeBasetenModelInfo,
+			mode === "plan" ? apiConfiguration.planModeRequestyModelInfo : mode === "kiss" ? apiConfiguration.kissModeRequestyModelInfo : apiConfiguration.actModeRequestyModelInfo,
+		groqModelInfo: mode === "plan" ? apiConfiguration.planModeGroqModelInfo : mode === "kiss" ? apiConfiguration.kissModeGroqModelInfo : apiConfiguration.actModeGroqModelInfo,
+		basetenModelInfo: mode === "plan" ? apiConfiguration.planModeBasetenModelInfo : mode === "kiss" ? apiConfiguration.kissModeBasetenModelInfo : apiConfiguration.actModeBasetenModelInfo,
 		huggingFaceModelInfo:
-			mode === "plan" ? apiConfiguration.planModeHuggingFaceModelInfo : apiConfiguration.actModeHuggingFaceModelInfo,
+			mode === "plan" ? apiConfiguration.planModeHuggingFaceModelInfo : mode === "kiss" ? apiConfiguration.kissModeHuggingFaceModelInfo : apiConfiguration.actModeHuggingFaceModelInfo,
 		vsCodeLmModelSelector:
-			mode === "plan" ? apiConfiguration.planModeVsCodeLmModelSelector : apiConfiguration.actModeVsCodeLmModelSelector,
-		hicapModelInfo: mode === "plan" ? apiConfiguration.planModeHicapModelInfo : apiConfiguration.actModeHicapModelInfo,
+			mode === "plan" ? apiConfiguration.planModeVsCodeLmModelSelector : mode === "kiss" ? apiConfiguration.kissModeVsCodeLmModelSelector : apiConfiguration.actModeVsCodeLmModelSelector,
+		hicapModelInfo: mode === "plan" ? apiConfiguration.planModeHicapModelInfo : mode === "kiss" ? apiConfiguration.kissModeHicapModelInfo : apiConfiguration.actModeHicapModelInfo,
 		aihubmixModelInfo:
-			mode === "plan" ? apiConfiguration.planModeAihubmixModelInfo : apiConfiguration.actModeAihubmixModelInfo,
+			mode === "plan" ? apiConfiguration.planModeAihubmixModelInfo : mode === "kiss" ? apiConfiguration.kissModeAihubmixModelInfo : apiConfiguration.actModeAihubmixModelInfo,
 		vercelAiGatewayModelInfo:
 			mode === "plan"
 				? apiConfiguration.planModeVercelAiGatewayModelInfo
-				: apiConfiguration.actModeVercelAiGatewayModelInfo,
+				: mode === "kiss"
+					? apiConfiguration.kissModeVercelAiGatewayModelInfo
+					: apiConfiguration.actModeVercelAiGatewayModelInfo,
 
 		// AWS Bedrock fields
 		awsBedrockCustomSelected:
 			mode === "plan"
 				? apiConfiguration.planModeAwsBedrockCustomSelected
-				: apiConfiguration.actModeAwsBedrockCustomSelected,
+				: mode === "kiss"
+					? apiConfiguration.kissModeAwsBedrockCustomSelected
+					: apiConfiguration.actModeAwsBedrockCustomSelected,
 		awsBedrockCustomModelBaseId:
 			mode === "plan"
 				? apiConfiguration.planModeAwsBedrockCustomModelBaseId
-				: apiConfiguration.actModeAwsBedrockCustomModelBaseId,
+				: mode === "kiss"
+					? apiConfiguration.kissModeAwsBedrockCustomModelBaseId
+					: apiConfiguration.actModeAwsBedrockCustomModelBaseId,
 
 		// Huawei Cloud Maas Model Info
 		huaweiCloudMaasModelInfo:
 			mode === "plan"
 				? apiConfiguration.planModeHuaweiCloudMaasModelInfo
-				: apiConfiguration.actModeHuaweiCloudMaasModelInfo,
+				: mode === "kiss"
+					? apiConfiguration.kissModeHuaweiCloudMaasModelInfo
+					: apiConfiguration.actModeHuaweiCloudMaasModelInfo,
 
 		// Other mode-specific fields
 		thinkingBudgetTokens:
-			mode === "plan" ? apiConfiguration.planModeThinkingBudgetTokens : apiConfiguration.actModeThinkingBudgetTokens,
-		reasoningEffort: mode === "plan" ? apiConfiguration.planModeReasoningEffort : apiConfiguration.actModeReasoningEffort,
+			mode === "plan" ? apiConfiguration.planModeThinkingBudgetTokens : mode === "kiss" ? apiConfiguration.kissModeThinkingBudgetTokens : apiConfiguration.actModeThinkingBudgetTokens,
+		reasoningEffort: mode === "plan" ? apiConfiguration.planModeReasoningEffort : mode === "kiss" ? apiConfiguration.kissModeReasoningEffort : apiConfiguration.actModeReasoningEffort,
 		// Oracle Code Assist
-		ocaModelInfo: mode === "plan" ? apiConfiguration.planModeOcaModelInfo : apiConfiguration.actModeOcaModelInfo,
+		ocaModelInfo: mode === "plan" ? apiConfiguration.planModeOcaModelInfo : mode === "kiss" ? apiConfiguration.kissModeOcaModelInfo : apiConfiguration.actModeOcaModelInfo,
 	}
 }
 
@@ -683,10 +715,13 @@ export async function syncModeConfigurations(
 		// Always sync common fields
 		planModeApiProvider: sourceFields.apiProvider,
 		actModeApiProvider: sourceFields.apiProvider,
+		kissModeApiProvider: sourceFields.apiProvider,
 		planModeThinkingBudgetTokens: sourceFields.thinkingBudgetTokens,
 		actModeThinkingBudgetTokens: sourceFields.thinkingBudgetTokens,
+		kissModeThinkingBudgetTokens: sourceFields.thinkingBudgetTokens,
 		planModeReasoningEffort: sourceFields.reasoningEffort,
 		actModeReasoningEffort: sourceFields.reasoningEffort,
+		kissModeReasoningEffort: sourceFields.reasoningEffort,
 	}
 
 	// Handle provider-specific fields
@@ -694,97 +729,123 @@ export async function syncModeConfigurations(
 		case "openrouter":
 			updates.planModeOpenRouterModelId = sourceFields.openRouterModelId
 			updates.actModeOpenRouterModelId = sourceFields.openRouterModelId
+			updates.kissModeOpenRouterModelId = sourceFields.openRouterModelId
 			updates.planModeOpenRouterModelInfo = sourceFields.openRouterModelInfo
 			updates.actModeOpenRouterModelInfo = sourceFields.openRouterModelInfo
+			updates.kissModeOpenRouterModelInfo = sourceFields.openRouterModelInfo
 			break
 
 		case "cline":
 			updates.planModeClineModelId = sourceFields.clineModelId
 			updates.actModeClineModelId = sourceFields.clineModelId
+			updates.kissModeClineModelId = sourceFields.clineModelId
 			updates.planModeClineModelInfo = sourceFields.clineModelInfo
 			updates.actModeClineModelInfo = sourceFields.clineModelInfo
+			updates.kissModeClineModelInfo = sourceFields.clineModelInfo
 			break
 
 		case "requesty":
 			updates.planModeRequestyModelId = sourceFields.requestyModelId
 			updates.actModeRequestyModelId = sourceFields.requestyModelId
+			updates.kissModeRequestyModelId = sourceFields.requestyModelId
 			updates.planModeRequestyModelInfo = sourceFields.requestyModelInfo
 			updates.actModeRequestyModelInfo = sourceFields.requestyModelInfo
+			updates.kissModeRequestyModelInfo = sourceFields.requestyModelInfo
 			break
 
 		case "openai":
 			updates.planModeOpenAiModelId = sourceFields.openAiModelId
 			updates.actModeOpenAiModelId = sourceFields.openAiModelId
+			updates.kissModeOpenAiModelId = sourceFields.openAiModelId
 			updates.planModeOpenAiModelInfo = sourceFields.openAiModelInfo
 			updates.actModeOpenAiModelInfo = sourceFields.openAiModelInfo
+			updates.kissModeOpenAiModelInfo = sourceFields.openAiModelInfo
 			break
 
 		case "ollama":
 			updates.planModeOllamaModelId = sourceFields.ollamaModelId
 			updates.actModeOllamaModelId = sourceFields.ollamaModelId
+			updates.kissModeOllamaModelId = sourceFields.ollamaModelId
 			break
 
 		case "lmstudio":
 			updates.planModeLmStudioModelId = sourceFields.lmStudioModelId
 			updates.actModeLmStudioModelId = sourceFields.lmStudioModelId
+			updates.kissModeLmStudioModelId = sourceFields.lmStudioModelId
 			break
 
 		case "vscode-lm":
 			updates.planModeVsCodeLmModelSelector = sourceFields.vsCodeLmModelSelector
 			updates.actModeVsCodeLmModelSelector = sourceFields.vsCodeLmModelSelector
+			updates.kissModeVsCodeLmModelSelector = sourceFields.vsCodeLmModelSelector
 			break
 
 		case "litellm":
 			updates.planModeLiteLlmModelId = sourceFields.liteLlmModelId
 			updates.actModeLiteLlmModelId = sourceFields.liteLlmModelId
+			updates.kissModeLiteLlmModelId = sourceFields.liteLlmModelId
 			updates.planModeLiteLlmModelInfo = sourceFields.liteLlmModelInfo
 			updates.actModeLiteLlmModelInfo = sourceFields.liteLlmModelInfo
+			updates.kissModeLiteLlmModelInfo = sourceFields.liteLlmModelInfo
 			break
 
 		case "groq":
 			updates.planModeGroqModelId = sourceFields.groqModelId
 			updates.actModeGroqModelId = sourceFields.groqModelId
+			updates.kissModeGroqModelId = sourceFields.groqModelId
 			updates.planModeGroqModelInfo = sourceFields.groqModelInfo
 			updates.actModeGroqModelInfo = sourceFields.groqModelInfo
+			updates.kissModeGroqModelInfo = sourceFields.groqModelInfo
 			break
 
 		case "huggingface":
 			updates.planModeHuggingFaceModelId = sourceFields.huggingFaceModelId
 			updates.actModeHuggingFaceModelId = sourceFields.huggingFaceModelId
+			updates.kissModeHuggingFaceModelId = sourceFields.huggingFaceModelId
 			updates.planModeHuggingFaceModelInfo = sourceFields.huggingFaceModelInfo
 			updates.actModeHuggingFaceModelInfo = sourceFields.huggingFaceModelInfo
+			updates.kissModeHuggingFaceModelInfo = sourceFields.huggingFaceModelInfo
 			break
 
 		case "baseten":
 			updates.planModeBasetenModelId = sourceFields.basetenModelId
 			updates.actModeBasetenModelId = sourceFields.basetenModelId
+			updates.kissModeBasetenModelId = sourceFields.basetenModelId
 			updates.planModeBasetenModelInfo = sourceFields.basetenModelInfo
 			updates.actModeBasetenModelInfo = sourceFields.basetenModelInfo
+			updates.kissModeBasetenModelInfo = sourceFields.basetenModelInfo
 			break
 
 		case "together":
 			updates.planModeTogetherModelId = sourceFields.togetherModelId
 			updates.actModeTogetherModelId = sourceFields.togetherModelId
+			updates.kissModeTogetherModelId = sourceFields.togetherModelId
 			break
 
 		case "fireworks":
 			updates.planModeFireworksModelId = sourceFields.fireworksModelId
 			updates.actModeFireworksModelId = sourceFields.fireworksModelId
+			updates.kissModeFireworksModelId = sourceFields.fireworksModelId
 			break
 
 		case "bedrock":
 			updates.planModeApiModelId = sourceFields.apiModelId
 			updates.actModeApiModelId = sourceFields.apiModelId
+			updates.kissModeApiModelId = sourceFields.apiModelId
 			updates.planModeAwsBedrockCustomSelected = sourceFields.awsBedrockCustomSelected
 			updates.actModeAwsBedrockCustomSelected = sourceFields.awsBedrockCustomSelected
+			updates.kissModeAwsBedrockCustomSelected = sourceFields.awsBedrockCustomSelected
 			updates.planModeAwsBedrockCustomModelBaseId = sourceFields.awsBedrockCustomModelBaseId
 			updates.actModeAwsBedrockCustomModelBaseId = sourceFields.awsBedrockCustomModelBaseId
+			updates.kissModeAwsBedrockCustomModelBaseId = sourceFields.awsBedrockCustomModelBaseId
 			break
 		case "huawei-cloud-maas":
 			updates.planModeHuaweiCloudMaasModelId = sourceFields.huaweiCloudMaasModelId
 			updates.actModeHuaweiCloudMaasModelId = sourceFields.huaweiCloudMaasModelId
+			updates.kissModeHuaweiCloudMaasModelId = sourceFields.huaweiCloudMaasModelId
 			updates.planModeHuaweiCloudMaasModelInfo = sourceFields.huaweiCloudMaasModelInfo
 			updates.actModeHuaweiCloudMaasModelInfo = sourceFields.huaweiCloudMaasModelInfo
+			updates.kissModeHuaweiCloudMaasModelInfo = sourceFields.huaweiCloudMaasModelInfo
 			break
 
 		case "dify":
@@ -795,33 +856,42 @@ export async function syncModeConfigurations(
 		case "hicap":
 			updates.planModeHicapModelId = sourceFields.hicapModelId
 			updates.actModeHicapModelId = sourceFields.hicapModelId
+			updates.kissModeHicapModelId = sourceFields.hicapModelId
 			updates.planModeHicapModelInfo = sourceFields.hicapModelInfo
 			updates.actModeHicapModelInfo = sourceFields.hicapModelInfo
+			updates.kissModeHicapModelInfo = sourceFields.hicapModelInfo
 			break
 
 		case "vercel-ai-gateway":
 			// Vercel AI Gateway uses its own model fields
 			updates.planModeVercelAiGatewayModelId = sourceFields.vercelAiGatewayModelId
 			updates.actModeVercelAiGatewayModelId = sourceFields.vercelAiGatewayModelId
+			updates.kissModeVercelAiGatewayModelId = sourceFields.vercelAiGatewayModelId
 			updates.planModeVercelAiGatewayModelInfo = sourceFields.vercelAiGatewayModelInfo
 			updates.actModeVercelAiGatewayModelInfo = sourceFields.vercelAiGatewayModelInfo
+			updates.kissModeVercelAiGatewayModelInfo = sourceFields.vercelAiGatewayModelInfo
 			break
 		case "oca":
 			updates.planModeOcaModelId = sourceFields.ocaModelId
 			updates.actModeOcaModelId = sourceFields.ocaModelId
+			updates.kissModeOcaModelId = sourceFields.ocaModelId
 			updates.planModeOcaModelInfo = sourceFields.ocaModelInfo
 			updates.actModeOcaModelInfo = sourceFields.ocaModelInfo
+			updates.kissModeOcaModelInfo = sourceFields.ocaModelInfo
 			break
 		case "nousResearch":
 			updates.planModeNousResearchModelId = sourceFields.nousResearchModelId
 			updates.actModeNousResearchModelId = sourceFields.nousResearchModelId
+			updates.kissModeNousResearchModelId = sourceFields.nousResearchModelId
 			break
 
 		case "aihubmix":
 			updates.planModeAihubmixModelId = sourceFields.aihubmixModelId
 			updates.planModeAihubmixModelInfo = sourceFields.aihubmixModelInfo
 			updates.actModeAihubmixModelId = sourceFields.aihubmixModelId
+			updates.kissModeAihubmixModelId = sourceFields.aihubmixModelId
 			updates.actModeAihubmixModelInfo = sourceFields.aihubmixModelInfo
+			updates.kissModeAihubmixModelInfo = sourceFields.aihubmixModelInfo
 			break
 
 		// Providers that use apiProvider + apiModelId fields
@@ -847,6 +917,7 @@ export async function syncModeConfigurations(
 		default:
 			updates.planModeApiModelId = sourceFields.apiModelId
 			updates.actModeApiModelId = sourceFields.apiModelId
+			updates.kissModeApiModelId = sourceFields.apiModelId
 			break
 	}
 
@@ -860,41 +931,41 @@ export { filterOpenRouterModelIds } from "@shared/utils/model-filters"
 export const getProviderInfo = (
 	provider: ApiProvider,
 	apiConfiguration: any,
-	effectiveMode: "plan" | "act",
+	effectiveMode: "plan" | "act" | "kiss",
 ): { modelId?: string; baseUrl?: string; helpText: string } => {
 	switch (provider) {
 		case "baseten":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeBasetenModelId : apiConfiguration.actModeBasetenModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeBasetenModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeBasetenModelId : apiConfiguration.actModeBasetenModelId,
 				baseUrl: apiConfiguration.basetenBaseUrl,
 				helpText: "Start Baseten and load a model to begin",
 			}
 		case "lmstudio":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeLmStudioModelId : apiConfiguration.actModeLmStudioModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeLmStudioModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeLmStudioModelId : apiConfiguration.actModeLmStudioModelId,
 				baseUrl: apiConfiguration.lmStudioBaseUrl,
 				helpText: "Start LM Studio and load a model to begin",
 			}
 		case "ollama":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeOllamaModelId : apiConfiguration.actModeOllamaModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeOllamaModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeOllamaModelId : apiConfiguration.actModeOllamaModelId,
 				baseUrl: apiConfiguration.ollamaBaseUrl,
 				helpText: "Run `ollama serve` and pull a model",
 			}
 		case "litellm":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeLiteLlmModelId : apiConfiguration.actModeLiteLlmModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeLiteLlmModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeLiteLlmModelId : apiConfiguration.actModeLiteLlmModelId,
 				baseUrl: apiConfiguration.liteLlmBaseUrl,
 				helpText: "Add your LiteLLM proxy URL in settings",
 			}
 		case "openai":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeOpenAiModelId : apiConfiguration.actModeOpenAiModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeOpenAiModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeOpenAiModelId : apiConfiguration.actModeOpenAiModelId,
 				baseUrl: apiConfiguration.openAiBaseUrl,
 				helpText: "Add your OpenAI API key and endpoint",
 			}
@@ -907,14 +978,14 @@ export const getProviderInfo = (
 		case "requesty":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeRequestyModelId : apiConfiguration.actModeRequestyModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeRequestyModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeRequestyModelId : apiConfiguration.actModeRequestyModelId,
 				baseUrl: apiConfiguration.requestyBaseUrl,
 				helpText: "Add your Requesty API key in settings",
 			}
 		case "together":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeTogetherModelId : apiConfiguration.actModeTogetherModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeTogetherModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeTogetherModelId : apiConfiguration.actModeTogetherModelId,
 				baseUrl: undefined,
 				helpText: "Add your Together AI API key in settings",
 			}
@@ -926,20 +997,20 @@ export const getProviderInfo = (
 			}
 		case "hicap":
 			return {
-				modelId: effectiveMode === "plan" ? apiConfiguration.planModeHicapModelId : apiConfiguration.actModeHicapModelId,
+				modelId: effectiveMode === "plan" ? apiConfiguration.planModeHicapModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeHicapModelId : apiConfiguration.actModeHicapModelId,
 				baseUrl: undefined,
 				helpText: "Add your HiCap API key in settings",
 			}
 		case "oca":
 			return {
-				modelId: effectiveMode === "plan" ? apiConfiguration.planModeOcaModelId : apiConfiguration.actModeOcaModelId,
+				modelId: effectiveMode === "plan" ? apiConfiguration.planModeOcaModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeOcaModelId : apiConfiguration.actModeOcaModelId,
 				baseUrl: apiConfiguration.ocaBaseUrl,
 				helpText: "Configure your OCA endpoint in settings",
 			}
 		case "aihubmix":
 			return {
 				modelId:
-					effectiveMode === "plan" ? apiConfiguration.planModeAihubmixModelId : apiConfiguration.actModeAihubmixModelId,
+					effectiveMode === "plan" ? apiConfiguration.planModeAihubmixModelId : effectiveMode === "kiss" ? apiConfiguration.kissModeAihubmixModelId : apiConfiguration.actModeAihubmixModelId,
 				baseUrl: apiConfiguration.aihubmixBaseUrl,
 				helpText: "Add your AIHubMix API key in settings",
 			}

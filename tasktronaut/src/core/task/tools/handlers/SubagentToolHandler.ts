@@ -151,7 +151,16 @@ export class UseSubagentsToolHandler implements IFullyManagedTool {
 				`Too many subagent prompts provided (${prompts.length}). Maximum is ${MAX_SUBAGENT_PROMPTS}.`,
 			)
 		}
-		if (configuredSubagentConfig?.role === "worker" && configuredSubagentConfig.isolation !== "worktree" && prompts.length > 1) {
+		const allowSharedWorkspaceParallel =
+			configuredSubagentConfig?.allowParallelSharedWorkspace === true &&
+			configuredSubagentConfig.isolation === "inherit"
+
+		if (
+			configuredSubagentConfig?.role === "worker" &&
+			configuredSubagentConfig.isolation !== "worktree" &&
+			!allowSharedWorkspaceParallel &&
+			prompts.length > 1
+		) {
 			config.taskState.consecutiveMistakeCount++
 			return formatResponse.toolError(
 				`The '${configuredSubagentConfig.name}' subagent can only run one prompt at a time because it writes to the shared workspace without worktree isolation.`,

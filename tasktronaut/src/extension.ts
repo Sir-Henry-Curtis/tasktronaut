@@ -14,7 +14,7 @@ import { sendSettingsButtonClickedEvent } from "./core/controller/ui/subscribeTo
 import { sendWorktreesButtonClickedEvent } from "./core/controller/ui/subscribeToWorktreesButtonClicked"
 import { WebviewProvider } from "./core/webview"
 import { createClineAPI } from "./exports"
-import { installGsdToWorkspace } from "./gsd/GsdInstaller"
+import { installGsdToWorkspace, verifyManagedAssetsForWorkspace } from "./gsd/GsdInstaller"
 import { GsdOrchestrator } from "./gsd/GsdOrchestrator"
 import { LaikaBridgeService } from "./laika/LaikaBridgeService"
 import { initializeTestMode } from "./services/test/TestMode"
@@ -59,6 +59,35 @@ import { SharedUriHandler, TASK_URI_PATH } from "./services/uri/SharedUriHandler
 import { ShowMessageType } from "./shared/proto/host/window"
 import { fileExistsAtPath } from "./utils/fs"
 
+async function syncGsdManagedAssetsForWorkspace(workspacePath: string, reason: string) {
+	try {
+		await installGsdToWorkspace(workspacePath)
+		const verification = await verifyManagedAssetsForWorkspace(workspacePath)
+		if (!verification.ok) {
+			const preview = verification.mismatches
+				.slice(0, 5)
+				.map((mismatch) => mismatch.path)
+				.join(", ")
+			Logger.warn(
+				`[GSD] Managed assets mismatch after ${reason} for ${workspacePath}: ${verification.mismatches.length} mismatches (${preview})`,
+			)
+			return
+		}
+		Logger.info(`[GSD] Managed assets verified for ${workspacePath} (${verification.assetCount} assets)`)
+	} catch (error) {
+		Logger.warn(
+			`[GSD] Managed asset sync failed during ${reason} for ${workspacePath}: ${error instanceof Error ? error.message : String(error)}`,
+		)
+	}
+}
+
+async function syncGsdManagedAssetsForOpenWorkspaces(reason: string) {
+	const folders = vscode.workspace.workspaceFolders ?? []
+	for (const folder of folders) {
+		await syncGsdManagedAssetsForWorkspace(folder.uri.fsPath, reason)
+	}
+}
+
 // This method is called when the VS Code extension is activated.
 // NOTE: This is VS Code specific - services that should be registered
 // for all-platform should be registered in common.ts.
@@ -100,19 +129,20 @@ export async function activate(context: vscode.ExtensionContext) {
 	const testModeWatchers = await initializeTestMode(webview)
 	context.subscriptions.push(...testModeWatchers)
 
-	// FORK MOD: GSD v1.5 — install hooks/rules to workspace and start orchestrator.
-	const primaryWorkspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-	if (primaryWorkspace) {
-		try {
-			await installGsdToWorkspace(primaryWorkspace)
-		} catch (e) {
-			Logger.warn(`[GSD] Installer error: ${e instanceof Error ? e.message : String(e)}`)
-		}
-	}
+	// FORK MOD: GSD v1.5 — install and verify managed assets for all open workspaces.
+	await syncGsdManagedAssetsForOpenWorkspaces("activation")
 	const gsdOrchestrator = new GsdOrchestrator(context)
 	gsdOrchestrator.activate()
+	context.subscriptions.push({ dispose: () => gsdOrchestrator.dispose() })
 	const laikaBridge = new LaikaBridgeService()
 	laikaBridge.activate(context)
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeWorkspaceFolders((event) => {
+			for (const added of event.added) {
+				void syncGsdManagedAssetsForWorkspace(added.uri.fsPath, "workspace-folder-added")
+			}
+		}),
+	)
 
 	// Initialize hook discovery cache for performance optimization
 	HookDiscoveryCache.getInstance().initialize(
@@ -165,6 +195,51 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(commands.AccountButton, () => sendAccountButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.WorktreesButton, () => sendWorktreesButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.GsdButton, () => sendGsdButtonClickedEvent()))
+	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.GsdVerifyManagedAssets, async () => {
+			const verificationWorkspaces = (vscode.workspace.workspaceFolders ?? []).map((folder) => folder.uri.fsPath)
+			if (verificationWorkspaces.length === 0) {
+				await vscode.window.showWarningMessage("Tasktronaut could not verify managed GSD assets because no workspace is open.")
+				return
+			}
+
+			try {
+				let totalAssets = 0
+				let totalMismatches = 0
+				for (const verificationWorkspace of verificationWorkspaces) {
+					await installGsdToWorkspace(verificationWorkspace)
+					const verification = await verifyManagedAssetsForWorkspace(verificationWorkspace)
+					totalAssets += verification.assetCount
+					totalMismatches += verification.mismatches.length
+					if (!verification.ok) {
+						const preview = verification.mismatches
+							.slice(0, 5)
+							.map((mismatch) => mismatch.path)
+							.join(", ")
+						Logger.warn(
+							`[GSD] Managed asset verification found ${verification.mismatches.length} mismatches after refresh for ${verificationWorkspace}: ${preview}`,
+						)
+					}
+				}
+				if (totalMismatches === 0) {
+					await vscode.window.showInformationMessage(
+						`Tasktronaut verified ${totalAssets} managed GSD assets across ${verificationWorkspaces.length} workspace(s).`,
+					)
+					return
+				}
+				await vscode.window.showWarningMessage(
+					`Tasktronaut found ${totalMismatches} managed GSD asset mismatches after refresh. Check the Tasktronaut output for details.`,
+				)
+			} catch (error) {
+				Logger.warn(
+					`[GSD] Managed asset verification command failed: ${error instanceof Error ? error.message : String(error)}`,
+				)
+				await vscode.window.showErrorMessage(
+					`Tasktronaut could not verify managed GSD assets: ${error instanceof Error ? error.message : String(error)}`,
+				)
+			}
+		}),
+	)
 
 	/*
 	We use the text document content provider API to show the left side for diff view by creating a

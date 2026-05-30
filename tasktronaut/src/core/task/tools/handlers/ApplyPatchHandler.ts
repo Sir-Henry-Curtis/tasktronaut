@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises"
 import { resolve as resolvePath } from "node:path"
 import type { ToolUse } from "@core/assistant-message"
+import { formatResponse } from "@core/prompts/responses"
 import { resolveWorkspacePath } from "@core/workspace"
 import { processFilesIntoText } from "@integrations/misc/extract-text"
 import type { ClineSayTool } from "@shared/ExtensionMessage"
@@ -407,10 +408,28 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 			return responseLines.join("\n")
 		} catch (error) {
 			await provider.revertChanges()
+			if (error instanceof DiffError) {
+				config.taskState.consecutiveMistakeCount++
+				return formatResponse.toolError(this.formatPatchDiffError(error))
+			}
 			throw error
 		} finally {
 			await provider.reset()
 		}
+	}
+
+	private formatPatchDiffError(error: DiffError): string {
+		const message = error.message || "Invalid apply_patch input."
+		const duplicateAddMatch = message.match(/^Duplicate add for file: (.+)$/)
+		if (duplicateAddMatch) {
+			const filePath = duplicateAddMatch[1]
+			return [
+				`Invalid apply_patch input: the patch tries to add '${filePath}' more than once.`,
+				`Use a single '*** Add File: ${filePath}' section for the initial file creation, or switch later changes for that file to '*** Update File: ${filePath}'.`,
+				"Combine all new-file content into one Add section before retrying.",
+			].join("\n")
+		}
+		return message
 	}
 
 	private preprocessLines(text: string): string[] {

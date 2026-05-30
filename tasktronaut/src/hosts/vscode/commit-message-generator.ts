@@ -71,6 +71,26 @@ export async function generateCommitMsg(controller: Controller, scm?: vscode.Sou
 	}
 }
 
+export async function generateCommitMsgForPath(controller: Controller, repoPath: string): Promise<boolean> {
+	const gitExtension = vscode.extensions.getExtension("vscode.git")?.exports
+	if (!gitExtension) {
+		throw new Error("Git extension not found")
+	}
+
+	const git = gitExtension.getAPI(1)
+	const normalizedRepoPath = path.resolve(repoPath)
+	const repository =
+		git.repositories.find((candidate: any) => path.resolve(candidate.rootUri.fsPath) === normalizedRepoPath) ||
+		git.repositories.find((candidate: any) => normalizedRepoPath.startsWith(path.resolve(candidate.rootUri.fsPath)))
+
+	if (!repository) {
+		return false
+	}
+
+	await generateCommitMsgForRepository(controller, repository)
+	return true
+}
+
 async function orchestrateWorkspaceCommitMsgGeneration(controller: Controller, repos: any[]) {
 	const reposWithChanges = await filterForReposWithChanges(repos)
 

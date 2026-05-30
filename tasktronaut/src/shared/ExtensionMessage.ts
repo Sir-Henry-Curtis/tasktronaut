@@ -5,7 +5,6 @@ import { RemoteConfigFields } from "@shared/storage/state-keys"
 import type { Environment } from "../config"
 import { AutoApprovalSettings } from "./AutoApprovalSettings"
 import { ApiConfiguration } from "./api"
-import { BrowserSettings } from "./BrowserSettings"
 import { ClineFeatureSetting } from "./ClineFeatureSetting"
 import { BannerCardData } from "./cline/banner"
 import { ClineRulesToggles } from "./cline-rules"
@@ -41,8 +40,6 @@ export interface ExtensionState {
 	onboardingModels: OnboardingModelGroup | undefined
 	apiConfiguration?: ApiConfiguration
 	autoApprovalSettings: AutoApprovalSettings
-	browserSettings: BrowserSettings
-	remoteBrowserHost?: string
 	preferredLanguage?: string
 	mode: Mode
 	checkpointManagerErrorMessage?: string
@@ -138,7 +135,6 @@ export type ClineAsk =
 	| "resume_task"
 	| "resume_completed_task"
 	| "mistake_limit_reached"
-	| "browser_action_launch"
 	| "use_mcp_server"
 	| "new_task"
 	| "condense"
@@ -161,9 +157,6 @@ export type ClineSay =
 	| "command"
 	| "command_output"
 	| "tool"
-	| "browser_action_launch"
-	| "browser_action"
-	| "browser_action_result"
 	| "mcp_server_request_started"
 	| "mcp_server_response"
 	| "mcp_notification"
@@ -225,7 +218,7 @@ export interface ClineSayHook {
 		content?: string // Content preview (first 200 chars)
 		diff?: string // Diff preview (first 200 chars)
 		regex?: string // Regex pattern for search_files
-		url?: string // URL for web_fetch or browser_action
+		url?: string // URL for web_fetch
 		mcpTool?: string // MCP tool name
 		mcpServer?: string // MCP server name
 		resourceUri?: string // MCP resource URI
@@ -244,16 +237,6 @@ export type HookOutputStreamMeta = {
 	source: "global" | "workspace"
 	/** Full path to the hook script that emitted the output. */
 	scriptPath: string
-}
-
-// must keep in sync with system prompt
-export const browserActions = ["launch", "click", "type", "scroll_down", "scroll_up", "close"] as const
-export type BrowserAction = (typeof browserActions)[number]
-
-export interface ClineSayBrowserAction {
-	action: BrowserAction
-	coordinate?: string
-	text?: string
 }
 
 export interface ClineSayGenerateExplanation {
@@ -306,13 +289,6 @@ export interface ClineSaySubagentStatus {
 	maxContextTokens: number
 	maxContextUsagePercentage: number
 	items: SubagentStatusItem[]
-}
-
-export type BrowserActionResult = {
-	screenshot?: string
-	logs?: string
-	currentUrl?: string
-	currentMousePosition?: string
 }
 
 export interface ClineAskUseMcpServer {

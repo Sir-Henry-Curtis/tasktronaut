@@ -22,12 +22,6 @@ describe("PromptRegistry", () => {
 			enabled: true,
 			remindClineInterval: 6,
 		},
-		browserSettings: {
-			viewport: {
-				width: 1280,
-				height: 720,
-			},
-		},
 		isTesting: true,
 		providerInfo: mockProviderInfo,
 	}

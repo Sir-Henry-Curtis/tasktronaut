@@ -1,14 +1,61 @@
 # Root-level generated artifacts and local runtime state
 
+# Dependencies
+node_modules/
+
+# Build, package, and test outputs
+dist/
+build/
+out/
+coverage/
+coverage-unit/
+.nyc_output/
+target/
+*.vsix
+*.tsbuildinfo
+.turbo/
+.vite/
+test-results/
+.vscode-test/
+
+# Local environment and secrets
+.env
+*.env
+.secrets
+secrets.json
+/tools/api_key
+
 # Tasktronaut workspace-local runtime files
 /.tasktronaut/actors.json
 /.tasktronaut/ipc.jsonl
 /.tasktronaut/leader.json
 /.tasktronaut/runtime/
 /.tasktronaut/worktrees/
+/.tasktronaut/managed-manifest.json
+/.tasktronaut/
+/.tasktronautrules/
+/prototypes
+/.agents
+
+.codex
 
 # Packaged extension artifacts
 /tasktronaut/dist/*.vsix
+/tasktronaut/test-workspace/
+/tasktronaut/tmp/
+/tasktronaut/pkg/
+/tasktronaut/.worktrees/
+/tasktronaut/evals/smoke-tests/results/
+/tasktronaut/.tui-test/
+/tasktronaut/tui-traces/
+/tasktronaut/tests/**/cache/
+
+# Tasktronaut generated files
+/tasktronaut/src/generated/
+/tasktronaut/src/shared/proto/
+/tasktronaut/webview-ui/src/services/grpc-client.ts
+/tasktronaut/webview-ui/src/**/*.js
+/tasktronaut/webview-ui/src/**/*.js.map
 
 # Laika frontend build output
 /prototypes/laika/dist/

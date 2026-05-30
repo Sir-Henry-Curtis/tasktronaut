@@ -85,29 +85,9 @@ let pendingRefresh: Promise<Record<string, ModelInfo>> | null = null
  * @param controller The controller instance
  * @returns Record of model ID to ModelInfo (application types)
  */
-export async function refreshOpenRouterModels(controller: Controller): Promise<Record<string, ModelInfo>> {
-	// Check in-memory cache first
-	const cache = StateManager.get().getModelsCache("openRouter")
-	if (cache) {
-		return cache
-	}
-
-	// If a fetch is already in progress, return the same promise
-	if (pendingRefresh) {
-		return pendingRefresh
-	}
-
-	// Start new fetch and track the promise
-	pendingRefresh = (async () => {
-		try {
-			return await fetchAndCacheModels(controller)
-		} finally {
-			// Clear pending promise when done (success or error)
-			pendingRefresh = null
-		}
-	})()
-
-	return pendingRefresh
+export async function refreshOpenRouterModels(_controller: Controller): Promise<Record<string, ModelInfo>> {
+	// FORK MOD: ITAR/network-isolated build — OpenRouter model discovery (openrouter.ai) disabled.
+	return {}
 }
 
 async function fetchAndCacheModels(controller: Controller): Promise<Record<string, ModelInfo>> {

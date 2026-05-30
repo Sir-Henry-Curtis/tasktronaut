@@ -17,7 +17,7 @@ When Cline uses the `use_subagents` tool, it launches independent agents simulta
 - Gets its own prompt describing what to investigate
 - Runs with a separate context window and token budget
 - Can read files, search code, list directories, run read-only commands, and use skills
-- Cannot edit files, use the browser, access MCP servers, or spawn nested subagents
+- Cannot edit files, fetch external URLs, access MCP servers, or spawn nested subagents
 - Returns a result focused on the most relevant file paths for the main agent to read next
 
 Subagent costs (tokens and API spend) are tracked separately per subagent and rolled into the task's total cost. You can see per-subagent stats (tool calls, tokens, cost) in the chat UI as they run.
@@ -66,7 +66,7 @@ Subagents are read-only research agents. Here is what they have access to:
 | `execute_command` | Run read-only commands (`ls`, `grep`, `git log`, `git diff`, etc.) |
 | `use_skill` | Load and activate skills |
 
-Subagents cannot write files, apply patches, use the browser, access MCP servers, or perform web searches. They also cannot spawn their own subagents.
+Subagents cannot write files, apply patches, fetch external URLs, access MCP servers, or perform web searches. They also cannot spawn their own subagents.
 
 <Note>
   Commands run by subagents execute in the background and are restricted to read-only operations. Subagents will not run commands that modify files or system state.

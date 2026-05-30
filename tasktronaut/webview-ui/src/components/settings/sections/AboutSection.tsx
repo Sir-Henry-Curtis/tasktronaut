@@ -14,7 +14,8 @@ const AboutSection = ({ version, renderSectionHeader }: AboutSectionProps) => {
 					<h2 className="text-lg font-semibold">Tasktronaut v{version}</h2>
 					<p>
 						Tasktronaut is a mission-ready coding assistant for structured engineering workflows. It can explore your
-						codebase, edit files, run terminal commands, and use browser tools while keeping you in the approval loop.
+						codebase, edit files, run terminal commands, and orchestrate approved tooling while keeping you in the
+						approval loop.
 					</p>
 
 					<h3 className="text-md font-semibold">Distribution</h3>
@@ -27,7 +28,9 @@ const AboutSection = ({ version, renderSectionHeader }: AboutSectionProps) => {
 					</p>
 
 					<h3 className="text-md font-semibold">Support</h3>
-					<p>Project-specific documentation and support channels should be provided by the internal distribution owner.</p>
+					<p>
+						Project-specific documentation and support channels should be provided by the internal distribution owner.
+					</p>
 				</div>
 			</Section>
 		</div>

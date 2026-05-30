@@ -129,7 +129,7 @@ Exit workflow.
 
 ```bash
 # Detect advisor mode (file-existence guard — no Read until needed)
-if [ -f "$HOME/.claude/get-shit-done/USER-PROFILE.md" ]; then
+if [ -f "$HOME/.tasktronaut/gsd/USER-PROFILE.md" ]; then
   ADVISOR_MODE=true
 else
   ADVISOR_MODE=false

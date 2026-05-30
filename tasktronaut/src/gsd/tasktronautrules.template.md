@@ -1,6 +1,6 @@
 # GSD (Get Shit Done) Workflow — v1.5
 # Bundled with this extension — no network fetch required.
-# Installed to .clinerules/gsd.md in the workspace root.
+# Installed to .tasktronautrules/gsd.md in the workspace root.
 
 ## Overview
 GSD is a structured spec-driven workflow for AI-assisted development.

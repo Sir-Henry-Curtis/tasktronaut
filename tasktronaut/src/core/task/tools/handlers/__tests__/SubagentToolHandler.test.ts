@@ -37,7 +37,6 @@ function createConfig(options?: {
 		reinitExistingTaskFromId: sinon.stub().resolves(),
 		cancelTask: sinon.stub().resolves(),
 		updateTaskHistory: sinon.stub().resolves([]),
-		applyLatestBrowserSettings: sinon.stub().resolves(undefined),
 		switchToActMode: sinon.stub().resolves(false),
 		setActiveHookExecution: sinon.stub().resolves(),
 		clearActiveHookExecution: sinon.stub().resolves(),
@@ -69,7 +68,6 @@ function createConfig(options?: {
 		autoApprover: {
 			shouldAutoApproveTool: sinon.stub().returns([options?.autoApproveSafe ?? false, options?.autoApproveAll ?? false]),
 		},
-		browserSettings: {},
 		focusChainSettings: {},
 		services: {
 			stateManager: {
@@ -621,6 +619,62 @@ describe("SubagentToolHandler", () => {
 
 		assert.match(String(result), /can only run one prompt at a time/i)
 		sinon.assert.notCalled(runStub)
+	})
+
+	it("allows explicitly opted-in shared-workspace worker subagents to run multiple prompts in parallel", async () => {
+		const { config } = createConfig({ autoApproveSafe: true, autoApproveAll: true })
+		const handler = new UseSubagentsToolHandler()
+		const dynamicToolName = "use_subagent_gsd_codebase_mapper"
+		sinon.stub(AgentConfigLoader, "getInstance").returns({
+			resolveSubagentNameForTool: (toolName: string) => (toolName === dynamicToolName ? "gsd-codebase-mapper" : undefined),
+			getCachedConfig: () => ({
+				name: "gsd-codebase-mapper",
+				description: "mapper",
+				role: "worker",
+				isolation: "inherit",
+				allowParallelSharedWorkspace: true,
+				tools: [],
+				systemPrompt: "prompt",
+			}),
+		} as unknown as AgentConfigLoader)
+
+		let activeRuns = 0
+		let maxActiveRuns = 0
+		const runStub = sinon.stub(SubagentRunner.prototype, "run").callsFake(async () => {
+			activeRuns++
+			maxActiveRuns = Math.max(maxActiveRuns, activeRuns)
+			await delay(10)
+			activeRuns--
+			return {
+				status: "completed",
+				result: "mapped",
+				stats: {
+					toolCalls: 1,
+					inputTokens: 2,
+					outputTokens: 3,
+					cacheWriteTokens: 0,
+					cacheReadTokens: 0,
+					totalCost: 0.1,
+					contextTokens: 100,
+					contextWindow: 200000,
+					contextUsagePercentage: 0.05,
+				},
+			}
+		})
+
+		const result = await handler.execute(config, {
+			type: "tool_use",
+			name: dynamicToolName as ClineDefaultTool,
+			params: {
+				prompt_1: "focus tech",
+				prompt_2: "focus arch",
+			},
+			partial: false,
+		})
+
+		assert.match(String(result), /Succeeded: 2/)
+		assert.ok(maxActiveRuns > 1)
+		sinon.assert.calledTwice(runStub)
 	})
 
 	it("requires prompt for configured subagent tools", async () => {

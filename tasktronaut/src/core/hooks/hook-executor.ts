@@ -51,6 +51,38 @@ function fromHookOutput(output: HookOutput): HookExecutionResult {
 	}
 }
 
+function isNoOpHookResult(result: HookOutput): boolean {
+	return result.cancel !== true && !result.contextModification?.trim() && !result.errorMessage?.trim()
+}
+
+function isHookProtocolOutputLine(line: string): boolean {
+	const trimmed = line.trim()
+	if (!trimmed || !trimmed.startsWith("{") || !trimmed.endsWith("}")) {
+		return false
+	}
+
+	try {
+		const parsed = JSON.parse(trimmed)
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+			return false
+		}
+
+		const knownKeys = ["cancel", "contextModification", "errorMessage", "shouldContinue"]
+		const hasHookProtocolKey = knownKeys.some((key) => Object.prototype.hasOwnProperty.call(parsed, key))
+		if (!hasHookProtocolKey) {
+			return false
+		}
+
+		return (
+			(parsed.cancel === undefined || typeof parsed.cancel === "boolean") &&
+			(parsed.contextModification === undefined || typeof parsed.contextModification === "string") &&
+			(parsed.errorMessage === undefined || typeof parsed.errorMessage === "string")
+		)
+	} catch {
+		return false
+	}
+}
+
 /**
  * Executes a hook with standardized error handling, status tracking, and cleanup.
  * This consolidates the common pattern used across all hook execution sites.
@@ -122,6 +154,13 @@ export async function executeHook<Name extends keyof Hooks>(options: HookExecuti
 
 		// Create streaming callback
 		const streamCallback = async (line: string, stream: "stdout" | "stderr", meta?: HookOutputStreamMeta) => {
+			if (line === "") {
+				return
+			}
+			if (stream === "stdout" && isHookProtocolOutputLine(line)) {
+				return
+			}
+
 			// Preserve script identity for multi-hook (global + workspace) scenarios.
 			// Without this, concurrent hooks interleave output and it's hard to tell which
 			// script produced which line (and can look like only one hook is printing).
@@ -157,8 +196,14 @@ export async function executeHook<Name extends keyof Hooks>(options: HookExecuti
 
 		Logger.log(`[${hookName} Hook]`, result)
 
-		// NoOp hooks return proto defaults; preserve the minimal legacy return shape.
-		if (result.cancel === false && result.contextModification === "" && result.errorMessage === "") {
+		// No-op hooks should not leave visual noise in chat.
+		if (isNoOpHookResult(result)) {
+			if (isCancellable && clearActiveHookExecution) {
+				await clearActiveHookExecution()
+			}
+			if (hookMessageTs !== undefined) {
+				await deleteHookMessageGroup(messageStateHandler, hookMessageTs)
+			}
 			return { wasCancelled: false }
 		}
 
@@ -273,12 +318,32 @@ async function updateHookMessage(
 	}
 }
 
+async function deleteHookMessageGroup(messageStateHandler: MessageStateHandler, hookMessageTs: number): Promise<void> {
+	const clineMessages = messageStateHandler.getClineMessages()
+	const hookMessageIndex = clineMessages.findIndex((m: ClineMessage) => m.ts === hookMessageTs)
+	if (hookMessageIndex === -1) {
+		return
+	}
+
+	const indexesToDelete = [hookMessageIndex]
+	for (let i = hookMessageIndex + 1; i < clineMessages.length; i++) {
+		if (clineMessages[i].say !== "hook_output_stream") {
+			break
+		}
+		indexesToDelete.push(i)
+	}
+
+	for (const index of indexesToDelete.reverse()) {
+		await messageStateHandler.deleteClineMessage(index)
+	}
+}
+
 /**
  * Reorders hook and tool messages so hook UI appears before tool UI.
  * This is called immediately after a hook message is created.
  *
  * The algorithm:
- * 1. Find the most recent tool message (ask or say with type "tool", "command", "use_mcp_server", or "browser_action_launch")
+ * 1. Find the most recent tool message (ask or say with type "tool", "command", or "use_mcp_server")
  * 2. Find any hook messages that came after it
  * 3. Delete the tool message
  * 4. Re-add the tool message at the end (after hook messages)
@@ -287,7 +352,7 @@ async function reorderHookAndToolMessages(messageStateHandler: MessageStateHandl
 	const clineMessages = messageStateHandler.getClineMessages()
 
 	// Define all message types that represent tool executions with PreToolUse hooks
-	const toolMessageTypes = ["tool", "command", "use_mcp_server", "browser_action_launch"]
+	const toolMessageTypes = ["tool", "command", "use_mcp_server"]
 
 	// Find the most recent tool message
 	let lastToolMessageIndex = -1

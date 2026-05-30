@@ -32,7 +32,7 @@ export const HelpPanelContent: React.FC<HelpPanelContentProps> = ({ onClose }) =
 	return (
 		<Panel label="Help">
 			<Box flexDirection="column" gap={1}>
-				<Text>Cline can edit files, run terminal commands, use the browser, and more with your permission.</Text>
+				<Text>Cline can edit files, run terminal commands, fetch external URLs, and more with your permission.</Text>
 
 				<Box flexDirection="column">
 					<Text bold>Plan vs Act Mode</Text>

@@ -20,7 +20,7 @@ interface MessagesAreaProps {
 
 /**
  * The scrollable messages area with virtualized list
- * Handles rendering of chat rows and browser sessions
+ * Handles rendering of chat rows and grouped tool content.
  */
 export const MessagesArea: React.FC<MessagesAreaProps> = ({
 	task,
@@ -239,8 +239,6 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 					rangeChanged={handleRangeChanged}
 					ref={virtuosoRef} // anything lower causes issues with followOutput
 					style={{
-						scrollbarWidth: "none", // Firefox
-						msOverflowStyle: "none", // IE/Edge
 						overflowAnchor: "none", // prevent scroll jump when content expands
 					}}
 				/>

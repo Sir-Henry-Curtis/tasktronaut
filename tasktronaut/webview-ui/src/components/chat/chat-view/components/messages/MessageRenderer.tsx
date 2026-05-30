@@ -1,7 +1,6 @@
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import type React from "react"
 import { useMemo } from "react"
-import BrowserSessionRow from "@/components/chat/BrowserSessionRow"
 import ChatRow from "@/components/chat/ChatRow"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { cn } from "@/lib/utils"
@@ -24,8 +23,8 @@ interface MessageRendererProps {
 }
 
 /**
- * Specialized component for rendering different message types
- * Handles browser sessions, regular messages, and checkpoint logic
+ * Specialized component for rendering different message types.
+ * Handles low-stakes tool groups and regular chat rows.
  */
 export const MessageRenderer: React.FC<MessageRendererProps> = ({
 	index,
@@ -81,20 +80,8 @@ export const MessageRenderer: React.FC<MessageRendererProps> = ({
 		return <ToolGroupRenderer allMessages={modifiedMessages} isLastGroup={isLastToolGroup} messages={messageOrGroup} />
 	}
 
-	// Browser session group
 	if (Array.isArray(messageOrGroup)) {
-		return (
-			<BrowserSessionRow
-				expandedRows={expandedRows}
-				isLast={isLastMessage}
-				key={messageOrGroup[0]?.ts}
-				lastModifiedMessage={modifiedMessages.at(-1)}
-				messages={messageOrGroup}
-				onHeightChange={onHeightChange}
-				onSetQuote={onSetQuote}
-				onToggleExpand={onToggleExpand}
-			/>
-		)
+		return null
 	}
 
 	// Regular message

@@ -82,7 +82,6 @@ The following tools are currently registered:
 - `access_mcp_resource`
 - `ask_followup_question`
 - `attempt_completion`
-- `browser_action`
 - `execute_command`
 - `focus_chain`
 - `list_code_definition_names`

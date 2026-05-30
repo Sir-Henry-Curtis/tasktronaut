@@ -27,6 +27,7 @@ tools: read_file, list_files, search_files
 modelId: sonnet
 role: worker
 isolation: worktree
+allowParallelSharedWorkspace: true
 ---
 
 You are a code reviewer.`
@@ -38,6 +39,7 @@ You are a code reviewer.`
 		assert.equal(parsed.modelId, "sonnet")
 		assert.equal(parsed.role, "worker")
 		assert.equal(parsed.isolation, "worktree")
+		assert.equal(parsed.allowParallelSharedWorkspace, true)
 		assert.deepEqual(parsed.tools, [ClineDefaultTool.FILE_READ, ClineDefaultTool.LIST_FILES, ClineDefaultTool.SEARCH])
 		assert.equal(parsed.systemPrompt, "You are a code reviewer.")
 	})

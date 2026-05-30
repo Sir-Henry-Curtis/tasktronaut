@@ -46,6 +46,7 @@ export const VSCODE_ONLY_COMMANDS: SlashCommand[] = [
 		section: "default",
 	},
 	// GSD core workflow
+	{ name: "gsd-map-project", description: "Classify and map a code or document project workspace", section: "default" },
 	{ name: "gsd-map-codebase", description: "Analyze existing codebase before starting a new project", section: "default" },
 	{ name: "gsd-new-project", description: "Initialize project with requirements and roadmap", section: "default" },
 	{ name: "gsd-discuss-phase", description: "Capture implementation decisions before planning", section: "default" },

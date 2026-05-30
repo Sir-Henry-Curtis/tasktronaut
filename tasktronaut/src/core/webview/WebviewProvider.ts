@@ -42,6 +42,11 @@ export abstract class WebviewProvider {
 	}
 
 	/**
+	 * Posts a raw message to the webview. No-op by default; overridden in VscodeWebviewProvider.
+	 */
+	public postRawMessageToWebview(_message: Record<string, unknown>): void {}
+
+	/**
 	 * Converts a local filesystem path to a URL that can be used within the webview.
 	 *
 	 * @param path - The local path to convert

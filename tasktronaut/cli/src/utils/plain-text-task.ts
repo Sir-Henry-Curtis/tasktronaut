@@ -220,7 +220,7 @@ function handleMessageForPipeMode(message: ClineMessage, verbose: boolean): void
 		if (message.ask === "api_req_failed") {
 			// Errors always go to stderr
 			process.stderr.write(`Error: API request failed: ${fullText}\n`)
-		} else if (message.ask === "tool" || message.ask === "command" || message.ask === "browser_action_launch") {
+		} else if (message.ask === "tool" || message.ask === "command") {
 			// These require approval - warn via stderr
 			process.stderr.write(`Waiting for approval: ${message.ask}\n`)
 		} else if (verbose) {

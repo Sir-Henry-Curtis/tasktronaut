@@ -190,7 +190,7 @@ const MarkdownText: React.FC<{ children: string; color?: string }> = ({ children
 interface ChatMessageProps {
 	message: ClineMessage
 	isStreaming?: boolean
-	mode?: "act" | "plan"
+	mode?: "act" | "plan" | "kiss"
 }
 
 /**
@@ -265,7 +265,7 @@ function getToolMainArg(_toolName: string, args: Record<string, unknown>): strin
 const ToolCallText: React.FC<{
 	toolName: string
 	args: Record<string, unknown>
-	mode?: "act" | "plan"
+	mode?: "act" | "plan" | "kiss"
 	isAsk?: boolean
 }> = ({ toolName, args, mode, isAsk = false }) => {
 	const desc = getToolDescription(toolName)
@@ -663,25 +663,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message, mode, isStrea
 	if (say === "api_req_started" && text) {
 		// Skip showing these - they're summarized in the status bar
 		return null
-	}
-
-	// Browser actions
-	if (say === "browser_action" || say === "browser_action_launch") {
-		return (
-			<Box flexDirection="column" marginBottom={1} width="100%">
-				<DotRow color={toolColor} flashing={partial === true && isStreaming}>
-					<Text>
-						<Text color={toolColor}>Cline used the browser</Text>
-						{text && (
-							<Text>
-								<Text color={toolColor}>: </Text>
-								<Text>{truncate(text, 50)}</Text>
-							</Text>
-						)}
-					</Text>
-				</DotRow>
-			</Box>
-		)
 	}
 
 	// MCP server

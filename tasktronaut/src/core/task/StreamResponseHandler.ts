@@ -334,7 +334,10 @@ class ReasoningHandler {
 			return null
 		}
 
-		if (!this.pendingReasoning.summary.length && !this.pendingReasoning.content) {
+		// Only discard if there's no id either — models like gpt-5.4 with reasoning_effort=high
+		// produce reasoning items with empty content/summary but a valid rs_... id that must
+		// be stored so the Responses API history can pair it with its subsequent function_call.
+		if (!this.pendingReasoning.id && !this.pendingReasoning.summary.length && !this.pendingReasoning.content) {
 			return null
 		}
 

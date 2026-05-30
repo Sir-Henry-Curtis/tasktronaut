@@ -5,7 +5,6 @@ import { act_mode_respond_variants } from "./act_mode_respond"
 import { apply_patch_variants } from "./apply_patch"
 import { ask_followup_question_variants } from "./ask_followup_question"
 import { attempt_completion_variants } from "./attempt_completion"
-import { browser_action_variants } from "./browser_action"
 import { execute_command_variants } from "./execute_command"
 import { focus_chain_variants } from "./focus_chain"
 import { generate_explanation_variants } from "./generate_explanation"
@@ -21,7 +20,6 @@ import { subagent_variants } from "./subagent"
 import { use_mcp_tool_variants } from "./use_mcp_tool"
 import { use_skill_variants } from "./use_skill"
 import { web_fetch_variants } from "./web_fetch"
-import { web_search_variants } from "./web_search"
 import { write_to_file_variants } from "./write_to_file"
 
 /**
@@ -36,7 +34,6 @@ export function registerClineToolSets(): void {
 		...act_mode_respond_variants,
 		...ask_followup_question_variants,
 		...attempt_completion_variants,
-		...browser_action_variants,
 		...execute_command_variants,
 		...focus_chain_variants,
 		...generate_explanation_variants,
@@ -52,7 +49,6 @@ export function registerClineToolSets(): void {
 		...use_mcp_tool_variants,
 		...use_skill_variants,
 		...web_fetch_variants,
-		...web_search_variants,
 		...write_to_file_variants,
 		...apply_patch_variants,
 	]

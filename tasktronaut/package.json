@@ -2,7 +2,7 @@
 	"name": "tasktronaut",
 	"displayName": "Tasktronaut",
 	"description": "Mission-ready coding assistant for structured engineering workflows, with file editing, terminal execution, controlled URL fetch, and human approval gates built into VS Code.",
-	"version": "1.1.3",
+	"version": "1.2.30",
 	"icon": "assets/icons/icon.png",
 	"workspaces": [
 		".",

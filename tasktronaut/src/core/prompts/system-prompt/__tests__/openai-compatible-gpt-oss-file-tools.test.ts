@@ -13,7 +13,6 @@ const makeContext = (modelId: string): SystemPromptContext => ({
 	supportsBrowserUse: true,
 	clineWebToolsEnabled: true,
 	focusChainSettings: { enabled: true, remindClineInterval: 6 },
-	browserSettings: { viewport: { width: 1280, height: 720 } },
 	isTesting: true,
 	enableNativeToolCalls: true,
 	providerInfo: {

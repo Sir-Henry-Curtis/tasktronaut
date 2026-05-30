@@ -3174,6 +3174,662 @@ Based on analysis of verification corpus (80% pass rate, 8 gaps):
 `,
 	},
 	{
+		targetPath: "references/continuation-format.md",
+		content: `# Continuation Format
+
+Standard format for presenting next steps after completing a command or workflow.
+
+## Core Structure
+
+\`\`\`
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**{identifier}: {name}** — {one-line description}
+
+\`/clear\` then:
+
+\`{command to copy-paste}\`
+
+---
+
+**Also available:**
+- \`{alternative option 1}\` — description
+- \`{alternative option 2}\` — description
+
+---
+\`\`\`
+
+> If \`project_code\` is not set in the init context, omit the project identity suffix:
+> \`## ▶ Next Up\` (no \` — [CODE] Title\`).
+
+## Format Rules
+
+1. **Always show what it is** — name + description, never just a command path
+2. **Pull context from source** — ROADMAP.md for phases, PLAN.md \`<objective>\` for plans
+3. **Command in inline code** — backticks, easy to copy-paste, renders as clickable link
+4. **\`/clear\` first** — always show \`/clear\` before the command so users run it in the correct order
+5. **"Also available" not "Other options"** — sounds more app-like
+6. **Visual separators** — \`---\` above and below to make it stand out
+7. **Project identity in heading** — include \`[PROJECT_CODE] PROJECT_TITLE\` from init context so handoffs are self-identifying across sessions. If \`project_code\` is not set, omit the suffix entirely (just \`## ▶ Next Up\`)
+
+## Variants
+
+### Execute Next Plan
+
+\`\`\`
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**02-03: Refresh Token Rotation** — Add /api/auth/refresh with sliding expiry
+
+\`/clear\` then:
+
+\`/gsd-execute-phase 2\`
+
+---
+
+**Also available:**
+- Review plan before executing
+- \`/gsd-list-phase-assumptions 2\` — check assumptions
+
+---
+\`\`\`
+
+### Execute Final Plan in Phase
+
+Add note that this is the last plan and what comes after:
+
+\`\`\`
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**02-03: Refresh Token Rotation** — Add /api/auth/refresh with sliding expiry
+<sub>Final plan in Phase 2</sub>
+
+\`/clear\` then:
+
+\`/gsd-execute-phase 2\`
+
+---
+
+**After this completes:**
+- Phase 2 → Phase 3 transition
+- Next: **Phase 3: Core Features** — User dashboard and settings
+
+---
+\`\`\`
+
+### Plan a Phase
+
+\`\`\`
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**Phase 2: Authentication** — JWT login flow with refresh tokens
+
+\`/clear\` then:
+
+\`/gsd-plan-phase 2\`
+
+---
+
+**Also available:**
+- \`/gsd-discuss-phase 2\` — gather context first
+- \`/gsd-research-phase 2\` — investigate unknowns
+- Review roadmap
+
+---
+\`\`\`
+
+### Phase Complete, Ready for Next
+
+Show completion status before next action:
+
+\`\`\`
+---
+
+## ✓ Phase 2 Complete
+
+3/3 plans executed
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**Phase 3: Core Features** — User dashboard, settings, and data export
+
+\`/clear\` then:
+
+\`/gsd-plan-phase 3\`
+
+---
+
+**Also available:**
+- \`/gsd-discuss-phase 3\` — gather context first
+- \`/gsd-research-phase 3\` — investigate unknowns
+- Review what Phase 2 built
+
+---
+\`\`\`
+
+### Multiple Equal Options
+
+When there's no clear primary action:
+
+\`\`\`
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**Phase 3: Core Features** — User dashboard, settings, and data export
+
+\`/clear\` then one of:
+
+**To plan directly:** \`/gsd-plan-phase 3\`
+
+**To discuss context first:** \`/gsd-discuss-phase 3\`
+
+**To research unknowns:** \`/gsd-research-phase 3\`
+
+---
+\`\`\`
+
+### Milestone Complete
+
+\`\`\`
+---
+
+## 🎉 Milestone v1.0 Complete
+
+All 4 phases shipped
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+**Start v1.1** — questioning → research → requirements → roadmap
+
+\`/clear\` then:
+
+\`/gsd-new-milestone\`
+
+---
+\`\`\`
+
+## Pulling Context
+
+### For phases (from ROADMAP.md):
+
+\`\`\`markdown
+### Phase 2: Authentication
+**Goal**: JWT login flow with refresh tokens
+\`\`\`
+
+Extract: \`**Phase 2: Authentication** — JWT login flow with refresh tokens\`
+
+### For plans (from ROADMAP.md):
+
+\`\`\`markdown
+Plans:
+- [ ] 02-03: Add refresh token rotation
+\`\`\`
+
+Or from PLAN.md \`<objective>\`:
+
+\`\`\`xml
+<objective>
+Add refresh token rotation with sliding expiry window.
+
+Purpose: Extend session lifetime without compromising security.
+</objective>
+\`\`\`
+
+Extract: \`**02-03: Refresh Token Rotation** — Add /api/auth/refresh with sliding expiry\`
+
+## Anti-Patterns
+
+### Don't: Command-only (no context)
+
+\`\`\`
+## To Continue
+
+Run \`/clear\`, then paste:
+/gsd-execute-phase 2
+\`\`\`
+
+User has no idea what 02-03 is about.
+
+### Don't: Missing /clear explanation
+
+\`\`\`
+\`/gsd-plan-phase 3\`
+
+Run /clear first.
+\`\`\`
+
+Doesn't explain why. User might skip it.
+
+### Don't: "Other options" language
+
+\`\`\`
+Other options:
+- Review roadmap
+\`\`\`
+
+Sounds like an afterthought. Use "Also available:" instead.
+
+### Don't: Fenced code blocks for commands
+
+\`\`\`
+\`\`\`
+/gsd-plan-phase 3
+\`\`\`
+\`\`\`
+
+Fenced blocks inside templates create nesting ambiguity. Use inline backticks instead.
+`,
+	},
+	{
+		targetPath: "references/scout-codebase.md",
+		content: `# Codebase scout — map selection table
+
+> Lazy-loaded reference for the \`scout_codebase\` step in
+> \`workflows/discuss-phase.md\` (extracted via #2551 progressive-disclosure
+> refactor). Read this only when prior \`.planning/codebase/*.md\` maps exist
+> and the workflow needs to pick which 2–3 to load.
+
+## Phase-type → recommended maps
+
+Read 2–3 maps based on inferred phase type. Do NOT read all seven —
+that inflates context without improving discussion quality.
+
+| Phase type (infer from title + ROADMAP entry) | Read these maps |
+|---|---|
+| UI / frontend / styling / design | CONVENTIONS.md, STRUCTURE.md, STACK.md |
+| Backend / API / service / data model | STACK.md, ARCHITECTURE.md, INTEGRATIONS.md |
+| Integration / third-party / provider | STACK.md, INTEGRATIONS.md, ARCHITECTURE.md |
+| Infrastructure / DevOps / CI / deploy | STACK.md, ARCHITECTURE.md, INTEGRATIONS.md |
+| Testing / QA / coverage | TESTING.md, CONVENTIONS.md, STRUCTURE.md |
+| Documentation / content | CONVENTIONS.md, STRUCTURE.md |
+| Mixed / unclear | STACK.md, ARCHITECTURE.md, CONVENTIONS.md |
+
+Read CONCERNS.md only if the phase explicitly addresses known concerns or
+security issues.
+
+## Single-read rule
+
+Read each map file in a **single** Read call. Do not read the same file at
+two different offsets — split reads break prompt-cache reuse and cost more
+than a single full read.
+
+## No-maps fallback
+
+If \`.planning/codebase/*.md\` does not exist:
+1. Extract key terms from the phase goal (e.g., "feed" → "post", "card",
+   "list"; "auth" → "login", "session", "token")
+2. \`grep -rlE "{term1}|{term2}" src/ app/ --include="*.ts" ...\` (use \`-E\`
+   for extended regex so the \`|\` alternation works on both GNU grep and BSD
+   grep / macOS), and \`ls\` the conventional component/hook/util dirs
+3. Read the 3–5 most relevant files
+
+## Output (internal \`<codebase_context>\`)
+
+From the scan, identify:
+- **Reusable assets** — components, hooks, utilities usable in this phase
+- **Established patterns** — state management, styling, data fetching
+- **Integration points** — routes, nav, providers where new code connects
+- **Creative options** — approaches the architecture enables or constrains
+
+Used in \`analyze_phase\` and \`present_gray_areas\`. NOT written to a file —
+session-only.
+`,
+	},
+	{
+		targetPath: "references/sketch-interactivity.md",
+		content: `# Making Sketches Feel Alive
+
+Static mockups are barely better than screenshots. Every interactive element in a sketch must respond to interaction.
+
+## Required Interactivity
+
+| Element | Must Have |
+|---------|-----------|
+| Buttons | Click handler with visible feedback (state change, animation, toast) |
+| Forms | Input validation on blur, submit handler that shows success state |
+| Lists | Add/remove items, empty state, populated state |
+| Toggles/switches | Working toggle with visible state change |
+| Tabs/nav | Click to switch content |
+| Modals/drawers | Open/close with transition |
+| Hover states | Every clickable element needs a hover effect |
+| Dropdowns | Open/close, item selection |
+
+## Transitions
+
+Add \`transition: all 0.15s ease\` as a baseline to interactive elements. Subtle motion makes the sketch feel real and helps judge whether the interaction pattern works.
+
+## Fake the Backend
+
+If the sketch shows a "Save" button, clicking it should show a brief loading state then a success message. If it shows a search bar, typing should filter hardcoded results. The goal is to feel the full interaction loop, not just see the resting state.
+
+## State Cycling
+
+If the sketch has multiple states (empty, loading, populated, error), include buttons to cycle through them. Label each state clearly. This lets the user experience how the design handles different data conditions.
+
+## Implementation
+
+Use vanilla JS in inline \`<script>\` tags. No frameworks, no build step. Keep it simple:
+
+\`\`\`html
+<script>
+  // Toggle a panel
+  document.querySelector('.panel-toggle').addEventListener('click', (e) => {
+    e.target.closest('.panel').classList.toggle('collapsed');
+  });
+</script>
+\`\`\`
+`,
+	},
+	{
+		targetPath: "references/sketch-theme-system.md",
+		content: `# Shared Theme System
+
+All sketches share a CSS variable theme so design decisions compound across sketches.
+
+## Setup
+
+On the first sketch, create \`.planning/sketches/themes/\` with a default theme:
+
+\`\`\`
+.planning/sketches/
+  themes/
+    default.css         <- all sketches link to this
+  001-dashboard-layout/
+    index.html          <- links to ../themes/default.css
+\`\`\`
+
+## Theme File Structure
+
+Each theme defines CSS custom properties only — no component styles, no layout rules. Just the visual vocabulary:
+
+\`\`\`css
+:root {
+  /* Colors */
+  --color-bg: #fafafa;
+  --color-surface: #ffffff;
+  --color-border: #e5e5e5;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b6b6b;
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-accent: #f59e0b;
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Shapes */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+}
+\`\`\`
+
+Adapt the default theme to match the mood/direction established during intake. The values above are a starting point — change colors, fonts, spacing, and shapes to match the agreed aesthetic.
+
+## Linking
+
+Every sketch links to the theme:
+
+\`\`\`html
+<link rel="stylesheet" href="../themes/default.css">
+\`\`\`
+
+## Creating New Themes
+
+When a sketch reveals an aesthetic fork ("should this feel clinical or warm?"), create both as theme files rather than arguing about it. The user can switch and feel the difference.
+
+Name themes descriptively: \`midnight.css\`, \`warm-minimal.css\`, \`brutalist.css\`.
+
+## Theme Switcher
+
+Include in every sketch (part of the sketch toolbar):
+
+\`\`\`html
+<select id="theme-switcher" onchange="document.querySelector('link[href*=themes]').href='../themes/'+this.value+'.css'">
+  <option value="default">Default</option>
+</select>
+\`\`\`
+
+Dynamically populate options by listing available theme files, or hardcode the known themes.
+`,
+	},
+	{
+		targetPath: "references/sketch-tooling.md",
+		content: `# Sketch Toolbar
+
+Include a small floating toolbar in every sketch. It provides utilities without competing with the actual design.
+
+## Implementation
+
+A small \`<div>\` fixed to the bottom-right, semi-transparent, expands on hover:
+
+\`\`\`html
+<div id="sketch-tools" style="position:fixed;bottom:12px;right:12px;z-index:9999;font-family:system-ui;font-size:12px;background:rgba(0,0,0,0.7);color:white;padding:8px 12px;border-radius:8px;opacity:0.4;transition:opacity 0.2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='0.4'">
+  <!-- Theme switcher -->
+  <!-- Viewport buttons -->
+  <!-- Annotation toggle -->
+</div>
+\`\`\`
+
+## Components
+
+### Theme Switcher
+
+A dropdown that swaps the theme CSS file at runtime:
+
+\`\`\`html
+<select onchange="document.querySelector('link[href*=themes]').href='../themes/'+this.value+'.css'">
+  <option value="default">Default</option>
+</select>
+\`\`\`
+
+### Viewport Preview
+
+Three buttons that constrain the sketch content area to standard widths:
+
+- Phone: 375px
+- Tablet: 768px
+- Desktop: 1280px (or full width)
+
+Implemented by wrapping sketch content in a container and adjusting its \`max-width\`.
+
+### Annotation Mode
+
+A toggle that overlays spacing values, color hex codes, and font sizes on hover. Implemented as a JS snippet that reads computed styles and shows them in a tooltip. Helps understand visual decisions without opening dev tools.
+
+## Styling
+
+The toolbar should be unobtrusive — small, dark, semi-transparent. It should never compete with the sketch visually. Style it independently of the theme (hardcoded dark background, white text).
+`,
+	},
+	{
+		targetPath: "references/sketch-variant-patterns.md",
+		content: `# Multi-Variant HTML Patterns
+
+Every sketch produces 2-3 variants in the same HTML file. The user switches between them to compare.
+
+## Tab-Based Variants
+
+The standard approach: a tab bar at the top of the page, each tab shows a different variant.
+
+\`\`\`html
+<div id="variant-nav" style="position:fixed;top:0;left:0;right:0;z-index:9998;background:var(--color-surface, #fff);border-bottom:1px solid var(--color-border, #e5e5e5);padding:8px 16px;display:flex;gap:8px;font-family:system-ui;">
+  <button class="variant-tab active" onclick="showVariant('a')">A: Sidebar Layout</button>
+  <button class="variant-tab" onclick="showVariant('b')">B: Top Nav</button>
+  <button class="variant-tab" onclick="showVariant('c')">C: Floating Panels</button>
+</div>
+
+<div id="variant-a" class="variant active">
+  <!-- Variant A content -->
+</div>
+<div id="variant-b" class="variant" style="display:none">
+  <!-- Variant B content -->
+</div>
+<div id="variant-c" class="variant" style="display:none">
+  <!-- Variant C content -->
+</div>
+
+<script>
+function showVariant(id) {
+  document.querySelectorAll('.variant').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.variant-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('variant-' + id).style.display = 'block';
+  event.target.classList.add('active');
+}
+</script>
+\`\`\`
+
+Add \`padding-top\` to the body to account for the fixed tab bar.
+
+## Marking the Winner
+
+After the user picks a direction, add a visual indicator to the winning tab:
+
+\`\`\`html
+<button class="variant-tab active">A: Sidebar Layout ★ Selected</button>
+\`\`\`
+
+Keep all variants visible and navigable — the winner is highlighted, not the only option.
+
+## Side-by-Side (for small variants)
+
+When comparing small elements (button styles, card layouts, icon treatments), render them next to each other with labels rather than using tabs:
+
+\`\`\`html
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:24px;">
+  <div>
+    <h3>A: Rounded</h3>
+    <!-- variant content -->
+  </div>
+  <div>
+    <h3>B: Sharp</h3>
+    <!-- variant content -->
+  </div>
+  <div>
+    <h3>C: Pill</h3>
+    <!-- variant content -->
+  </div>
+</div>
+\`\`\`
+
+## Variant Count
+
+- **First round (dramatic):** 2-3 meaningfully different approaches
+- **Refinement rounds:** 2-3 subtle variations within the chosen direction
+- **Never more than 4** — more than that overwhelms. If there are 5+ options, narrow before showing.
+
+## Synthesis Variants
+
+When the user cherry-picks elements across variants, create a new variant tab labeled descriptively:
+
+\`\`\`html
+<button class="variant-tab" onclick="showVariant('synth1')">Synthesis: A's layout + C's palette</button>
+\`\`\`
+`,
+	},
+	{
+		targetPath: "references/universal-anti-patterns.md",
+		content: `# Universal Anti-Patterns
+
+Rules that apply to ALL workflows and agents. Individual workflows may have additional specific anti-patterns.
+
+---
+
+## Context Budget Rules
+
+1. **Never** read agent definition files (\`agents/*.md\`) -- \`subagent_type\` auto-loads them. Reading agent definitions into the orchestrator wastes context for content automatically injected into subagent sessions.
+2. **Never** inline large files into subagent prompts -- tell agents to read files from disk instead. Agents have their own context windows.
+3. **Read depth scales with context window** -- check \`context_window\` in \`.planning/config.json\`. At < 500000: read only frontmatter, status fields, or summaries. At >= 500000 (1M model): full body reads permitted when content is needed for inline decisions. See \`references/context-budget.md\` for the complete table.
+4. **Delegate** heavy work to subagents -- the orchestrator routes, it does not build, analyze, research, investigate, or verify.
+5. **Proactive pause warning**: If you have already consumed significant context (large file reads, multiple subagent results), warn the user: "Context budget is getting heavy. Consider checkpointing progress."
+
+## File Reading Rules
+
+6. **SUMMARY.md read depth scales with context window** -- at context_window < 500000: read frontmatter only from prior phase SUMMARYs. At >= 500000: full body reads permitted for direct-dependency phases. Transitive dependencies (2+ phases back) remain frontmatter-only regardless.
+7. **Never** read full PLAN.md files from other phases -- only current phase plans.
+8. **Never** read \`.planning/logs/\` files -- only the health workflow reads these.
+9. **Do not** re-read full file contents when frontmatter is sufficient -- frontmatter contains status, key_files, commits, and provides fields. Exception: at >= 500000, re-reading full body is acceptable when semantic content is needed.
+
+## Subagent Rules
+
+10. **NEVER** use non-GSD agent types (\`general-purpose\`, \`Explore\`, \`Plan\`, \`Bash\`, \`feature-dev\`, etc.) -- ALWAYS use \`subagent_type: "gsd-{agent}"\` (e.g., \`gsd-phase-researcher\`, \`gsd-executor\`, \`gsd-planner\`). GSD agents have project-aware prompts, audit logging, and workflow context. Generic agents bypass all of this.
+11. **Do not** re-litigate decisions that are already locked in CONTEXT.md (or PROJECT.md ## Context section) -- respect locked decisions unconditionally.
+
+## Questioning Anti-Patterns
+
+Reference: \`references/questioning.md\` for the full anti-pattern list.
+
+12. **Do not** walk through checklists -- checklist walking (asking items one by one from a list) is the #1 anti-pattern. Instead, use progressive depth: start broad, dig where interesting.
+13. **Do not** use corporate speak -- avoid jargon like "stakeholder alignment", "synergize", "deliverables". Use plain language.
+14. **Do not** apply premature constraints -- don't narrow the solution space before understanding the problem. Ask about the problem first, then constrain.
+
+## State Management Anti-Patterns
+
+15. **No direct Write/Edit to STATE.md or ROADMAP.md for mutations.** Always use \`gsd-sdk query\` for registered state/roadmap handlers (e.g. \`state.update\`, \`state.advance-plan\`, \`roadmap.update-plan-progress\`), or legacy \`node …/gsd-tools.cjs\` for CLI-only commands. Direct Write tool usage bypasses safe update logic and is unsafe in multi-session environments. Exception: first-time creation of STATE.md from template is allowed.
+
+## Behavioral Rules
+
+16. **Do not** create artifacts the user did not approve -- always confirm before writing new planning documents.
+17. **Do not** modify files outside the workflow's stated scope -- check the plan's files_modified list.
+18. **Do not** suggest multiple next actions without clear priority -- one primary suggestion, alternatives listed secondary.
+19. **Do not** use \`git add .\` or \`git add -A\` -- stage specific files only.
+20. **Do not** include sensitive information (API keys, passwords, tokens) in planning documents or commits.
+
+## Error Recovery Rules
+
+21. **Git lock detection**: Before any git operation, if it fails with "Unable to create lock file", check for stale \`.git/index.lock\` and advise the user to remove it (do not remove automatically).
+22. **Config fallback awareness**: Config loading returns \`null\` silently on invalid JSON. If your workflow depends on config values, check for null and warn the user: "config.json is invalid or missing -- running with defaults."
+23. **Partial state recovery**: If STATE.md references a phase directory that doesn't exist, do not proceed silently. Warn the user and suggest diagnosing the mismatch.
+
+## GSD-Specific Rules
+
+24. **Do not** check for \`mode === 'auto'\` or \`mode === 'autonomous'\` -- GSD uses \`yolo\` config flag. Check \`yolo: true\` for autonomous mode, absence or \`false\` for interactive mode.
+25. **Prefer \`gsd-sdk query\`** for orchestration when a handler exists; when shelling out to the legacy CLI, use **\`gsd-tools.cjs\`** (not \`gsd-tools.js\` or any other filename) — GSD ships the programmatic API as CommonJS for Node.js CLI compatibility.
+26. **Plan files MUST follow \`{padded_phase}-{NN}-PLAN.md\` pattern** (e.g., \`01-01-PLAN.md\`). Never use \`PLAN-01.md\`, \`plan-01.md\`, or any other variation -- gsd-tools detection depends on this exact pattern.
+27. **Do not start executing the next plan before writing the SUMMARY.md for the current plan** -- downstream plans may reference it via \`@\` includes.
+
+## iOS / Apple Platform Rules
+
+28. **NEVER use \`Package.swift\` + \`.executableTarget\` (or \`.target\`) as the primary build system for iOS apps.** SPM executable targets produce macOS CLI binaries, not iOS \`.app\` bundles. They cannot be installed on iOS devices or submitted to the App Store. Use XcodeGen (\`project.yml\` + \`xcodegen generate\`) to create a proper \`.xcodeproj\`. See \`references/ios-scaffold.md\` for the full pattern.
+29. **Verify SwiftUI API availability before use.** Many SwiftUI APIs require a specific minimum iOS version (e.g., \`NavigationSplitView\` is iOS 16+, \`List(selection:)\` with multi-select and \`@Observable\` require iOS 17). If a plan uses an API that exceeds the declared \`IPHONEOS_DEPLOYMENT_TARGET\`, raise the deployment target or add \`#available\` guards.
+`,
+	},
+	{
 		targetPath: "templates/research-project/STACK.md",
 		content: `# Stack Research Template
 
@@ -4805,6 +5461,1442 @@ skipped: 0
 `,
 	},
 	{
+		targetPath: "templates/retrospective.md",
+		content: `# Project Retrospective
+
+*A living document updated after each milestone. Lessons feed forward into future planning.*
+
+## Milestone: v{version} — {name}
+
+**Shipped:** {date}
+**Phases:** {count} | **Plans:** {count} | **Sessions:** {count}
+
+### What Was Built
+- {Key deliverable 1}
+- {Key deliverable 2}
+- {Key deliverable 3}
+
+### What Worked
+- {Efficiency win or successful pattern}
+- {What went smoothly}
+
+### What Was Inefficient
+- {Missed opportunity}
+- {What took longer than expected}
+
+### Patterns Established
+- {New pattern or convention that should persist}
+
+### Key Lessons
+1. {Specific, actionable lesson}
+2. {Another lesson}
+
+### Cost Observations
+- Model mix: {X}% opus, {Y}% sonnet, {Z}% haiku
+- Sessions: {count}
+- Notable: {efficiency observation}
+
+---
+
+## Cross-Milestone Trends
+
+### Process Evolution
+
+| Milestone | Sessions | Phases | Key Change |
+|-----------|----------|--------|------------|
+| v{X} | {N} | {M} | {What changed in process} |
+
+### Cumulative Quality
+
+| Milestone | Tests | Coverage | Zero-Dep Additions |
+|-----------|-------|----------|-------------------|
+| v{X} | {N} | {Y}% | {count} |
+
+### Top Lessons (Verified Across Milestones)
+
+1. {Lesson verified by multiple milestones}
+2. {Another cross-validated lesson}
+`,
+	},
+	{
+		targetPath: "templates/roadmap.md",
+		content: `# Roadmap Template
+
+Template for \`.planning/ROADMAP.md\`.
+
+## Initial Roadmap (v1.0 Greenfield)
+
+\`\`\`markdown
+# Roadmap: [Project Name]
+
+## Overview
+
+[One paragraph describing the journey from start to finish]
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+Decimal phases appear between their surrounding integers in numeric order.
+
+- [ ] **Phase 1: [Name]** - [One-line description]
+- [ ] **Phase 2: [Name]** - [One-line description]
+- [ ] **Phase 3: [Name]** - [One-line description]
+- [ ] **Phase 4: [Name]** - [One-line description]
+
+## Phase Details
+
+### Phase 1: [Name]
+**Goal**: [What this phase delivers]
+**Depends on**: Nothing (first phase)
+**Requirements**: [REQ-01, REQ-02, REQ-03]  <!-- brackets optional, parser handles both formats -->
+**Success Criteria** (what must be TRUE):
+  1. [Observable behavior from user perspective]
+  2. [Observable behavior from user perspective]
+  3. [Observable behavior from user perspective]
+**Plans**: [Number of plans, e.g., "3 plans" or "TBD"]
+
+Plans:
+- [ ] 01-01: [Brief description of first plan]
+- [ ] 01-02: [Brief description of second plan]
+- [ ] 01-03: [Brief description of third plan]
+
+### Phase 2: [Name]
+**Goal**: [What this phase delivers]
+**Depends on**: Phase 1
+**Requirements**: [REQ-04, REQ-05]
+**Success Criteria** (what must be TRUE):
+  1. [Observable behavior from user perspective]
+  2. [Observable behavior from user perspective]
+**Plans**: [Number of plans]
+
+Plans:
+- [ ] 02-01: [Brief description]
+- [ ] 02-02: [Brief description]
+
+### Phase 2.1: Critical Fix (INSERTED)
+**Goal**: [Urgent work inserted between phases]
+**Depends on**: Phase 2
+**Success Criteria** (what must be TRUE):
+  1. [What the fix achieves]
+**Plans**: 1 plan
+
+Plans:
+- [ ] 02.1-01: [Description]
+
+### Phase 3: [Name]
+**Goal**: [What this phase delivers]
+**Depends on**: Phase 2
+**Requirements**: [REQ-06, REQ-07, REQ-08]
+**Success Criteria** (what must be TRUE):
+  1. [Observable behavior from user perspective]
+  2. [Observable behavior from user perspective]
+  3. [Observable behavior from user perspective]
+**Plans**: [Number of plans]
+
+Plans:
+- [ ] 03-01: [Brief description]
+- [ ] 03-02: [Brief description]
+
+### Phase 4: [Name]
+**Goal**: [What this phase delivers]
+**Depends on**: Phase 3
+**Requirements**: [REQ-09, REQ-10]
+**Success Criteria** (what must be TRUE):
+  1. [Observable behavior from user perspective]
+  2. [Observable behavior from user perspective]
+**Plans**: [Number of plans]
+
+Plans:
+- [ ] 04-01: [Brief description]
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 2 → 2.1 → 2.2 → 3 → 3.1 → 4
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. [Name] | 0/3 | Not started | - |
+| 2. [Name] | 0/2 | Not started | - |
+| 3. [Name] | 0/2 | Not started | - |
+| 4. [Name] | 0/1 | Not started | - |
+\`\`\`
+
+<guidelines>
+**Initial planning (v1.0):**
+- Phase count depends on granularity setting (coarse: 3-5, standard: 5-8, fine: 8-12)
+- Each phase delivers something coherent
+- Phases can have 1+ plans (split if >3 tasks or multiple subsystems)
+- Plans use naming: {phase}-{plan}-PLAN.md (e.g., 01-02-PLAN.md)
+- No time estimates (this isn't enterprise PM)
+- Progress table updated by execute workflow
+- Plan count can be "TBD" initially, refined during planning
+
+**Success criteria:**
+- 2-5 observable behaviors per phase (from user's perspective)
+- Cross-checked against requirements during roadmap creation
+- Flow downstream to \`must_haves\` in plan-phase
+- Verified by verify-phase after execution
+- Format: "User can [action]" or "[Thing] works/exists"
+
+**After milestones ship:**
+- Collapse completed milestones in \`<details>\` tags
+- Add new milestone sections for upcoming work
+- Keep continuous phase numbering (never restart at 01)
+</guidelines>
+
+<status_values>
+- \`Not started\` - Haven't begun
+- \`In progress\` - Currently working
+- \`Complete\` - Done (add completion date)
+- \`Deferred\` - Pushed to later (with reason)
+</status_values>
+
+## Milestone-Grouped Roadmap (After v1.0 Ships)
+
+After completing first milestone, reorganize with milestone groupings:
+
+\`\`\`markdown
+# Roadmap: [Project Name]
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-4 (shipped YYYY-MM-DD)
+- 🚧 **v1.1 [Name]** - Phases 5-6 (in progress)
+- 📋 **v2.0 [Name]** - Phases 7-10 (planned)
+
+## Phases
+
+<details>
+<summary>✅ v1.0 MVP (Phases 1-4) - SHIPPED YYYY-MM-DD</summary>
+
+### Phase 1: [Name]
+**Goal**: [What this phase delivers]
+**Plans**: 3 plans
+
+Plans:
+- [x] 01-01: [Brief description]
+- [x] 01-02: [Brief description]
+- [x] 01-03: [Brief description]
+
+[... remaining v1.0 phases ...]
+
+</details>
+
+### 🚧 v1.1 [Name] (In Progress)
+
+**Milestone Goal:** [What v1.1 delivers]
+
+#### Phase 5: [Name]
+**Goal**: [What this phase delivers]
+**Depends on**: Phase 4
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01: [Brief description]
+- [ ] 05-02: [Brief description]
+
+[... remaining v1.1 phases ...]
+
+### 📋 v2.0 [Name] (Planned)
+
+**Milestone Goal:** [What v2.0 delivers]
+
+[... v2.0 phases ...]
+
+## Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation | v1.0 | 3/3 | Complete | YYYY-MM-DD |
+| 2. Features | v1.0 | 2/2 | Complete | YYYY-MM-DD |
+| 5. Security | v1.1 | 0/2 | Not started | - |
+\`\`\`
+
+**Notes:**
+- Milestone emoji: ✅ shipped, 🚧 in progress, 📋 planned
+- Completed milestones collapsed in \`<details>\` for readability
+- Current/future milestones expanded
+- Continuous phase numbering (01-99)
+- Progress table includes milestone column
+`,
+	},
+	{
+		targetPath: "templates/state.md",
+		content: `# State Template
+
+Template for \`.planning/STATE.md\` — the project's living memory.
+
+---
+
+## File Template
+
+\`\`\`markdown
+# Project State
+
+## Project Reference
+
+See: .planning/PROJECT.md (updated [date])
+
+**Core value:** [One-liner from PROJECT.md Core Value section]
+**Current focus:** [Current phase name]
+
+## Current Position
+
+Phase: [X] of [Y] ([Phase name])
+Plan: [A] of [B] in current phase
+Status: [Ready to plan / Planning / Ready to execute / In progress / Phase complete]
+Last activity: [YYYY-MM-DD] — [What happened]
+
+Progress: [░░░░░░░░░░] 0%
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: [N]
+- Average duration: [X] min
+- Total execution time: [X.X] hours
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: [durations]
+- Trend: [Improving / Stable / Degrading]
+
+*Updated after each plan completion*
+
+## Accumulated Context
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [Phase X]: [Decision summary]
+- [Phase Y]: [Decision summary]
+
+### Pending Todos
+
+[From .planning/todos/pending/ — ideas captured during sessions]
+
+None yet.
+
+### Blockers/Concerns
+
+[Issues that affect future work]
+
+None yet.
+
+## Deferred Items
+
+Items acknowledged and carried forward from previous milestone close:
+
+| Category | Item | Status | Deferred At |
+|----------|------|--------|-------------|
+| *(none)* | | | |
+
+## Session Continuity
+
+Last session: [YYYY-MM-DD HH:MM]
+Stopped at: [Description of last completed action]
+Resume file: [Path to .continue-here*.md if exists, otherwise "None"]
+\`\`\`
+
+<purpose>
+
+STATE.md is the project's short-term memory spanning all phases and sessions.
+
+**Problem it solves:** Information is captured in summaries, issues, and decisions but not systematically consumed. Sessions start without context.
+
+**Solution:** A single, small file that's:
+- Read first in every workflow
+- Updated after every significant action
+- Contains digest of accumulated context
+- Enables instant session restoration
+
+</purpose>
+
+<lifecycle>
+
+**Creation:** After ROADMAP.md is created (during init)
+- Reference PROJECT.md (read it for current context)
+- Initialize empty accumulated context sections
+- Set position to "Phase 1 ready to plan"
+
+**Reading:** First step of every workflow
+- progress: Present status to user
+- plan: Inform planning decisions
+- execute: Know current position
+- transition: Know what's complete
+
+**Writing:** After every significant action
+- execute: After SUMMARY.md created
+  - Update position (phase, plan, status)
+  - Note new decisions (detail in PROJECT.md)
+  - Add blockers/concerns
+- transition: After phase marked complete
+  - Update progress bar
+  - Clear resolved blockers
+  - Refresh Project Reference date
+
+</lifecycle>
+
+<sections>
+
+### Project Reference
+Points to PROJECT.md for full context. Includes:
+- Core value (the ONE thing that matters)
+- Current focus (which phase)
+- Last update date (triggers re-read if stale)
+
+Claude reads PROJECT.md directly for requirements, constraints, and decisions.
+
+### Current Position
+Where we are right now:
+- Phase X of Y — which phase
+- Plan A of B — which plan within phase
+- Status — current state
+- Last activity — what happened most recently
+- Progress bar — visual indicator of overall completion
+
+Progress calculation: (completed plans) / (total plans across all phases) × 100%
+
+### Performance Metrics
+Track velocity to understand execution patterns:
+- Total plans completed
+- Average duration per plan
+- Per-phase breakdown
+- Recent trend (improving/stable/degrading)
+
+Updated after each plan completion.
+
+### Accumulated Context
+
+**Decisions:** Reference to PROJECT.md Key Decisions table, plus recent decisions summary for quick access. Full decision log lives in PROJECT.md.
+
+**Pending Todos:** Ideas captured via /gsd-add-todo
+- Count of pending todos
+- Reference to .planning/todos/pending/
+- Brief list if few, count if many (e.g., "5 pending todos — see /gsd-check-todos")
+
+**Blockers/Concerns:** From "Next Phase Readiness" sections
+- Issues that affect future work
+- Prefix with originating phase
+- Cleared when addressed
+
+### Session Continuity
+Enables instant resumption:
+- When was last session
+- What was last completed
+- Is there a .continue-here file to resume from
+
+</sections>
+
+<size_constraint>
+
+Keep STATE.md under 100 lines.
+
+It's a DIGEST, not an archive. If accumulated context grows too large:
+- Keep only 3-5 recent decisions in summary (full log in PROJECT.md)
+- Keep only active blockers, remove resolved ones
+
+The goal is "read once, know where we are" — if it's too long, that fails.
+
+</size_constraint>
+`,
+	},
+	{
+		targetPath: "references/git-integration.md",
+		content: `<overview>
+Git integration for GSD framework.
+</overview>
+
+<core_principle>
+
+**Commit outcomes, not process.**
+
+The git log should read like a changelog of what shipped, not a diary of planning activity.
+</core_principle>
+
+<commit_points>
+
+| Event                   | Commit? | Why                                              |
+| ----------------------- | ------- | ------------------------------------------------ |
+| BRIEF + ROADMAP created | YES     | Project initialization                           |
+| PLAN.md created         | NO      | Intermediate - commit with plan completion       |
+| RESEARCH.md created     | NO      | Intermediate                                     |
+| DISCOVERY.md created    | NO      | Intermediate                                     |
+| **Task completed**      | YES     | Atomic unit of work (1 commit per task)         |
+| **Plan completed**      | YES     | Metadata commit (SUMMARY + STATE + ROADMAP)     |
+| Handoff created         | YES     | WIP state preserved                              |
+
+</commit_points>
+
+<git_check>
+
+\`\`\`bash
+[ -d .git ] && echo "GIT_EXISTS" || echo "NO_GIT"
+\`\`\`
+
+If NO_GIT: Run \`git init\` silently. GSD projects always get their own repo.
+</git_check>
+
+<commit_formats>
+
+<format name="initialization">
+## Project Initialization (brief + roadmap together)
+
+\`\`\`
+docs: initialize [project-name] ([N] phases)
+
+[One-liner from PROJECT.md]
+
+Phases:
+1. [phase-name]: [goal]
+2. [phase-name]: [goal]
+3. [phase-name]: [goal]
+\`\`\`
+
+What to commit:
+
+\`\`\`bash
+gsd-sdk query commit "docs: initialize [project-name] ([N] phases)" --files .planning/
+\`\`\`
+
+</format>
+
+<format name="task-completion">
+## Task Completion (During Plan Execution)
+
+Each task gets its own commit immediately after completion.
+
+> **Parallel agents:** When running as a parallel executor (spawned by execute-phase),
+> use \`--no-verify\` on all commits to avoid pre-commit hook lock contention.
+> The orchestrator validates hooks once after all agents complete.
+
+\`\`\`
+{type}({phase}-{plan}): {task-name}
+
+- [Key change 1]
+- [Key change 2]
+- [Key change 3]
+\`\`\`
+
+**Commit types:**
+- \`feat\` - New feature/functionality
+- \`fix\` - Bug fix
+- \`test\` - Test-only (TDD RED phase)
+- \`refactor\` - Code cleanup (TDD REFACTOR phase)
+- \`perf\` - Performance improvement
+- \`chore\` - Dependencies, config, tooling
+
+**Examples:**
+
+\`\`\`bash
+# Standard task
+git add src/api/auth.ts src/types/user.ts
+git commit -m "feat(08-02): create user registration endpoint
+
+- POST /auth/register validates email and password
+- Checks for duplicate users
+- Returns JWT token on success
+"
+
+# TDD task - RED phase
+git add src/__tests__/jwt.test.ts
+git commit -m "test(07-02): add failing test for JWT generation
+
+- Tests token contains user ID claim
+- Tests token expires in 1 hour
+- Tests signature verification
+"
+
+# TDD task - GREEN phase
+git add src/utils/jwt.ts
+git commit -m "feat(07-02): implement JWT generation
+
+- Uses jose library for signing
+- Includes user ID and expiry claims
+- Signs with HS256 algorithm
+"
+\`\`\`
+
+</format>
+
+<format name="plan-completion">
+## Plan Completion (After All Tasks Done)
+
+After all tasks committed, one final metadata commit captures plan completion.
+
+\`\`\`
+docs({phase}-{plan}): complete [plan-name] plan
+
+Tasks completed: [N]/[N]
+- [Task 1 name]
+- [Task 2 name]
+- [Task 3 name]
+
+SUMMARY: .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md
+\`\`\`
+
+What to commit:
+
+\`\`\`bash
+gsd-sdk query commit "docs({phase}-{plan}): complete [plan-name] plan" --files .planning/phases/XX-name/{phase}-{plan}-PLAN.md .planning/phases/XX-name/{phase}-{plan}-SUMMARY.md .planning/STATE.md .planning/ROADMAP.md
+\`\`\`
+
+**Note:** Code files NOT included - already committed per-task.
+
+</format>
+
+<format name="handoff">
+## Handoff (WIP)
+
+\`\`\`
+wip: [phase-name] paused at task [X]/[Y]
+
+Current: [task name]
+[If blocked:] Blocked: [reason]
+\`\`\`
+
+What to commit:
+
+\`\`\`bash
+gsd-sdk query commit "wip: [phase-name] paused at task [X]/[Y]" --files .planning/
+\`\`\`
+
+</format>
+</commit_formats>
+
+<example_log>
+
+**Old approach (per-plan commits):**
+\`\`\`
+a7f2d1 feat(checkout): Stripe payments with webhook verification
+3e9c4b feat(products): catalog with search, filters, and pagination
+8a1b2c feat(auth): JWT with refresh rotation using jose
+5c3d7e feat(foundation): Next.js 15 + Prisma + Tailwind scaffold
+2f4a8d docs: initialize ecommerce-app (5 phases)
+\`\`\`
+
+**New approach (per-task commits):**
+\`\`\`
+# Phase 04 - Checkout
+1a2b3c docs(04-01): complete checkout flow plan
+4d5e6f feat(04-01): add webhook signature verification
+7g8h9i feat(04-01): implement payment session creation
+0j1k2l feat(04-01): create checkout page component
+
+# Phase 03 - Products
+3m4n5o docs(03-02): complete product listing plan
+6p7q8r feat(03-02): add pagination controls
+9s0t1u feat(03-02): implement search and filters
+2v3w4x feat(03-01): create product catalog schema
+
+# Phase 02 - Auth
+5y6z7a docs(02-02): complete token refresh plan
+8b9c0d feat(02-02): implement refresh token rotation
+1e2f3g test(02-02): add failing test for token refresh
+4h5i6j docs(02-01): complete JWT setup plan
+7k8l9m feat(02-01): add JWT generation and validation
+0n1o2p chore(02-01): install jose library
+
+# Phase 01 - Foundation
+3q4r5s docs(01-01): complete scaffold plan
+6t7u8v feat(01-01): configure Tailwind and globals
+9w0x1y feat(01-01): set up Prisma with database
+2z3a4b feat(01-01): create Next.js 15 project
+
+# Initialization
+5c6d7e docs: initialize ecommerce-app (5 phases)
+\`\`\`
+
+Each plan produces 2-4 commits (tasks + metadata). Clear, granular, bisectable.
+
+</example_log>
+
+<anti_patterns>
+
+**Still don't commit (intermediate artifacts):**
+- PLAN.md creation (commit with plan completion)
+- RESEARCH.md (intermediate)
+- DISCOVERY.md (intermediate)
+- Minor planning tweaks
+- "Fixed typo in roadmap"
+
+**Do commit (outcomes):**
+- Each task completion (feat/fix/test/refactor)
+- Plan completion metadata (docs)
+- Project initialization (docs)
+
+**Key principle:** Commit working code and shipped outcomes, not planning process.
+
+</anti_patterns>
+
+<commit_strategy_rationale>
+
+## Why Per-Task Commits?
+
+**Context engineering for AI:**
+- Git history becomes primary context source for future Claude sessions
+- \`git log --grep="{phase}-{plan}"\` shows all work for a plan
+- \`git diff <hash>^..<hash>\` shows exact changes per task
+- Less reliance on parsing SUMMARY.md = more context for actual work
+
+**Failure recovery:**
+- Task 1 committed ✅, Task 2 failed ❌
+- Claude in next session: sees task 1 complete, can retry task 2
+- Can \`git reset --hard\` to last successful task
+
+**Debugging:**
+- \`git bisect\` finds exact failing task, not just failing plan
+- \`git blame\` traces line to specific task context
+- Each commit is independently revertable
+
+**Observability:**
+- Solo developer + Claude workflow benefits from granular attribution
+- Atomic commits are git best practice
+- "Commit noise" irrelevant when consumer is Claude, not humans
+
+</commit_strategy_rationale>
+
+<sub_repos_support>
+
+## Multi-Repo Workspace Support (sub_repos)
+
+For workspaces with separate git repos (e.g., \`backend/\`, \`frontend/\`, \`shared/\`), GSD routes commits to each repo independently.
+
+### Configuration
+
+In \`.planning/config.json\`, list sub-repo directories under \`planning.sub_repos\`:
+
+\`\`\`json
+{
+  "planning": {
+    "commit_docs": false,
+    "sub_repos": ["backend", "frontend", "shared"]
+  }
+}
+\`\`\`
+
+Set \`commit_docs: false\` so planning docs stay local and are not committed to any sub-repo.
+
+### How It Works
+
+1. **Auto-detection:** During \`/gsd-new-project\`, directories with their own \`.git\` folder are detected and offered for selection as sub-repos. On subsequent runs, \`loadConfig\` auto-syncs the \`sub_repos\` list with the filesystem — adding newly created repos and removing deleted ones. This means \`config.json\` may be rewritten automatically when repos change on disk.
+2. **File grouping:** Code files are grouped by their sub-repo prefix (e.g., \`backend/src/api/users.ts\` belongs to the \`backend/\` repo).
+3. **Independent commits:** Each sub-repo receives its own atomic commit via \`gsd-tools.cjs commit-to-subrepo\`. File paths are made relative to the sub-repo root before staging.
+4. **Planning stays local:** The \`.planning/\` directory is not committed; it acts as cross-repo coordination.
+
+### Commit Routing
+
+Instead of the standard \`commit\` command, use \`commit-to-subrepo\` when \`sub_repos\` is configured:
+
+\`\`\`bash
+gsd-sdk query commit-to-subrepo "feat(02-01): add user API" \\
+  --files backend/src/api/users.ts backend/src/types/user.ts frontend/src/components/UserForm.tsx
+\`\`\`
+
+This stages \`src/api/users.ts\` and \`src/types/user.ts\` in the \`backend/\` repo, and \`src/components/UserForm.tsx\` in the \`frontend/\` repo, then commits each independently with the same message.
+
+Files that don't match any configured sub-repo are reported as unmatched.
+
+</sub_repos_support>
+`,
+	},
+	{
+		targetPath: "references/user-profiling.md",
+		content: `# User Profiling: Detection Heuristics Reference
+
+This reference document defines detection heuristics for behavioral profiling across 8 dimensions. The gsd-user-profiler agent applies these rules when analyzing extracted session messages. Do not invent dimensions or scoring rules beyond what is defined here.
+
+## How to Use This Document
+
+1. The gsd-user-profiler agent reads this document before analyzing any messages
+2. For each dimension, the agent scans messages for the signal patterns defined below
+3. The agent applies the detection heuristics to classify the developer's pattern
+4. Confidence is scored using the thresholds defined per dimension
+5. Evidence quotes are curated using the rules in the Evidence Curation section
+6. Output must conform to the JSON schema in the Output Schema section
+
+---
+
+## Dimensions
+
+### 1. Communication Style
+
+\`dimension_id: communication_style\`
+
+**What we're measuring:** How the developer phrases requests, instructions, and feedback -- the structural pattern of their messages to Claude.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`terse-direct\` | Short, imperative messages with minimal context. Gets to the point immediately. |
+| \`conversational\` | Medium-length messages mixing instructions with questions and thinking-aloud. Natural, informal tone. |
+| \`detailed-structured\` | Long messages with explicit structure -- headers, numbered lists, problem statements, pre-analysis. |
+| \`mixed\` | No dominant pattern; style shifts based on task type or project context. |
+
+**Signal patterns:**
+
+1. **Message length distribution** -- Average word count across messages. Terse < 50 words, conversational 50-200 words, detailed > 200 words.
+2. **Imperative-to-interrogative ratio** -- Ratio of commands ("fix this", "add X") to questions ("what do you think?", "should we?"). High imperative ratio suggests terse-direct.
+3. **Structural formatting** -- Presence of markdown headers, numbered lists, code blocks, or bullet points within messages. Frequent formatting suggests detailed-structured.
+4. **Context preambles** -- Whether the developer provides background/context before making a request. Preambles suggest conversational or detailed-structured.
+5. **Sentence completeness** -- Whether messages use full sentences or fragments/shorthand. Fragments suggest terse-direct.
+6. **Follow-up pattern** -- Whether the developer provides additional context in subsequent messages (multi-message requests suggest conversational).
+
+**Detection heuristics:**
+
+1. If average message length < 50 words AND predominantly imperative mood AND minimal formatting --> \`terse-direct\`
+2. If average message length 50-200 words AND mix of imperative and interrogative AND occasional formatting --> \`conversational\`
+3. If average message length > 200 words AND frequent structural formatting AND context preambles present --> \`detailed-structured\`
+4. If message length variance is high (std dev > 60% of mean) AND no single pattern dominates (< 60% of messages match one style) --> \`mixed\`
+5. If pattern varies systematically by project type (e.g., terse in CLI projects, detailed in frontend) --> \`mixed\` with context-dependent note
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ messages showing consistent pattern (> 70% match), same pattern observed across 2+ projects
+- **MEDIUM:** 5-9 messages showing pattern, OR pattern consistent within 1 project only
+- **LOW:** < 5 messages with relevant signals, OR mixed signals (contradictory patterns observed in similar contexts)
+- **UNSCORED:** 0 messages with relevant signals for this dimension
+
+**Example quotes:**
+
+- **terse-direct:** "fix the auth bug" / "add pagination to the list endpoint" / "this test is failing, make it pass"
+- **conversational:** "I'm thinking we should probably handle the error case here. What do you think about returning a 422 instead of a 500? The client needs to know it was a validation issue."
+- **detailed-structured:** "## Context\\nThe auth flow currently uses session cookies but we need to migrate to JWT.\\n\\n## Requirements\\n1. Access tokens (15min expiry)\\n2. Refresh tokens (7-day)\\n3. httpOnly cookies\\n\\n## What I've tried\\nI looked at jose and jsonwebtoken..."
+
+**Context-dependent patterns:**
+
+When communication style varies systematically by project or task type, report the split rather than forcing a single rating. Example: "context-dependent: terse-direct for bug fixes and CLI tooling, detailed-structured for architecture and frontend work." Phase 3 orchestration resolves context-dependent splits by presenting the split to the user.
+
+---
+
+### 2. Decision Speed
+
+\`dimension_id: decision_speed\`
+
+**What we're measuring:** How quickly the developer makes choices when Claude presents options, alternatives, or trade-offs.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`fast-intuitive\` | Decides immediately based on experience or gut feeling. Minimal deliberation. |
+| \`deliberate-informed\` | Requests comparison or summary before deciding. Wants to understand trade-offs. |
+| \`research-first\` | Delays decision to research independently. May leave and return with findings. |
+| \`delegator\` | Defers to Claude's recommendation. Trusts the suggestion. |
+
+**Signal patterns:**
+
+1. **Response latency to options** -- How many messages between Claude presenting options and developer choosing. Immediate (same message or next) suggests fast-intuitive.
+2. **Comparison requests** -- Presence of "compare these", "what are the trade-offs?", "pros and cons?" suggests deliberate-informed.
+3. **External research indicators** -- Messages like "I looked into X and...", "according to the docs...", "I read that..." suggest research-first.
+4. **Delegation language** -- "just pick one", "whatever you recommend", "your call", "go with the best option" suggests delegator.
+5. **Decision reversal frequency** -- How often the developer changes a decision after making it. Frequent reversals may indicate fast-intuitive with low confidence.
+
+**Detection heuristics:**
+
+1. If developer selects options within 1-2 messages of presentation AND uses decisive language ("use X", "go with A") AND rarely asks for comparisons --> \`fast-intuitive\`
+2. If developer requests trade-off analysis or comparison tables AND decides after receiving comparison AND asks clarifying questions --> \`deliberate-informed\`
+3. If developer defers decisions with "let me look into this" AND returns with external information AND cites documentation or articles --> \`research-first\`
+4. If developer uses delegation language (> 3 instances) AND rarely overrides Claude's choices AND says "sounds good" or "your call" --> \`delegator\`
+5. If no clear pattern OR evidence is split across multiple styles --> classify as the dominant style with a context-dependent note
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ decision points observed showing consistent pattern, same pattern across 2+ projects
+- **MEDIUM:** 5-9 decision points, OR consistent within 1 project only
+- **LOW:** < 5 decision points observed, OR mixed decision-making styles
+- **UNSCORED:** 0 messages containing decision-relevant signals
+
+**Example quotes:**
+
+- **fast-intuitive:** "Use Tailwind. Next question." / "Option B, let's move on"
+- **deliberate-informed:** "Can you compare Prisma vs Drizzle for this use case? I want to understand the migration story and type safety differences before I pick."
+- **research-first:** "Hold off on the DB choice -- I want to read the Drizzle docs and check their GitHub issues first. I'll come back with a decision."
+- **delegator:** "You know more about this than me. Whatever you recommend, go with it."
+
+**Context-dependent patterns:**
+
+Decision speed often varies by stakes. A developer may be fast-intuitive for styling choices but research-first for database or auth decisions. When this pattern is clear, report the split: "context-dependent: fast-intuitive for low-stakes (styling, naming), deliberate-informed for high-stakes (architecture, security)."
+
+---
+
+### 3. Explanation Depth
+
+\`dimension_id: explanation_depth\`
+
+**What we're measuring:** How much explanation the developer wants alongside code -- their preference for understanding vs. speed.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`code-only\` | Wants working code with minimal or no explanation. Reads and understands code directly. |
+| \`concise\` | Wants brief explanation of approach with code. Key decisions noted, not exhaustive. |
+| \`detailed\` | Wants thorough walkthrough of the approach, reasoning, and code. Appreciates structure. |
+| \`educational\` | Wants deep conceptual explanation. Treats interactions as learning opportunities. |
+
+**Signal patterns:**
+
+1. **Explicit depth requests** -- "just show me the code", "explain why", "teach me about X", "skip the explanation"
+2. **Reaction to explanations** -- Does the developer skip past explanations? Ask for more detail? Say "too much"?
+3. **Follow-up question depth** -- Surface-level follow-ups ("does it work?") vs. conceptual ("why this pattern over X?")
+4. **Code comprehension signals** -- Does the developer reference implementation details in their messages? This suggests they read and understand code directly.
+5. **"I know this" signals** -- Messages like "I'm familiar with X", "skip the basics", "I know how hooks work" indicate lower explanation preference.
+
+**Detection heuristics:**
+
+1. If developer says "just the code" or "skip the explanation" AND rarely asks follow-up conceptual questions AND references code details directly --> \`code-only\`
+2. If developer accepts brief explanations without asking for more AND asks focused follow-ups about specific decisions --> \`concise\`
+3. If developer asks "why" questions AND requests walkthroughs AND appreciates structured explanations --> \`detailed\`
+4. If developer asks conceptual questions beyond the immediate task AND uses learning language ("I want to understand", "teach me") --> \`educational\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ messages showing consistent preference, same preference across 2+ projects
+- **MEDIUM:** 5-9 messages, OR consistent within 1 project only
+- **LOW:** < 5 relevant messages, OR preferences shift between interactions
+- **UNSCORED:** 0 messages with relevant signals
+
+**Example quotes:**
+
+- **code-only:** "Just give me the implementation. I'll read through it." / "Skip the explanation, show the code."
+- **concise:** "Quick summary of the approach, then the code please." / "Why did you use a Map here instead of an object?"
+- **detailed:** "Walk me through this step by step. I want to understand the auth flow before we implement it."
+- **educational:** "Can you explain how JWT refresh token rotation works conceptually? I want to understand the security model, not just implement it."
+
+**Context-dependent patterns:**
+
+Explanation depth often correlates with domain familiarity. A developer may want code-only for well-known tech but educational for new domains. Report splits when observed: "context-dependent: code-only for React/TypeScript, detailed for database optimization."
+
+---
+
+### 4. Debugging Approach
+
+\`dimension_id: debugging_approach\`
+
+**What we're measuring:** How the developer approaches problems, errors, and unexpected behavior when working with Claude.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`fix-first\` | Pastes error, wants it fixed. Minimal diagnosis interest. Results-oriented. |
+| \`diagnostic\` | Shares error with context, wants to understand the cause before fixing. |
+| \`hypothesis-driven\` | Investigates independently first, brings specific theories to Claude for validation. |
+| \`collaborative\` | Wants to work through the problem step-by-step with Claude as a partner. |
+
+**Signal patterns:**
+
+1. **Error presentation style** -- Raw error paste only (fix-first) vs. error + "I think it might be..." (hypothesis-driven) vs. "Can you help me understand why..." (diagnostic)
+2. **Pre-investigation indicators** -- Does the developer share what they already tried? Do they mention reading logs, checking state, or isolating the issue?
+3. **Root cause interest** -- After a fix, does the developer ask "why did that happen?" or just move on?
+4. **Step-by-step language** -- "Let's check X first", "what should we look at next?", "walk me through the debugging"
+5. **Fix acceptance pattern** -- Does the developer immediately apply fixes or question them first?
+
+**Detection heuristics:**
+
+1. If developer pastes errors without context AND accepts fixes without root cause questions AND moves on immediately --> \`fix-first\`
+2. If developer provides error context AND asks "why is this happening?" AND wants explanation with the fix --> \`diagnostic\`
+3. If developer shares their own analysis AND proposes theories ("I think the issue is X because...") AND asks Claude to confirm or refute --> \`hypothesis-driven\`
+4. If developer uses collaborative language ("let's", "what should we check?") AND prefers incremental diagnosis AND walks through problems together --> \`collaborative\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ debugging interactions showing consistent approach, same approach across 2+ projects
+- **MEDIUM:** 5-9 debugging interactions, OR consistent within 1 project only
+- **LOW:** < 5 debugging interactions, OR approach varies significantly
+- **UNSCORED:** 0 messages with debugging-relevant signals
+
+**Example quotes:**
+
+- **fix-first:** "Getting this error: TypeError: Cannot read properties of undefined. Fix it."
+- **diagnostic:** "The API returns 500 when I send a POST to /users. Here's the request body and the server log. What's causing this?"
+- **hypothesis-driven:** "I think the race condition is in the useEffect cleanup. I checked and the subscription isn't being cancelled on unmount. Can you confirm?"
+- **collaborative:** "Let's debug this together. The test passes locally but fails in CI. What should we check first?"
+
+**Context-dependent patterns:**
+
+Debugging approach may vary by urgency. A developer might be fix-first under deadline pressure but hypothesis-driven during regular development. Note temporal patterns if detected.
+
+---
+
+### 5. UX Philosophy
+
+\`dimension_id: ux_philosophy\`
+
+**What we're measuring:** How the developer prioritizes user experience, design, and visual quality relative to functionality.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`function-first\` | Get it working, polish later. Minimal UX concern during implementation. |
+| \`pragmatic\` | Basic usability from the start. Nothing ugly or broken, but no design obsession. |
+| \`design-conscious\` | Design and UX are treated as important as functionality. Attention to visual detail. |
+| \`backend-focused\` | Primarily builds backend/CLI. Minimal frontend exposure or interest. |
+
+**Signal patterns:**
+
+1. **Design-related requests** -- Mentions of styling, layout, responsiveness, animations, color schemes, spacing
+2. **Polish timing** -- Does the developer ask for visual polish during implementation or defer it?
+3. **UI feedback specificity** -- Vague ("make it look better") vs. specific ("increase the padding to 16px, change the font weight to 600")
+4. **Frontend vs. backend distribution** -- Ratio of frontend-focused requests to backend-focused requests
+5. **Accessibility mentions** -- References to a11y, screen readers, keyboard navigation, ARIA labels
+
+**Detection heuristics:**
+
+1. If developer rarely mentions UI/UX AND focuses on logic, APIs, data AND defers styling ("we'll make it pretty later") --> \`function-first\`
+2. If developer includes basic UX requirements AND mentions usability but not pixel-perfection AND balances form with function --> \`pragmatic\`
+3. If developer provides specific design requirements AND mentions polish, animations, spacing AND treats UI bugs as seriously as logic bugs --> \`design-conscious\`
+4. If developer works primarily on CLI tools, APIs, or backend systems AND rarely or never works on frontend AND messages focus on data, performance, infrastructure --> \`backend-focused\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ messages with UX-relevant signals, same pattern across 2+ projects
+- **MEDIUM:** 5-9 messages, OR consistent within 1 project only
+- **LOW:** < 5 relevant messages, OR philosophy varies by project type
+- **UNSCORED:** 0 messages with UX-relevant signals
+
+**Example quotes:**
+
+- **function-first:** "Just get the form working. We'll style it later." / "I don't care how it looks, I need the data flowing."
+- **pragmatic:** "Make sure the loading state is visible and the error messages are clear. Standard styling is fine."
+- **design-conscious:** "The button needs more breathing room -- add 12px vertical padding and make the hover state transition 200ms. Also check the contrast ratio."
+- **backend-focused:** "I'm building a CLI tool. No UI needed." / "Add the REST endpoint, I'll handle the frontend separately."
+
+**Context-dependent patterns:**
+
+UX philosophy is inherently project-dependent. A developer building a CLI tool is necessarily backend-focused for that project. When possible, distinguish between project-driven and preference-driven patterns. If the developer only has backend projects, note that the rating reflects available data: "backend-focused (note: all analyzed projects are backend/CLI -- may not reflect frontend preferences)."
+
+---
+
+### 6. Vendor Philosophy
+
+\`dimension_id: vendor_philosophy\`
+
+**What we're measuring:** How the developer approaches choosing and evaluating libraries, frameworks, and external services.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`pragmatic-fast\` | Uses what works, what Claude suggests, or what's fastest. Minimal evaluation. |
+| \`conservative\` | Prefers well-known, battle-tested, widely-adopted options. Risk-averse. |
+| \`thorough-evaluator\` | Researches alternatives, reads docs, compares features and trade-offs before committing. |
+| \`opinionated\` | Has strong, pre-existing preferences for specific tools. Knows what they like. |
+
+**Signal patterns:**
+
+1. **Library selection language** -- "just use whatever", "is X the standard?", "I want to compare A vs B", "we're using X, period"
+2. **Evaluation depth** -- Does the developer accept the first suggestion or ask for alternatives?
+3. **Stated preferences** -- Explicit mentions of preferred tools, past experience, or tool philosophy
+4. **Rejection patterns** -- Does the developer reject Claude's suggestions? On what basis (popularity, personal experience, docs quality)?
+5. **Dependency attitude** -- "minimize dependencies", "no external deps", "add whatever we need" -- reveals philosophy about external code
+
+**Detection heuristics:**
+
+1. If developer accepts library suggestions without pushback AND uses phrases like "sounds good" or "go with that" AND rarely asks about alternatives --> \`pragmatic-fast\`
+2. If developer asks about popularity, maintenance, community AND prefers "industry standard" or "battle-tested" AND avoids new/experimental --> \`conservative\`
+3. If developer requests comparisons AND reads docs before deciding AND asks about edge cases, license, bundle size --> \`thorough-evaluator\`
+4. If developer names specific libraries unprompted AND overrides Claude's suggestions AND expresses strong preferences --> \`opinionated\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ vendor/library decisions observed, same pattern across 2+ projects
+- **MEDIUM:** 5-9 decisions, OR consistent within 1 project only
+- **LOW:** < 5 vendor decisions observed, OR pattern varies
+- **UNSCORED:** 0 messages with vendor-selection signals
+
+**Example quotes:**
+
+- **pragmatic-fast:** "Use whatever ORM you recommend. I just need it working." / "Sure, Tailwind is fine."
+- **conservative:** "Is Prisma the most widely used ORM for this? I want something with a large community." / "Let's stick with what most teams use."
+- **thorough-evaluator:** "Before we pick a state management library, can you compare Zustand vs Jotai vs Redux Toolkit? I want to understand bundle size, API surface, and TypeScript support."
+- **opinionated:** "We're using Drizzle, not Prisma. I've used both and Drizzle's SQL-like API is better for complex queries."
+
+**Context-dependent patterns:**
+
+Vendor philosophy may shift based on project importance or domain. Personal projects may use pragmatic-fast while professional projects use thorough-evaluator. Report the split if detected.
+
+---
+
+### 7. Frustration Triggers
+
+\`dimension_id: frustration_triggers\`
+
+**What we're measuring:** What causes visible frustration, correction, or negative emotional signals in the developer's messages to Claude.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`scope-creep\` | Frustrated when Claude does things that were not asked for. Wants bounded execution. |
+| \`instruction-adherence\` | Frustrated when Claude doesn't follow instructions precisely. Values exactness. |
+| \`verbosity\` | Frustrated when Claude over-explains or is too wordy. Wants conciseness. |
+| \`regression\` | Frustrated when Claude breaks working code while fixing something else. Values stability. |
+
+**Signal patterns:**
+
+1. **Correction language** -- "I didn't ask for that", "don't do X", "I said Y not Z", "why did you change this?"
+2. **Repetition patterns** -- Repeating the same instruction with emphasis suggests instruction-adherence frustration
+3. **Emotional tone shifts** -- Shift from neutral to terse, use of capitals, exclamation marks, explicit frustration words
+4. **"Don't" statements** -- "don't add extra features", "don't explain so much", "don't touch that file" -- what they prohibit reveals what frustrates them
+5. **Frustration recovery** -- How quickly the developer returns to neutral tone after a frustration event
+
+**Detection heuristics:**
+
+1. If developer corrects Claude for doing unrequested work AND uses language like "I only asked for X", "stop adding things", "stick to what I asked" --> \`scope-creep\`
+2. If developer repeats instructions AND corrects specific deviations from stated requirements AND emphasizes precision ("I specifically said...") --> \`instruction-adherence\`
+3. If developer asks Claude to be shorter AND skips explanations AND expresses annoyance at length ("too much", "just the answer") --> \`verbosity\`
+4. If developer expresses frustration at broken functionality AND checks for regressions AND says "you broke X while fixing Y" --> \`regression\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ frustration events showing consistent trigger pattern, same trigger across 2+ projects
+- **MEDIUM:** 5-9 frustration events, OR consistent within 1 project only
+- **LOW:** < 5 frustration events observed (note: low frustration count is POSITIVE -- it means the developer is generally satisfied, not that data is insufficient)
+- **UNSCORED:** 0 messages with frustration signals (note: "no frustration detected" is a valid finding)
+
+**Example quotes:**
+
+- **scope-creep:** "I asked you to fix the login bug, not refactor the entire auth module. Revert everything except the bug fix."
+- **instruction-adherence:** "I said to use a Map, not an object. I was specific about this. Please redo it with a Map."
+- **verbosity:** "Way too much explanation. Just show me the code change, nothing else."
+- **regression:** "The search was working fine before. Now after your 'fix' to the filter, search results are empty. Don't touch things I didn't ask you to change."
+
+**Context-dependent patterns:**
+
+Frustration triggers tend to be consistent across projects (personality-driven, not project-driven). However, their intensity may vary with project stakes. If multiple frustration triggers are observed, report the primary (most frequent) and note secondaries.
+
+---
+
+### 8. Learning Style
+
+\`dimension_id: learning_style\`
+
+**What we're measuring:** How the developer prefers to understand new concepts, tools, or patterns they encounter.
+
+**Rating spectrum:**
+
+| Rating | Description |
+|--------|-------------|
+| \`self-directed\` | Reads code directly, figures things out independently. Asks Claude specific questions. |
+| \`guided\` | Asks Claude to explain relevant parts. Prefers guided understanding. |
+| \`documentation-first\` | Reads official docs and tutorials before diving in. References documentation. |
+| \`example-driven\` | Wants working examples to modify and learn from. Pattern-matching learner. |
+
+**Signal patterns:**
+
+1. **Learning initiation** -- Does the developer start by reading code, asking for explanation, requesting docs, or asking for examples?
+2. **Reference to external sources** -- Mentions of documentation, tutorials, Stack Overflow, blog posts suggest documentation-first
+3. **Example requests** -- "show me an example", "can you give me a sample?", "let me see how this looks in practice"
+4. **Code-reading indicators** -- "I looked at the implementation", "I see that X calls Y", "from reading the code..."
+5. **Explanation requests vs. code requests** -- Ratio of "explain X" to "show me X" messages
+
+**Detection heuristics:**
+
+1. If developer references reading code directly AND asks specific targeted questions AND demonstrates independent investigation --> \`self-directed\`
+2. If developer asks Claude to explain concepts AND requests walkthroughs AND prefers Claude-mediated understanding --> \`guided\`
+3. If developer cites documentation AND asks for doc links AND mentions reading tutorials or official guides --> \`documentation-first\`
+4. If developer requests examples AND modifies provided examples AND learns by pattern matching --> \`example-driven\`
+
+**Confidence scoring:**
+
+- **HIGH:** 10+ learning interactions showing consistent preference, same preference across 2+ projects
+- **MEDIUM:** 5-9 learning interactions, OR consistent within 1 project only
+- **LOW:** < 5 learning interactions, OR preference varies by topic familiarity
+- **UNSCORED:** 0 messages with learning-relevant signals
+
+**Example quotes:**
+
+- **self-directed:** "I read through the middleware code. The issue is that the token check happens after the rate limiter. Should those be swapped?"
+- **guided:** "Can you walk me through how the auth flow works in this codebase? Start from the login request."
+- **documentation-first:** "I read the Prisma docs on relations. Can you help me apply the many-to-many pattern from their guide to our schema?"
+- **example-driven:** "Show me a working example of a protected API route with JWT validation. I'll adapt it for our endpoints."
+
+**Context-dependent patterns:**
+
+Learning style often varies with domain expertise. A developer may be self-directed in familiar domains but guided or example-driven in new ones. Report the split if detected: "context-dependent: self-directed for TypeScript/Node, example-driven for Rust/systems programming."
+
+---
+
+## Evidence Curation
+
+### Evidence Format
+
+Use the combined format for each evidence entry:
+
+**Signal:** [pattern interpretation -- what the quote demonstrates] / **Example:** "[trimmed quote, ~100 characters]" -- project: [project name]
+
+### Evidence Targets
+
+- **3 evidence quotes per dimension** (24 total across all 8 dimensions)
+- Select quotes that best illustrate the rated pattern
+- Prefer quotes from different projects to demonstrate cross-project consistency
+- When fewer than 3 relevant quotes exist, include what is available and note the evidence count
+
+### Quote Truncation
+
+- Trim quotes to the behavioral signal -- the part that demonstrates the pattern
+- Target approximately 100 characters per quote
+- Preserve the meaningful fragment, not the full message
+- If the signal is in the middle of a long message, use "..." to indicate trimming
+- Never include the full 500-character message when 50 characters capture the signal
+
+### Project Attribution
+
+- Every evidence quote must include the project name
+- Project attribution enables verification and shows cross-project patterns
+- Format: \`-- project: [name]\`
+
+### Sensitive Content Exclusion (Layer 1)
+
+The profiler agent must never select quotes containing any of the following patterns:
+
+- \`sk-\` (API key prefixes)
+- \`Bearer \` (auth tokens)
+- \`password\` (credentials)
+- \`secret\` (secrets)
+- \`token\` (when used as a credential value, not a concept discussion)
+- \`api_key\` or \`API_KEY\` (API key references)
+- Full absolute file paths containing usernames (e.g., \`/Users/john/...\`, \`/home/john/...\`)
+
+**When sensitive content is found and excluded**, report as metadata in the analysis output:
+
+\`\`\`json
+{
+  "sensitive_excluded": [
+    { "type": "api_key_pattern", "count": 2 },
+    { "type": "file_path_with_username", "count": 1 }
+  ]
+}
+\`\`\`
+
+This metadata enables defense-in-depth auditing. Layer 2 (regex filter in the write-profile step) provides a second pass, but the profiler should still avoid selecting sensitive quotes.
+
+### Natural Language Priority
+
+Weight natural language messages higher than:
+- Pasted log output (detected by timestamps, repeated format strings, \`[DEBUG]\`, \`[INFO]\`, \`[ERROR]\`)
+- Session context dumps (messages starting with "This session is being continued from a previous conversation")
+- Large code pastes (messages where > 80% of content is inside code fences)
+
+These message types are genuine but carry less behavioral signal. Deprioritize them when selecting evidence quotes.
+
+---
+
+## Recency Weighting
+
+### Guideline
+
+Recent sessions (last 30 days) should be weighted approximately 3x compared to older sessions when analyzing patterns.
+
+### Rationale
+
+Developer styles evolve. A developer who was terse six months ago may now provide detailed structured context. Recent behavior is a more accurate reflection of current working style.
+
+### Application
+
+1. When counting signals for confidence scoring, recent signals count 3x (e.g., 4 recent signals = 12 weighted signals)
+2. When selecting evidence quotes, prefer recent quotes over older ones when both demonstrate the same pattern
+3. When patterns conflict between recent and older sessions, the recent pattern takes precedence for the rating, but note the evolution: "recently shifted from terse-direct to conversational"
+4. The 30-day window is relative to the analysis date, not a fixed date
+
+### Edge Cases
+
+- If ALL sessions are older than 30 days, apply no weighting (all sessions are equally stale)
+- If ALL sessions are within the last 30 days, apply no weighting (all sessions are equally recent)
+- The 3x weight is a guideline, not a hard multiplier -- use judgment when the weighted count changes a confidence threshold
+
+---
+
+## Thin Data Handling
+
+### Message Thresholds
+
+| Total Genuine Messages | Mode | Behavior |
+|------------------------|------|----------|
+| > 50 | \`full\` | Full analysis across all 8 dimensions. Questionnaire optional (user can choose to supplement). |
+| 20-50 | \`hybrid\` | Analyze available messages. Score each dimension with confidence. Supplement with questionnaire for LOW/UNSCORED dimensions. |
+| < 20 | \`insufficient\` | All dimensions scored LOW or UNSCORED. Recommend questionnaire fallback as primary profile source. Note: "insufficient session data for behavioral analysis." |
+
+### Handling Insufficient Dimensions
+
+When a specific dimension has insufficient data (even if total messages exceed thresholds):
+
+- Set confidence to \`UNSCORED\`
+- Set summary to: "Insufficient data -- no clear signals detected for this dimension."
+- Set claude_instruction to a neutral fallback: "No strong preference detected. Ask the developer when this dimension is relevant."
+- Set evidence_quotes to empty array \`[]\`
+- Set evidence_count to \`0\`
+
+### Questionnaire Supplement
+
+When operating in \`hybrid\` mode, the questionnaire fills gaps for dimensions where session analysis produced LOW or UNSCORED confidence. The questionnaire-derived ratings use:
+- **MEDIUM** confidence for strong, definitive picks
+- **LOW** confidence for "it varies" or ambiguous selections
+
+If session analysis and questionnaire agree on a dimension, confidence can be elevated (e.g., session LOW + questionnaire MEDIUM agreement = MEDIUM).
+
+---
+
+## Output Schema
+
+The profiler agent must return JSON matching this exact schema, wrapped in \`<analysis>\` tags.
+
+\`\`\`json
+{
+  "profile_version": "1.0",
+  "analyzed_at": "ISO-8601 timestamp",
+  "data_source": "session_analysis",
+  "projects_analyzed": ["project-name-1", "project-name-2"],
+  "messages_analyzed": 0,
+  "message_threshold": "full|hybrid|insufficient",
+  "sensitive_excluded": [
+    { "type": "string", "count": 0 }
+  ],
+  "dimensions": {
+    "communication_style": {
+      "rating": "terse-direct|conversational|detailed-structured|mixed",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [
+        {
+          "signal": "Pattern interpretation describing what the quote demonstrates",
+          "quote": "Trimmed quote, approximately 100 characters",
+          "project": "project-name"
+        }
+      ],
+      "summary": "One to two sentence description of the observed pattern",
+      "claude_instruction": "Imperative directive for Claude: 'Match structured communication style' not 'You tend to provide structured context'"
+    },
+    "decision_speed": {
+      "rating": "fast-intuitive|deliberate-informed|research-first|delegator",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "explanation_depth": {
+      "rating": "code-only|concise|detailed|educational",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "debugging_approach": {
+      "rating": "fix-first|diagnostic|hypothesis-driven|collaborative",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "ux_philosophy": {
+      "rating": "function-first|pragmatic|design-conscious|backend-focused",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "vendor_philosophy": {
+      "rating": "pragmatic-fast|conservative|thorough-evaluator|opinionated",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "frustration_triggers": {
+      "rating": "scope-creep|instruction-adherence|verbosity|regression",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    },
+    "learning_style": {
+      "rating": "self-directed|guided|documentation-first|example-driven",
+      "confidence": "HIGH|MEDIUM|LOW|UNSCORED",
+      "evidence_count": 0,
+      "cross_project_consistent": true,
+      "evidence_quotes": [],
+      "summary": "string",
+      "claude_instruction": "string"
+    }
+  }
+}
+\`\`\`
+
+### Schema Notes
+
+- **\`profile_version\`**: Always \`"1.0"\` for this schema version
+- **\`analyzed_at\`**: ISO-8601 timestamp of when the analysis was performed
+- **\`data_source\`**: \`"session_analysis"\` for session-based profiling, \`"questionnaire"\` for questionnaire-only, \`"hybrid"\` for combined
+- **\`projects_analyzed\`**: List of project names that contributed messages
+- **\`messages_analyzed\`**: Total number of genuine user messages processed
+- **\`message_threshold\`**: Which threshold mode was triggered (\`full\`, \`hybrid\`, \`insufficient\`)
+- **\`sensitive_excluded\`**: Array of excluded sensitive content types with counts (empty array if none found)
+- **\`claude_instruction\`**: Must be written in imperative form directed at Claude. This field is how the profile becomes actionable.
+  - Good: "Provide structured responses with headers and numbered lists to match this developer's communication style."
+  - Bad: "You tend to like structured responses."
+  - Good: "Ask before making changes beyond the stated request -- this developer values bounded execution."
+  - Bad: "The developer gets frustrated when you do extra work."
+
+---
+
+## Cross-Project Consistency
+
+### Assessment
+
+For each dimension, assess whether the observed pattern is consistent across the projects analyzed:
+
+- **\`cross_project_consistent: true\`** -- Same rating would apply regardless of which project is analyzed. Evidence from 2+ projects shows the same pattern.
+- **\`cross_project_consistent: false\`** -- Pattern varies by project. Include a context-dependent note in the summary.
+
+### Reporting Splits
+
+When \`cross_project_consistent\` is false, the summary must describe the split:
+
+- "Context-dependent: terse-direct for CLI/backend projects (gsd-tools, api-server), detailed-structured for frontend projects (dashboard, landing-page)."
+- "Context-dependent: fast-intuitive for familiar tech (React, Node), research-first for new domains (Rust, ML)."
+
+The rating field should reflect the **dominant** pattern (most evidence). The summary describes the nuance.
+
+### Phase 3 Resolution
+
+Context-dependent splits are resolved during Phase 3 orchestration. The orchestrator presents the split to the developer and asks which pattern represents their general preference. Until resolved, Claude uses the dominant pattern with awareness of the context-dependent variation.
+
+---
+
+*Reference document version: 1.0*
+*Dimensions: 8*
+*Schema: profile_version 1.0*
+`,
+	},
+	{
 		targetPath: "workflows/diagnose-issues.md",
 		content: `<purpose>
 Orchestrate parallel debug agents to investigate UAT gaps and find root causes.
@@ -5330,7 +7422,7 @@ Scan LEARNINGS.md files from recent phases for recurring patterns and surface pr
 **Invoke the graduation helper:**
 
 \`\`\`text
-@~/.claude/get-shit-done/workflows/graduation.md
+@.tasktronaut/workflows/graduation.md
 \`\`\`
 
 This step is fully delegated to \`graduation.md\`. It handles guard checks (feature flag, window size, threshold), clustering, backlog filtering, HITL prompting, promotion writes, and STATE.md updates.
@@ -5755,7 +7847,7 @@ Execute a phase prompt (PLAN.md) and create the outcome summary (SUMMARY.md).
 Read STATE.md before any operation to load project context.
 Read config.json for planning behavior settings.
 
-@~/.claude/get-shit-done/references/git-integration.md
+@.tasktronaut/references/git-integration.md
 </required_reading>
 
 <available_agent_types>
@@ -5979,7 +8071,7 @@ For \`type: tdd\` plans — RED-GREEN-REFACTOR:
 
 Errors: RED doesn't fail → investigate test/existing feature. GREEN doesn't pass → debug, iterate. REFACTOR breaks → undo.
 
-See \`~/.claude/get-shit-done/references/tdd.md\` for structure.
+See \`.tasktronaut/references/tdd.md\` for structure.
 </tdd_plan_execution>
 
 <precommit_failure_handling>
@@ -6023,7 +8115,7 @@ Display: \`CHECKPOINT: [Type]\` box → Progress {X}/{Y} → Task name → type-
 
 After response: verify if specified. Pass → continue. Fail → inform, wait. WAIT for user — do NOT hallucinate completion.
 
-See ~/.claude/get-shit-done/references/checkpoints.md for details.
+See .tasktronaut/references/checkpoints.md for details.
 </step>
 
 <step name="checkpoint_return_for_orchestrator">
@@ -6076,11 +8168,11 @@ fi
 grep -A 50 "^user_setup:" .planning/phases/XX-name/{phase}-{plan}-PLAN.md | head -50
 \`\`\`
 
-If user_setup exists: create \`{phase}-USER-SETUP.md\` using template \`~/.claude/get-shit-done/templates/user-setup.md\`. Per service: env vars table, account setup checklist, dashboard config, local dev notes, verification commands. Status "Incomplete". Set \`USER_SETUP_CREATED=true\`. If empty/missing: skip.
+If user_setup exists: create \`{phase}-USER-SETUP.md\` using template \`.tasktronaut/templates/user-setup.md\`. Per service: env vars table, account setup checklist, dashboard config, local dev notes, verification commands. Status "Incomplete". Set \`USER_SETUP_CREATED=true\`. If empty/missing: skip.
 </step>
 
 <step name="create_summary">
-Create \`{phase}-{plan}-SUMMARY.md\` at \`.planning/phases/XX-name/\`. Use \`~/.claude/get-shit-done/templates/summary.md\`.
+Create \`{phase}-{plan}-SUMMARY.md\` at \`.planning/phases/XX-name/\`. Use \`.tasktronaut/templates/summary.md\`.
 
 **Frontmatter:** phase, plan, subsystem, tags | requires/provides/affects | tech-stack.added/patterns | key-files.created/modified | key-decisions | requirements-completed (**MUST** copy \`requirements\` array from PLAN.md frontmatter verbatim) | duration ($DURATION), completed ($PLAN_END_TIME date).
 
@@ -6241,6 +8333,438 @@ All routes: \`/clear\` first for fresh context.
 - If codebase map exists: map updated with execution changes (or skipped if no significant changes)
 - If USER-SETUP.md created: prominently surfaced in completion output
 </success_criteria>
+`,
+	},
+	{
+		targetPath: "workflows/next.md",
+		content: `<purpose>
+Detect current project state and automatically advance to the next logical GSD workflow step.
+Reads project state to determine: discuss → plan → execute → verify → complete progression.
+</purpose>
+
+<required_reading>
+Read all files referenced by the invoking prompt's execution_context before starting.
+</required_reading>
+
+<process>
+
+<step name="detect_state">
+Read project state to determine current position:
+
+\`\`\`bash
+# Get state snapshot
+gsd-sdk query state.json 2>/dev/null || echo "{}"
+\`\`\`
+
+Also read:
+- \`.planning/STATE.md\` — current phase, progress, plan counts
+- \`.planning/ROADMAP.md\` — milestone structure and phase list
+
+Extract:
+- \`current_phase\` — which phase is active
+- \`plan_of\` / \`plans_total\` — plan execution progress
+- \`progress\` — overall percentage
+- \`status\` — active, paused, etc.
+
+If no \`.planning/\` directory exists:
+\`\`\`
+No GSD project detected. Run \`/gsd-new-project\` to get started.
+\`\`\`
+Exit.
+</step>
+
+<step name="safety_gates">
+Run hard-stop checks before routing. Exit on first hit unless \`--force\` was passed.
+
+If \`--force\` flag was passed, skip all gates and the consecutive guard.
+Print a one-line warning: \`⚠ --force: skipping safety gates\`
+Then proceed directly to \`determine_next_action\`.
+
+**Gate 1: Unresolved checkpoint**
+Check if \`.planning/.continue-here.md\` exists:
+\`\`\`bash
+[ -f .planning/.continue-here.md ]
+\`\`\`
+If found:
+\`\`\`
+⛔ Hard stop: Unresolved checkpoint
+
+\`.planning/.continue-here.md\` exists — a previous session left
+unfinished work that needs manual review before advancing.
+
+Read the file, resolve the issue, then delete it to continue.
+Use \`--force\` to bypass this check.
+\`\`\`
+Exit (do not route).
+
+**Gate 2: Error state**
+Check if STATE.md contains \`status: error\` or \`status: failed\`:
+If found:
+\`\`\`
+⛔ Hard stop: Project in error state
+
+STATE.md shows status: {status}. Resolve the error before advancing.
+Run \`/gsd-health\` to diagnose, or manually fix STATE.md.
+Use \`--force\` to bypass this check.
+\`\`\`
+Exit.
+
+**Gate 3: Unchecked verification**
+Check if the current phase has a VERIFICATION.md with any \`FAIL\` items that don't have overrides:
+If found:
+\`\`\`
+⛔ Hard stop: Unchecked verification failures
+
+VERIFICATION.md for phase {N} has {count} unresolved FAIL items.
+Address the failures or add overrides before advancing to the next phase.
+Use \`--force\` to bypass this check.
+\`\`\`
+Exit.
+
+**Prior-phase completeness scan:**
+After passing all three hard-stop gates, scan all phases that precede the current phase in ROADMAP.md order for incomplete work. For each prior phase number \`N\`, use \`gsd-sdk query find-phase <N>\` JSON (plans, summaries, incomplete_plans, etc.) to inspect that phase.
+
+Detect three categories of incomplete work:
+1. **Plans without summaries** — a PLAN.md exists in a prior phase directory but no matching SUMMARY.md exists (execution started but not completed).
+2. **Verification failures not overridden** — a prior phase has a VERIFICATION.md with \`FAIL\` items that have no override annotation.
+3. **CONTEXT.md without plans** — a prior phase directory has a CONTEXT.md but no PLAN.md files (discussion happened, planning never ran).
+
+If no incomplete prior work is found, continue to \`determine_next_action\` silently with no interruption.
+
+If incomplete prior work is found, show a structured completeness report:
+\`\`\`
+⚠ Prior phase has incomplete work
+
+Phase {N} — "{name}" has unresolved items:
+  • Plan {N}-{M} ({slug}): executed but no SUMMARY.md
+  [... additional items ...]
+
+Advancing before resolving these may cause:
+  • Verification gaps — future phase verification won't have visibility into what prior phases shipped
+  • Context loss — plans that ran without summaries leave no record for future agents
+
+Options:
+  [C] Continue and defer these items to backlog
+  [S] Stop and resolve manually (recommended)
+  [F] Force advance without recording deferral
+
+Choice [S]:
+\`\`\`
+
+**If the user chooses "Stop" (S or Enter/default):** Exit without routing.
+
+**If the user chooses "Continue and defer" (C):**
+1. For each incomplete item, create a backlog entry in \`ROADMAP.md\` under \`## Backlog\` using the existing \`999.x\` numbering scheme:
+\`\`\`markdown
+### Phase 999.{N}: Follow-up — Phase {src} incomplete plans (BACKLOG)
+
+**Goal:** Resolve plans that ran without producing summaries during Phase {src} execution
+**Source phase:** {src}
+**Deferred at:** {date} during /gsd-next advancement to Phase {dest}
+**Plans:**
+- [ ] {N}-{M}: {slug} (ran, no SUMMARY.md)
+\`\`\`
+2. Commit the deferral record:
+\`\`\`bash
+gsd-sdk query commit "docs: defer incomplete Phase {src} items to backlog"
+\`\`\`
+3. Continue routing to \`determine_next_action\` immediately — no second prompt.
+
+**If the user chooses "Force" (F):** Continue to \`determine_next_action\` without recording deferral.
+</step>
+
+<step name="spike_sketch_notice">
+Check for pending spike/sketch work and surface a notice (does not change routing):
+
+\`\`\`bash
+# Check for pending spikes (verdict: PENDING in any README)
+PENDING_SPIKES=$(grep -rl 'verdict: PENDING' .planning/spikes/*/README.md 2>/dev/null | wc -l | tr -d ' ')
+
+# Check for pending sketches (winner: null in any README)
+PENDING_SKETCHES=$(grep -rl 'winner: null' .planning/sketches/*/README.md 2>/dev/null | wc -l | tr -d ' ')
+\`\`\`
+
+If either count is > 0, display before routing:
+\`\`\`
+⚠ Pending exploratory work:
+  {PENDING_SPIKES} spike(s) with unresolved verdicts in .planning/spikes/
+  {PENDING_SKETCHES} sketch(es) without a winning variant in .planning/sketches/
+
+  Resume with \`/gsd-spike\` or \`/gsd-sketch\`, or continue with phase work below.
+\`\`\`
+
+Only show lines for non-zero counts. If both are 0, skip this notice entirely.
+</step>
+
+<step name="determine_next_action">
+Apply routing rules based on state:
+
+**Route 1: No phases exist yet → discuss**
+If ROADMAP has phases but no phase directories exist on disk:
+→ Next action: \`/gsd-discuss-phase <first-phase>\`
+
+**Route 2: Phase exists but has no CONTEXT.md or RESEARCH.md → discuss**
+If the current phase directory exists but has neither CONTEXT.md nor RESEARCH.md:
+→ Next action: \`/gsd-discuss-phase <current-phase>\`
+
+**Route 3: Phase has context but no plans → plan**
+If the current phase has CONTEXT.md (or RESEARCH.md) but no PLAN.md files:
+→ Next action: \`/gsd-plan-phase <current-phase>\`
+
+**Route 4: Phase has plans but incomplete summaries → execute**
+If plans exist but not all have matching summaries:
+→ Next action: \`/gsd-execute-phase <current-phase>\`
+
+**Route 5: All plans have summaries → verify and complete**
+If all plans in the current phase have summaries:
+→ Next action: \`/gsd-verify-work\`
+
+**Route 6: Phase complete, next phase exists → advance**
+If the current phase is complete and the next phase exists in ROADMAP:
+→ Next action: \`/gsd-discuss-phase <next-phase>\`
+
+**Route 7: All phases complete → complete milestone**
+If all phases are complete:
+→ Next action: \`/gsd-complete-milestone\`
+
+**Route 8: Paused → resume**
+If STATE.md shows paused_at:
+→ Next action: \`/gsd-resume-work\`
+</step>
+
+<step name="show_next">
+Present the Next Up block and stop:
+
+\`\`\`
+## GSD Next
+
+**Current:** Phase [N] — [name] | [progress]%
+**Status:** [status description]
+
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+\`/clear\` then:
+
+\`/gsd-[command] [args]\`
+
+[One-line explanation of why this is the next step]
+
+---
+\`\`\`
+
+Stop here. Do NOT attempt to invoke the command — slash commands are user-layer chat triggers and cannot be dispatched from within a running task.
+</step>
+
+</process>
+
+<success_criteria>
+
+- [ ] Project state correctly detected
+- [ ] Next action correctly determined from routing rules
+- [ ] Next Up block presented clearly for user to invoke
+
+</success_criteria>
+`,
+	},
+	{
+		targetPath: "workflows/graduation.md",
+		content: `# graduation.md — LEARNINGS.md Cross-Phase Graduation Helper
+
+**Invoked by:** \`transition.md\` step \`graduation_scan\`. Never invoked directly by users.
+
+This workflow clusters recurring items across the last N phases' LEARNINGS.md files and surfaces promotion candidates to the developer via HITL. No item is promoted without explicit developer approval.
+
+---
+
+## Configuration
+
+Read from project config (\`config.json\`):
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| \`features.graduation\` | \`true\` | Master on/off switch. \`false\` skips silently. |
+| \`features.graduation_window\` | \`5\` | How many prior phases to scan |
+| \`features.graduation_threshold\` | \`3\` | Minimum cluster size to surface |
+
+---
+
+## Step 1: Guard Checks
+
+\`\`\`bash
+GRADUATION_ENABLED=$(gsd-sdk query config-get features.graduation 2>/dev/null || echo "true")
+GRADUATION_WINDOW=$(gsd-sdk query config-get features.graduation_window 2>/dev/null || echo "5")
+GRADUATION_THRESHOLD=$(gsd-sdk query config-get features.graduation_threshold 2>/dev/null || echo "3")
+\`\`\`
+
+**Skip silently (print nothing) if:**
+- \`features.graduation\` is \`false\`
+- Fewer than \`graduation_threshold\` completed prior phases exist (not enough data)
+
+**Skip silently (print nothing) if total items across all LEARNINGS.md files in the window is fewer than 5.**
+
+---
+
+## Step 2: Collect LEARNINGS.md Files
+
+Find LEARNINGS.md files from the last N completed phases (excluding the phase currently completing):
+
+\`\`\`bash
+find .planning/phases -name "*-LEARNINGS.md" | sort | tail -n "$GRADUATION_WINDOW"
+\`\`\`
+
+For each file found:
+1. Parse the four category sections: \`## Decisions\`, \`## Lessons\`, \`## Patterns\`, \`## Surprises\`
+2. Extract each \`### Item Title\` + body as a single item record: \`{ category, title, body, source_phase, source_file }\`
+3. **Skip items that already contain \`**Graduated:**\`** — they have been promoted and must not re-surface
+
+---
+
+## Step 3: Cluster by Lexical Similarity
+
+For each category independently, cluster items using Jaccard similarity on tokenized title+body:
+
+**Tokenization:** lowercase, strip punctuation, split on whitespace, remove stop words (a, an, the, is, was, in, on, at, to, for, of, and, or, but, with, from, that, this, by, as).
+
+**Jaccard similarity:** \`|A ∩ B| / |A ∪ B|\` where A and B are token sets. Two items are in the same cluster if similarity ≥ 0.25.
+
+**Clustering algorithm:** single-pass greedy — process items in phase order; add to the first cluster whose centroid (union of all cluster tokens) has similarity ≥ 0.25 with the new item; otherwise start a new cluster.
+
+**Cluster size filter:** only surface clusters with distinct source phases ≥ \`graduation_threshold\` (not just total items — same item repeated in one phase still counts as 1 distinct phase).
+
+---
+
+## Step 4: Check graduation_backlog in STATE.md
+
+Read \`.planning/STATE.md\` \`graduation_backlog\` section (if present). Format:
+
+\`\`\`yaml
+graduation_backlog:
+  - cluster_id: "{sha256-of-cluster-title}"
+    status: "dismissed"   # or "deferred"
+    deferred_until: "phase-N"  # only for deferred entries
+    cluster_title: "{representative title}"
+\`\`\`
+
+**Skip any cluster whose \`cluster_id\` matches a \`dismissed\` entry.**
+
+**Skip any cluster whose \`cluster_id\` matches a \`deferred\` entry where \`deferred_until\` phase has not yet completed.**
+
+---
+
+## Step 5: Surface Promotion Candidates
+
+For each qualifying cluster, determine the suggested target file:
+
+| Category | Suggested Target |
+|----------|-----------------|
+| \`decisions\` | \`PROJECT.md\` — append under \`## Validated Decisions\` (create section if absent) |
+| \`patterns\` | \`PATTERNS.md\` — append under the appropriate category section (create file if absent) |
+| \`lessons\` | \`PROJECT.md\` — append under \`## Invariants\` (create section if absent) |
+| \`surprises\` | Flag for human review — if genuinely surprising 3+ times, something structural is wrong |
+
+Print the graduation report:
+
+\`\`\`text
+📚 Graduation scan across phases {M}–{N}:
+
+  HIGH RECURRENCE ({K}/{WINDOW} phases)
+  ├─ Cluster: "{representative title}"
+  ├─ Category: {category}
+  ├─ Sources: {list of NN-LEARNINGS filenames}
+  └─ Suggested target: {target file} § {section}
+
+  [repeat for each qualifying cluster, ordered HIGH→LOW recurrence]
+
+For each cluster above, choose an action:
+  P = Promote now   D = Defer (re-surface next transition)   X = Dismiss (never re-surface)   A = Defer all remaining
+\`\`\`
+
+---
+
+## Step 6: HITL — Process Each Cluster
+
+For each cluster (in order from Step 5), ask the developer:
+
+\`\`\`text
+Cluster: "{title}" [{category}, {K} phases] → {target}
+Action [P/D/X/A]:
+\`\`\`
+
+Use \`AskUserQuestion\` (or equivalent HITL primitive for the current runtime). If \`TEXT_MODE\` is true, display the cluster question as plain text and accept typed input. Accept single-character input: \`P\`, \`D\`, \`X\`, \`A\` (case-insensitive).
+
+**On \`P\` (Promote now):**
+
+1. Read the target file (or create it with a standard header if absent)
+2. Append the cluster entry under the suggested section:
+   \`\`\`markdown
+   ### {Cluster representative title}
+   {Merged body — combine unique sentences across cluster items}
+
+   **Sources:** Phase {A}, Phase {B}, Phase {C}
+   **Promoted:** {ISO_DATE}
+   \`\`\`
+3. For each source LEARNINGS.md item in the cluster, append \`**Graduated:** {target-file}:{ISO_DATE}\` after its last existing field
+4. Commit both the target file and all annotated LEARNINGS.md files in a single atomic commit:
+   \`docs(learnings): graduate "{cluster title}" to {target-file}\`
+
+**On \`D\` (Defer):**
+
+Write to \`.planning/STATE.md\` under \`graduation_backlog\`:
+\`\`\`yaml
+- cluster_id: "{sha256}"
+  status: "deferred"
+  deferred_until: "phase-{NEXT_PHASE_NUMBER}"
+  cluster_title: "{title}"
+\`\`\`
+
+**On \`X\` (Dismiss):**
+
+Write to \`.planning/STATE.md\` under \`graduation_backlog\`:
+\`\`\`yaml
+- cluster_id: "{sha256}"
+  status: "dismissed"
+  cluster_title: "{title}"
+\`\`\`
+
+**On \`A\` (Defer all):**
+
+Defer the current cluster (same as \`D\`) and skip all remaining clusters for this run, deferring each to the next transition. Print:
+\`\`\`text
+[graduation: deferred all remaining clusters to next transition]
+\`\`\`
+Then proceed directly to Step 7.
+
+---
+
+## Step 7: Completion Report
+
+After processing all clusters, print:
+
+\`\`\`text
+Graduation complete: {promoted} promoted, {deferred} deferred, {dismissed} dismissed.
+\`\`\`
+
+If no clusters qualified (all filtered by backlog or threshold), print:
+\`\`\`text
+[graduation: no qualifying clusters in phases {M}–{N}]
+\`\`\`
+
+---
+
+## First-Run Behaviour
+
+On the first transition after upgrading to a version that includes this workflow, all extant LEARNINGS.md files may produce a large batch of candidates at once. A \`[Defer all]\` shorthand is available: if the developer enters \`A\` at any cluster prompt, all remaining clusters for this run are deferred to the next transition.
+
+---
+
+## No-Op Conditions (silent skip)
+
+- \`features.graduation = false\`
+- Fewer than \`graduation_threshold\` prior phases with LEARNINGS.md
+- Total items < 5 across the window
+- All qualifying clusters are in \`graduation_backlog\` as dismissed
 `,
 	},
 ]

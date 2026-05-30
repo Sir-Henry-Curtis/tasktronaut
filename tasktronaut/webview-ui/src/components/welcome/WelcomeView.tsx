@@ -52,8 +52,8 @@ const WelcomeView = memo(() => {
 				</div>
 				<p>
 					Tasktronaut is a mission-ready coding assistant for structured engineering workflows. Configure your
-					OpenAI-compatible endpoint, then it can plan tasks, edit files, run terminal commands, and use browser tools
-					with your approval.
+					OpenAI-compatible endpoint, then it can plan tasks, edit files, run terminal commands, and orchestrate
+					approved tools with your approval.
 				</p>
 
 				<p className="text-(--vscode-descriptionForeground)">

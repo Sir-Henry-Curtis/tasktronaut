@@ -92,12 +92,6 @@ export function testVariantMatching() {
 					enabled: true,
 					remindClineInterval: 6,
 				},
-				browserSettings: {
-					viewport: {
-						width: 1280,
-						height: 720,
-					},
-				},
 				globalClineRulesFileInstructions: "Follow global rules",
 				localClineRulesFileInstructions: "Follow local rules",
 				preferredLanguageInstructions: "Prefer TypeScript",

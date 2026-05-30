@@ -448,7 +448,6 @@ export const config = createVariant(ModelFamily.GENERIC)
     ClineDefaultTool.SEARCH,
     ClineDefaultTool.LIST_FILES,
     ClineDefaultTool.LIST_CODE_DEF,
-    ClineDefaultTool.BROWSER,
     ClineDefaultTool.MCP_USE,
     ClineDefaultTool.MCP_ACCESS,
     ClineDefaultTool.ASK,
@@ -519,7 +518,6 @@ export const config = createVariant(ModelFamily.NEXT_GEN)
     ClineDefaultTool.SEARCH,
     ClineDefaultTool.LIST_FILES,
     ClineDefaultTool.LIST_CODE_DEF,
-    ClineDefaultTool.BROWSER,
     ClineDefaultTool.WEB_FETCH,  // Additional tool for next-gen
     ClineDefaultTool.MCP_USE,
     ClineDefaultTool.MCP_ACCESS,

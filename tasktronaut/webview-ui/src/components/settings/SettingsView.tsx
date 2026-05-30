@@ -8,6 +8,7 @@ import {
 	Info,
 	type LucideIcon,
 	SlidersHorizontal,
+	Workflow,
 	Wrench,
 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -17,7 +18,9 @@ import { useClineAuth } from "@/context/ClineAuthContext"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { cn } from "@/lib/utils"
 import { StateServiceClient } from "@/services/grpc-client"
+
 const isAdminOrOwner = (_org: unknown) => false
+
 import { Tab, TabContent, TabList, TabTrigger } from "../common/Tab"
 import ViewHeader from "../common/ViewHeader"
 import SectionHeader from "./SectionHeader"
@@ -26,12 +29,13 @@ import ApiConfigurationSection from "./sections/ApiConfigurationSection"
 import DebugSection from "./sections/DebugSection"
 import FeatureSettingsSection from "./sections/FeatureSettingsSection"
 import GeneralSettingsSection from "./sections/GeneralSettingsSection"
+import GsdSettingsSection from "./sections/GsdSettingsSection"
 import { RemoteConfigSection } from "./sections/RemoteConfigSection"
 
 const IS_DEV = process.env.IS_DEV
 
 // Tab definitions
-type SettingsTabID = "api-config" | "features" | "general" | "about" | "debug" | "remote-config"
+type SettingsTabID = "api-config" | "features" | "general" | "gsd" | "about" | "debug" | "remote-config"
 interface SettingsTab {
 	id: SettingsTabID
 	name: string
@@ -62,6 +66,13 @@ export const SETTINGS_TABS: SettingsTab[] = [
 		tooltipText: "General Settings",
 		headerText: "General Settings",
 		icon: Wrench,
+	},
+	{
+		id: "gsd",
+		name: "GSD",
+		tooltipText: "GSD Workflow Settings",
+		headerText: "GSD Settings",
+		icon: Workflow,
 	},
 	{
 		id: "remote-config",
@@ -113,19 +124,6 @@ const renderSectionHeader = (tabId: string) => {
 }
 
 const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
-	// Memoize to avoid recreation
-	const TAB_CONTENT_MAP: Record<SettingsTabID, React.FC<any>> = useMemo(
-		() => ({
-			"api-config": ApiConfigurationSection,
-			general: GeneralSettingsSection,
-			features: FeatureSettingsSection,
-			"remote-config": RemoteConfigSection,
-			about: AboutSection,
-			debug: DebugSection,
-		}),
-		[],
-	) // Empty deps - these imports never change
-
 	const { version, environment, settingsInitialModelTab } = useExtensionState()
 	const { activeOrganization } = useClineAuth()
 
@@ -218,22 +216,29 @@ const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
 
 	// Memoized active content component
 	const ActiveContent = useMemo(() => {
-		const Component = TAB_CONTENT_MAP[activeTab as keyof typeof TAB_CONTENT_MAP]
-		if (!Component) {
-			return null
+		switch (activeTab as SettingsTabID) {
+			case "api-config":
+				return (
+					<ApiConfigurationSection
+						initialModelTab={settingsInitialModelTab}
+						renderSectionHeader={renderSectionHeader}
+					/>
+				)
+			case "features":
+				return <FeatureSettingsSection renderSectionHeader={renderSectionHeader} />
+			case "general":
+				return <GeneralSettingsSection renderSectionHeader={renderSectionHeader} />
+			case "gsd":
+				return <GsdSettingsSection renderSectionHeader={renderSectionHeader} />
+			case "remote-config":
+				return <RemoteConfigSection renderSectionHeader={renderSectionHeader} />
+			case "about":
+				return <AboutSection renderSectionHeader={renderSectionHeader} version={version} />
+			case "debug":
+				return <DebugSection onResetState={handleResetState} renderSectionHeader={renderSectionHeader} />
+			default:
+				return null
 		}
-
-		// Special props for specific components
-		const props: any = { renderSectionHeader }
-		if (activeTab === "debug") {
-			props.onResetState = handleResetState
-		} else if (activeTab === "about") {
-			props.version = version
-		} else if (activeTab === "api-config") {
-			props.initialModelTab = settingsInitialModelTab
-		}
-
-		return <Component {...props} />
 	}, [activeTab, handleResetState, settingsInitialModelTab, version])
 
 	return (

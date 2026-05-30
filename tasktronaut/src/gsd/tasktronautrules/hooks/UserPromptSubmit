@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 let input = '';
 const timeout = setTimeout(() => process.exit(0), 5000);
@@ -28,6 +29,26 @@ process.stdin.on('end', () => {
     const planningDir = path.join(cwd, '.planning');
 
     let contextModification = '## GSD Context Injection for /' + command + '\n\n';
+    const bootstrapCommands = new Set(['gsd-new-project', 'gsd-map-project', 'gsd-map-codebase']);
+
+    if (command === 'gsd-map-project') {
+      const inventory = runSdkQuery(cwd, 'init.map-project');
+      if (inventory) {
+        contextModification += '### Project Inventory\n```json\n' + truncate(inventory, 12000) + '\n```\n\n';
+        contextModification += 'Use this SDK inventory as the bounded project map source. Do not deep-read large files unless the user asks for a focused follow-up.\n\n';
+      } else {
+        contextModification += '### Project Inventory\nRun `gsd-sdk query init.map-project` before deciding whether this is a code, document, mixed, empty, or unclear workspace.\n\n';
+      }
+    }
+
+    if (command === 'gsd-map-codebase') {
+      const inventory = runSdkQuery(cwd, 'init.map-codebase');
+      if (inventory) {
+        contextModification += '### Codebase Map Bootstrap\n```json\n' + truncate(inventory, 8000) + '\n```\n\n';
+      } else {
+        contextModification += '### Codebase Map Bootstrap\nRun `gsd-sdk query init.map-codebase` before spawning mapper work.\n\n';
+      }
+    }
 
     // Always inject STATE.md if it exists
     const statePath = path.join(planningDir, 'STATE.md');
@@ -35,7 +56,7 @@ process.stdin.on('end', () => {
     if (fs.existsSync(statePath)) {
       state = fs.readFileSync(statePath, 'utf8').trim();
       contextModification += '### Current State\n```\n' + state + '\n```\n\n';
-    } else if (!command.includes('new-project')) {
+    } else if (!bootstrapCommands.has(command)) {
       contextModification += '### No GSD Project\nRun /gsd-new-project to initialize.\n\n';
     }
 
@@ -69,3 +90,49 @@ process.stdin.on('end', () => {
   }
   process.exit(0);
 });
+
+function runSdkQuery(cwd, query) {
+  const jsCandidates = [
+    path.join(cwd, '.tasktronaut', 'bin', 'gsd-sdk.js'),
+    path.join(cwd, '..', '.tasktronaut', 'bin', 'gsd-sdk.js'),
+    path.join(cwd, '..', '..', '.tasktronaut', 'bin', 'gsd-sdk.js'),
+  ];
+
+  for (const script of jsCandidates) {
+    const nodeResult = spawnSync('node', [script, 'query', query], {
+      cwd,
+      encoding: 'utf8',
+      timeout: 2500,
+      windowsHide: true,
+    });
+    if (nodeResult.status === 0 && nodeResult.stdout && nodeResult.stdout.trim()) {
+      return nodeResult.stdout.trim();
+    }
+  }
+
+  const wrapperCandidates = [
+    path.join(cwd, '.tasktronaut', 'bin', 'gsd-sdk'),
+    path.join(cwd, '..', '.tasktronaut', 'bin', 'gsd-sdk'),
+    path.join(cwd, '..', '..', '.tasktronaut', 'bin', 'gsd-sdk'),
+    'gsd-sdk',
+  ];
+
+  for (const bin of wrapperCandidates) {
+    const wrapperResult = spawnSync(bin, ['query', query], {
+      cwd,
+      encoding: 'utf8',
+      timeout: 2500,
+      windowsHide: true,
+    });
+    if (wrapperResult.status === 0 && wrapperResult.stdout && wrapperResult.stdout.trim()) {
+      return wrapperResult.stdout.trim();
+    }
+  }
+
+  return '';
+}
+
+function truncate(value, max) {
+  if (!value || value.length <= max) return value || '';
+  return value.slice(0, max) + '\n...[truncated]';
+}

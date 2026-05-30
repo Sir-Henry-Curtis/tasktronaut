@@ -17,6 +17,8 @@ export async function togglePlanActModeProto(controller: Controller, request: To
 			mode = "plan"
 		} else if (request.mode === PlanActMode.ACT) {
 			mode = "act"
+		} else if (request.mode === PlanActMode.KISS) {
+			mode = "kiss"
 		} else {
 			throw new Error(`Invalid mode value: ${request.mode}`)
 		}

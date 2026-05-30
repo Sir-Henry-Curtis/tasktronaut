@@ -22,11 +22,23 @@ const EXECUTABLE_EVENTS = new Set([
 	"verification_requested",
 	"task_start_requested",
 	"task_resume_requested",
+	"task_status_requested",
 	"task_pause_requested",
 	"task_abort_requested",
 	"task_ready_for_review",
 	"task_verified",
+	"task_request_changes",
 	"task_add_review_note",
+	"task_add_review_comment",
+	"task_restore_checkpoint",
+	"task_request_commit",
+	"task_request_sync",
+	"task_request_ship_check",
+	"task_request_pr",
+	"focus_actor_requested",
+	"open_path_requested",
+	"tasktronaut_ui_requested",
+	"tasktronaut_auto_approval_updated",
 ])
 
 export function parseBridgeEventLine(line: string): BridgeEventRecord | undefined {

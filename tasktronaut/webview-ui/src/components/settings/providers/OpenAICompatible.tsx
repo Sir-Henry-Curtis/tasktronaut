@@ -3,6 +3,7 @@ import { ModelInfo, openAiModelInfoSaneDefaults } from "@shared/api"
 import { OpenAiModelsRequest } from "@shared/proto/cline/models"
 import { Mode } from "@shared/storage/types"
 import { VSCodeButton, VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
+import { InfoIcon } from "lucide-react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Tooltip } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
@@ -25,6 +26,25 @@ interface OpenAICompatibleProviderProps {
 	isPopup?: boolean
 	currentMode: Mode
 }
+
+const AdvancedSettingLabel = ({ label, tooltip }: { label: string; tooltip: string }) => (
+	<span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 500 }}>
+		<span>{label}</span>
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<span
+					className="cursor-help"
+					style={{ display: "inline-flex", alignItems: "center", opacity: 0.8 }}
+					aria-label={`${label} help`}>
+					<InfoIcon size={14} />
+				</span>
+			</TooltipTrigger>
+			<TooltipContent className="max-w-xs whitespace-pre-wrap" side="top">
+				{tooltip}
+			</TooltipContent>
+		</Tooltip>
+	</span>
+)
 
 /**
  * The OpenAI Compatible provider configuration component
@@ -128,10 +148,12 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 	const handleOpenAiModelChange = async (newModelId: string, modelInfo: ModelInfo | undefined) => {
 		await handleModeFieldsChange(
 			{
+				apiProvider: { plan: "planModeApiProvider", act: "actModeApiProvider" },
 				openAiModelId: { plan: "planModeOpenAiModelId", act: "actModeOpenAiModelId" },
 				openAiModelInfo: { plan: "planModeOpenAiModelInfo", act: "actModeOpenAiModelInfo" },
 			},
 			{
+				apiProvider: "openai" as const,
 				openAiModelId: newModelId,
 				openAiModelInfo: modelInfo ?? { ...openAiModelInfoSaneDefaults },
 			},
@@ -189,7 +211,14 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 				<DebouncedTextField
 					initialValue={selectedModelId || ""}
 					onChange={(value) =>
-						handleModeFieldChange({ plan: "planModeOpenAiModelId", act: "actModeOpenAiModelId" }, value, currentMode)
+						void handleModeFieldsChange(
+							{
+								apiProvider: { plan: "planModeApiProvider", act: "actModeApiProvider" },
+								openAiModelId: { plan: "planModeOpenAiModelId", act: "actModeOpenAiModelId" },
+							},
+							{ apiProvider: "openai" as const, openAiModelId: value },
+							currentMode,
+						)
 					}
 					placeholder={apiConfiguration?.openAiBaseUrl && apiConfiguration?.openAiApiKey ? "Loading models..." : "Enter Model ID..."}
 					style={{ width: "100%", marginBottom: 10 }}>
@@ -333,7 +362,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								currentMode,
 							)
 						}}>
-						Supports Images
+						<AdvancedSettingLabel
+							label="Supports Images"
+							tooltip="Enable this only if the selected endpoint/model accepts image inputs. Leave it on for modern multimodal OpenAI models. Turn it off for text-only backends."
+						/>
 					</VSCodeCheckbox>
 
 					<VSCodeCheckbox
@@ -349,7 +381,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								currentMode,
 							)
 						}}>
-						Enable R1 messages format
+						<AdvancedSettingLabel
+							label="Enable R1 messages format"
+							tooltip="Compatibility toggle for DeepSeek R1-style OpenAI-compatible backends that expect a different message/tool schema. Leave this off for normal OpenAI GPT-5.x endpoints."
+						/>
 					</VSCodeCheckbox>
 
 					<div style={{ display: "flex", gap: 10, marginTop: "5px" }}>
@@ -369,7 +404,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								)
 							}}
 							style={{ flex: 1 }}>
-							<span style={{ fontWeight: 500 }}>Context Window Size</span>
+							<AdvancedSettingLabel
+								label="Context Window Size"
+								tooltip="Informational model limit for total prompt history plus output. For OpenAI GPT-5.4 this should usually stay around 128K to 1.05M depending on the real model metadata. Changing this does not by itself fix TPM rate limits."
+							/>
 						</DebouncedTextField>
 
 						<DebouncedTextField
@@ -388,7 +426,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								)
 							}}
 							style={{ flex: 1 }}>
-							<span style={{ fontWeight: 500 }}>Max Output Tokens</span>
+							<AdvancedSettingLabel
+								label="Max Output Tokens"
+								tooltip="Caps how many tokens the model may generate in one response. Sane GPT-5.4 value: 8192. Use -1 only when the app should fall back to the built-in model default. Very large values like 500000 are not appropriate here."
+							/>
 						</DebouncedTextField>
 					</div>
 
@@ -409,7 +450,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								)
 							}}
 							style={{ flex: 1 }}>
-							<span style={{ fontWeight: 500 }}>Input Price / 1M tokens</span>
+							<AdvancedSettingLabel
+								label="Input Price / 1M tokens"
+								tooltip="Optional pricing metadata used for cost display only. It does not change model behavior. Set this if your OpenAI-compatible endpoint has custom pricing."
+							/>
 						</DebouncedTextField>
 
 						<DebouncedTextField
@@ -428,7 +472,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 								)
 							}}
 							style={{ flex: 1 }}>
-							<span style={{ fontWeight: 500 }}>Output Price / 1M tokens</span>
+							<AdvancedSettingLabel
+								label="Output Price / 1M tokens"
+								tooltip="Optional pricing metadata used for cost display only. It does not affect token limits, quality, or request size."
+							/>
 						</DebouncedTextField>
 					</div>
 
@@ -448,7 +495,10 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 									currentMode,
 								)
 							}}>
-							<span style={{ fontWeight: 500 }}>Temperature</span>
+							<AdvancedSettingLabel
+								label="Temperature"
+								tooltip="Controls randomness. For coding assistants, sane values are usually 0 to 0.3. Use 0 for the most deterministic behavior. Higher values may be better for brainstorming but can hurt tool reliability."
+							/>
 						</DebouncedTextField>
 					</div>
 				</>
@@ -461,8 +511,12 @@ export const OpenAICompatibleProvider = ({ showModelOptions, isPopup, currentMod
 					color: "var(--vscode-descriptionForeground)",
 				}}>
 				<span style={{ color: "var(--vscode-charts-orange)" }}>
-					(<span style={{ fontWeight: 500 }}>Note:</span> Tasktronaut relies on long prompts, multi-step tool use, and
-					iterative code editing. Models with weaker planning or tool-use abilities may struggle on complex tasks.)
+					(<span style={{ fontWeight: 500 }}>Note:</span> This warning exists so failures can be diagnosed, not just to say a
+					model is “weaker.” Tasktronaut uses long prompts, multi-step tool calls, iterative code editing, and large
+					conversation history. On models that handle those poorly, the common symptoms are repeated tool-call failures,
+					bad patch/edit formatting, lost task state, or OpenAI Responses context/tool-continuity errors. If you hit those,
+					try a fresh task, sane output-token limits such as 8192 for GPT-5.4, lower reasoning effort when context is
+					blowing up, or a model with stronger tool-use reliability.)
 				</span>
 			</p>
 

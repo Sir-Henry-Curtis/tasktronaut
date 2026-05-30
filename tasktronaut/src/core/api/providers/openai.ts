@@ -103,7 +103,7 @@ export class OpenAiHandler implements ApiHandler {
 			["o1", "o3", "o4", "gpt-5"].some((prefix) => modelId.includes(prefix)) && !modelId.includes("chat")
 
 		let openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = [
-			{ role: "system", content: systemPrompt },
+			...(systemPrompt ? [{ role: "system" as const, content: systemPrompt }] : []),
 			...convertToOpenAiMessages(messages),
 		]
 		let temperature: number | undefined

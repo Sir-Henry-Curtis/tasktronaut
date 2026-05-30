@@ -48,7 +48,6 @@ import { formatContentBlockToMarkdown } from "@integrations/misc/export-markdown
 import { processFilesIntoText } from "@integrations/misc/extract-text"
 import { showSystemNotification } from "@integrations/notifications"
 import { ITerminalManager } from "@integrations/terminal/types"
-import { BrowserSession } from "@services/browser/BrowserSession"
 import { UrlContentFetcher } from "@services/browser/UrlContentFetcher"
 import { featureFlagsService } from "@services/feature-flags"
 import { listFiles } from "@services/glob/list-files"
@@ -133,6 +132,10 @@ import { buildUserFeedbackContent } from "./utils/buildUserFeedbackContent"
 
 export type ToolResponse = ClineToolResponseContent
 
+export function shouldEndAfterTextOnlyAssistantResponse(assistantTextOnly: string, didToolUse: boolean): boolean {
+	return assistantTextOnly.trim().length > 0 && !didToolUse
+}
+
 type TaskParams = {
 	controller: Controller
 	mcpHub: McpHub
@@ -213,7 +216,6 @@ export class Task {
 	api: ApiHandler
 	terminalManager: ITerminalManager
 	private urlContentFetcher: UrlContentFetcher
-	browserSession: BrowserSession
 	contextManager: ContextManager
 	private diffViewProvider: DiffViewProvider
 	public checkpointManager?: ICheckpointManager
@@ -313,7 +315,6 @@ export class Task {
 		Logger.info(`[Task ${taskId}] Using StandaloneTerminalManager for command execution`)
 
 		this.urlContentFetcher = new UrlContentFetcher()
-		this.browserSession = new BrowserSession(stateManager)
 		this.contextManager = new ContextManager()
 		this.streamHandler = new StreamResponseHandler()
 		this.cwd = cwd
@@ -463,13 +464,15 @@ export class Task {
 			},
 		}
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
-		const currentProvider = mode === "plan" ? apiConfiguration.planModeApiProvider : apiConfiguration.actModeApiProvider
+		const currentProvider =
+			mode === "plan"
+				? apiConfiguration.planModeApiProvider
+				: mode === "kiss"
+					? apiConfiguration.kissModeApiProvider
+					: apiConfiguration.actModeApiProvider
 
 		// Now that ulid is initialized, we can build the API handler
 		this.api = buildApiHandler(effectiveApiConfiguration, mode)
-
-		// Set ulid on browserSession for telemetry tracking
-		this.browserSession.setUlid(this.ulid)
 
 		// Note: Task initialization (startTask/resumeTaskFromHistory) is now called
 		// from Controller.initTask() AFTER the task instance is fully assigned.
@@ -560,7 +563,6 @@ export class Task {
 			this.messageStateHandler,
 			this.api,
 			this.urlContentFetcher,
-			this.browserSession,
 			this.diffViewProvider,
 			this.mcpHub,
 			this.fileContextTracker,
@@ -1050,10 +1052,13 @@ export class Task {
 
 		const imageBlocks: ClineImageContentBlock[] = formatResponse.imageBlocks(images)
 
+		const isKissModeTask = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
 		const userContent: ClineUserContent[] = [
 			{
 				type: "text",
-				text: `<task>\n${task}\n</task>`,
+				// KISS mode: send raw text so lightweight local models don't see XML task tags
+				// that trigger structured/planning-style responses
+				text: isKissModeTask ? (task ?? "") : `<task>\n${task}\n</task>`,
 			},
 			...imageBlocks,
 		]
@@ -1342,27 +1347,37 @@ export class Task {
 		const hasPendingFileContextWarnings = pendingContextWarning && pendingContextWarning.length > 0
 
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
-		const [taskResumptionMessage, userResponseMessage] = formatResponse.taskResumption(
-			mode === "plan" ? "plan" : "act",
-			agoText,
-			this.cwd,
-			wasRecent,
-			responseText,
-			hasPendingFileContextWarnings,
-		)
 
-		if (taskResumptionMessage !== "") {
-			newUserContent.push({
-				type: "text",
-				text: taskResumptionMessage,
-			})
-		}
+		if (mode === "kiss") {
+			// KISS mode: skip the [TASK RESUMPTION] scaffolding and <user_message> XML wrapper
+			// entirely — they mention tool use and retry logic that confuses lightweight local models.
+			// Just send the user's reply as plain text.
+			if (responseText) {
+				newUserContent.push({ type: "text", text: responseText })
+			}
+		} else {
+			const [taskResumptionMessage, userResponseMessage] = formatResponse.taskResumption(
+				mode === "plan" ? "plan" : "act",
+				agoText,
+				this.cwd,
+				wasRecent,
+				responseText,
+				hasPendingFileContextWarnings,
+			)
 
-		if (userResponseMessage !== "") {
-			newUserContent.push({
-				type: "text",
-				text: userResponseMessage,
-			})
+			if (taskResumptionMessage !== "") {
+				newUserContent.push({
+					type: "text",
+					text: taskResumptionMessage,
+				})
+			}
+
+			if (userResponseMessage !== "") {
+				newUserContent.push({
+					type: "text",
+					text: userResponseMessage,
+				})
+			}
 		}
 
 		if (responseImages && responseImages.length > 0) {
@@ -1436,8 +1451,32 @@ export class Task {
 
 			//const totalCost = this.calculateApiCost(totalInputTokens, totalOutputTokens)
 			if (didEndLoop) {
+				const isKissLoop = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
+				if (isKissLoop) {
+					// KISS mode is conversational: after a text-only response, wait for the user's
+					// next message via ask("followup"). This posts a proper ask message so the existing
+					// UI state machine (buttonConfig, isWaitingForResponse) enables input and hides
+					// "Thinking..." without any special-case patches. When the user responds, loop back.
+					try {
+						const { text, images } = await this.ask("followup", "")
+						if (this.taskState.abort) break
+						nextUserContent = []
+						if (text?.trim()) nextUserContent.push({ type: "text", text })
+						if (images?.length) nextUserContent.push(...formatResponse.imageBlocks(images))
+						if (!nextUserContent.length) break
+						continue
+					} catch {
+						break // task was aborted while waiting
+					}
+				}
 				// For now a task never 'completes'. This will only happen if the user hits max requests and denies resetting the count.
 				//this.say("task_completed", `Task completed. Total API usage cost: ${totalCost}`)
+				break
+			}
+			const isKissLoop = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
+			if (isKissLoop) {
+				// Safety: KISS mode never sends noToolsUsed — it confuses small models with XML
+				// tool call examples that trigger training-data patterns like task_progress boilerplate.
 				break
 			}
 			// this.say(
@@ -1618,7 +1657,6 @@ export class Task {
 			// PHASE 7: Clean up resources
 			this.terminalManager.disposeAll()
 			this.urlContentFetcher.closeBrowser()
-			await this.browserSession.dispose()
 			this.clineIgnoreController.dispose()
 			this.fileContextTracker.dispose()
 			// need to await for when we want to make sure directories/files are reverted before
@@ -1715,7 +1753,11 @@ export class Task {
 		const model = this.api.getModel()
 		const apiConfig = this.stateManager.getApiConfiguration()
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
-		const providerId = (mode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
+		const providerId = (mode === "plan"
+			? apiConfig.planModeApiProvider
+			: mode === "kiss"
+				? apiConfig.kissModeApiProvider
+				: apiConfig.actModeApiProvider) as string
 		const customPrompt = this.stateManager.getGlobalSettingsKey("customPrompt")
 		return { model, providerId, customPrompt, mode }
 	}
@@ -1849,12 +1891,7 @@ export class Task {
 		const host = await HostProvider.env.getHostVersion({})
 		const ide = host?.platform || "Unknown"
 		const isCliEnvironment = host.clineType === ClineClient.Cli
-		const browserSettings = this.stateManager.getGlobalSettingsKey("browserSettings")
-		const disableBrowserTool = browserSettings.disableToolUse ?? false
-		// cline browser tool uses image recognition for navigation (requires model image support).
-		const modelSupportsBrowserUse = providerInfo.model.info.supportsImages ?? false
-
-		const supportsBrowserUse = modelSupportsBrowserUse && !disableBrowserTool // only enable browser use if the model supports it and the user hasn't disabled it
+		const supportsBrowserUse = false
 		const preferredLanguageRaw = this.stateManager.getGlobalSettingsKey("preferredLanguage")
 		const preferredLanguage = getLanguageKey(preferredLanguageRaw as LanguageDisplay)
 		const preferredLanguageInstructions =
@@ -1933,35 +1970,43 @@ export class Task {
 			visible: visibleTabPaths.slice(0, cap),
 		}
 
+		const isKissMode = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
+
+		// KISS mode uses the xs (compact) variant and native tool calling so MCP tools are
+		// surfaced as first-class function definitions rather than as XML use_mcp_tool wrappers.
+		const effectiveProviderInfo = isKissMode ? { ...providerInfo, customPrompt: "compact" } : providerInfo
+
 		const promptContext: SystemPromptContext = {
 			cwd: this.cwd,
 			ide,
-			providerInfo,
-			editorTabs,
-			supportsBrowserUse,
+			providerInfo: effectiveProviderInfo,
+			// KISS mode: strip all codebase context so lightweight local models receive a minimal prompt
+			editorTabs: isKissMode ? undefined : editorTabs,
+			supportsBrowserUse: isKissMode ? false : supportsBrowserUse,
 			mcpHub: this.mcpHub,
-			skills: availableSkills,
-			focusChainSettings: this.stateManager.getGlobalSettingsKey("focusChainSettings"),
-			globalClineRulesFileInstructions,
-			localClineRulesFileInstructions,
-			localCursorRulesFileInstructions,
-			localCursorRulesDirInstructions,
-			localWindsurfRulesFileInstructions,
-			localAgentsRulesFileInstructions,
-			clineIgnoreInstructions,
+			skills: isKissMode ? undefined : availableSkills,
+			focusChainSettings: isKissMode ? undefined : this.stateManager.getGlobalSettingsKey("focusChainSettings"),
+			globalClineRulesFileInstructions: isKissMode ? undefined : globalClineRulesFileInstructions,
+			localClineRulesFileInstructions: isKissMode ? undefined : localClineRulesFileInstructions,
+			localCursorRulesFileInstructions: isKissMode ? undefined : localCursorRulesFileInstructions,
+			localCursorRulesDirInstructions: isKissMode ? undefined : localCursorRulesDirInstructions,
+			localWindsurfRulesFileInstructions: isKissMode ? undefined : localWindsurfRulesFileInstructions,
+			localAgentsRulesFileInstructions: isKissMode ? undefined : localAgentsRulesFileInstructions,
+			clineIgnoreInstructions: isKissMode ? undefined : clineIgnoreInstructions,
 			preferredLanguageInstructions,
-			browserSettings: this.stateManager.getGlobalSettingsKey("browserSettings"),
-			subagentsEnabled: this.stateManager.getGlobalSettingsKey("subagentsEnabled"),
-			clineWebToolsEnabled:
-				this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled") && featureFlagsService.getWebtoolsEnabled(),
-			isMultiRootEnabled: multiRootEnabled,
-			workspaceRoots,
+			subagentsEnabled: isKissMode ? false : this.stateManager.getGlobalSettingsKey("subagentsEnabled"),
+			clineWebToolsEnabled: isKissMode
+				? false
+				: this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled") && featureFlagsService.getWebtoolsEnabled(),
+			isMultiRootEnabled: isKissMode ? false : multiRootEnabled,
+			workspaceRoots: isKissMode ? undefined : workspaceRoots,
 			isSubagentRun: false,
 			isCliEnvironment,
 			enableNativeToolCalls:
+				isKissMode ||
 				providerInfo.model.info.apiFormat === ApiFormat.OPENAI_RESPONSES ||
 				this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
-			enableParallelToolCalling: this.isParallelToolCallingEnabled(),
+			enableParallelToolCalling: isKissMode ? false : this.isParallelToolCallingEnabled(),
 			terminalExecutionMode: this.terminalExecutionMode,
 		}
 
@@ -1971,7 +2016,10 @@ export class Task {
 			await this.say("conditional_rules_applied", JSON.stringify({ rules: activatedConditionalRules }))
 		}
 
-		const { systemPrompt, tools } = await getSystemPrompt(promptContext)
+		const { systemPrompt: rawSystemPrompt, tools: rawTools } = await getSystemPrompt(promptContext)
+
+		const systemPrompt = rawSystemPrompt
+		const tools = rawTools
 		this.useNativeToolCalls = !!tools?.length
 		await this.writePromptMetadataArtifacts({ systemPrompt, providerInfo })
 
@@ -2365,7 +2413,7 @@ export class Task {
 				"mistake_limit_reached",
 				this.api.getModel().id.includes("claude")
 					? `This may indicate a failure in Tasktronaut's planning or tool-use loop, which can sometimes be mitigated with direct guidance (for example: "Try breaking the task into smaller steps").`
-					: "Tasktronaut relies on long prompts, multi-step tool use, and iterative code editing. Models with weaker planning or tool-use abilities may struggle on complex tasks.",
+					: "Tasktronaut stopped because the model hit repeated execution mistakes. This warning usually appears after several failed tool calls, malformed patch/edit attempts, or OpenAI Responses context/tool-continuity errors in the same task. It is meant as a debugging signal, not just a capability warning. Things to try: start a fresh task to shrink history, keep max output tokens sane, reduce reasoning effort if the model is over-producing context, or switch to a model with stronger multi-step tool-use reliability.",
 			)
 			if (response === "messageResponse") {
 				// Display the user's message in the chat UI
@@ -2563,7 +2611,9 @@ export class Task {
 
 		// add environment details as its own text block, separate from tool results
 		// do not add environment details to the message which we are compacting the context window
-		if (environmentDetails) {
+		// KISS mode: suppress environment details so lightweight local models receive no extra context
+		const isKissMode = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
+		if (environmentDetails && !isKissMode) {
 			userContent.push({ type: "text", text: environmentDetails })
 		}
 
@@ -3170,8 +3220,14 @@ export class Task {
 
 				// if the model did not tool use, then we need to tell it to either use a tool or attempt_completion
 				const didToolUse = this.taskState.assistantMessageContent.some((block) => block.type === "tool_use")
+				const didProvideTextOnlyAnswer = shouldEndAfterTextOnlyAssistantResponse(assistantTextOnly, didToolUse)
 
-				if (!didToolUse) {
+				if (didProvideTextOnlyAnswer) {
+					// A plain answer is valid for non-actionable user questions. Previously we treated
+					// every text-only response as a tool-use failure, which made simple Q&A feel silent
+					// or self-correcting instead of helpful.
+					didEndLoop = true
+				} else if (!didToolUse) {
 					// normal request where tool use is required
 					this.taskState.userMessageContent.push({
 						type: "text",
@@ -3183,8 +3239,10 @@ export class Task {
 				// Reset auto-retry counter for each new API request
 				this.taskState.autoRetryAttempts = 0
 
-				const recDidEndLoop = await this.recursivelyMakeClineRequests(this.taskState.userMessageContent)
-				didEndLoop = recDidEndLoop
+				if (!didEndLoop) {
+					const recDidEndLoop = await this.recursivelyMakeClineRequests(this.taskState.userMessageContent)
+					didEndLoop = recDidEndLoop
+				}
 			} else {
 				// if there's no assistant_responses, that means we got no text or tool_use content blocks from API which we should assume is an error
 				const { model, providerId } = this.getCurrentProviderInfo()
@@ -3392,8 +3450,9 @@ export class Task {
 			? await ensureLocalClineDirExists(this.cwd, GlobalFileNames.clineRules)
 			: false
 
-		// Add focus chain instructions if needed
-		if (!useCompactPrompt && this.FocusChainManager?.shouldIncludeFocusChainInstructions()) {
+		// Add focus chain instructions if needed (not in KISS mode — no outside input)
+		const isKissModeForContext = this.stateManager.getGlobalSettingsKey("mode") === "kiss"
+		if (!isKissModeForContext && !useCompactPrompt && this.FocusChainManager?.shouldIncludeFocusChainInstructions()) {
 			const focusChainInstructions = this.FocusChainManager.generateFocusChainInstructions()
 			if (focusChainInstructions.trim()) {
 				processedUserContent.push({

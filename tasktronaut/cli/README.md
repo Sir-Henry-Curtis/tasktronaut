@@ -28,7 +28,7 @@
 
 Meet Cline, an AI assistant that lives in your terminal.
 
-Cline can handle complex software development tasks step-by-step. With tools that let him create & edit files, explore large projects, use the browser, and execute terminal commands (after you grant permission), he can assist you in ways that go beyond code completion or tech support.
+Cline can handle complex software development tasks step-by-step. With tools that let him create & edit files, explore large projects, fetch external URLs, and execute terminal commands (after you grant permission), he can assist you in ways that go beyond code completion or tech support.
 
 ```bash
 npm i -g cline

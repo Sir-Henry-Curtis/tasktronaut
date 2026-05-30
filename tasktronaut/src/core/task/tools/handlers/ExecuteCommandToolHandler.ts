@@ -5,6 +5,7 @@ import { showApprovalNotification, showSystemNotification } from "@integrations/
 import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences"
 import { ClineAsk } from "@shared/ExtensionMessage"
 import { arePathsEqual } from "@utils/path"
+import path from "path"
 import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
@@ -56,6 +57,27 @@ export function resolveCommandTimeoutSeconds(
 	}
 
 	return isLikelyLongRunningCommand(command) ? LONG_RUNNING_COMMAND_TIMEOUT_SECONDS : DEFAULT_COMMAND_TIMEOUT_SECONDS
+}
+
+export function normalizeManagedGsdSdkCommand(
+	command: string,
+	platform: NodeJS.Platform = process.platform,
+	workspaceRelativeLauncher?: string,
+): string {
+	const trimmedStart = command.match(/^\s*/)?.[0] ?? ""
+	const commandBody = command.slice(trimmedStart.length)
+	const launcher =
+		workspaceRelativeLauncher ??
+		(platform === "win32" ? ".tasktronaut\\bin\\gsd-sdk.cmd" : path.posix.join(".tasktronaut", "bin", "gsd-sdk"))
+	const escapedLauncher = launcher.includes(" ") ? `"${launcher}"` : launcher
+
+	return (
+		trimmedStart +
+		commandBody.replace(
+			/^(?:"gsd-sdk"|'gsd-sdk'|gsd-sdk|(?:\.?[\\/])?\.tasktronaut[\\/]bin[\\/]gsd-sdk(?:\.cmd)?)(?=\s|$)/i,
+			escapedLauncher,
+		)
+	)
 }
 
 export class ExecuteCommandToolHandler implements IFullyManagedTool {
@@ -126,7 +148,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 
 		// Handle multi-workspace command execution
 		let executionDir: string = config.cwd
-		let actualCommand: string = command
+		let actualCommand: string = normalizeManagedGsdSdkCommand(command)
 
 		let workspaceHintUsed = false
 		let workspaceHint: string | undefined
@@ -139,7 +161,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 			if (commandMatch) {
 				workspaceHintUsed = true
 				workspaceHint = commandMatch[1]
-				actualCommand = commandMatch[2].trim()
+				actualCommand = normalizeManagedGsdSdkCommand(commandMatch[2].trim())
 
 				// Find the workspace root for this hint
 				const adapter = new WorkspacePathAdapter({

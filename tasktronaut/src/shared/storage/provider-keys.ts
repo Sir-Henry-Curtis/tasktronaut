@@ -122,7 +122,7 @@ const ProviderDefaultModelMap: Partial<Record<ApiProvider, string>> = {
  * Get the provider-specific model ID key for a given provider and mode.
  * Different providers store their model IDs in different state keys.
  */
-export function getProviderModelIdKey(provider: ApiProvider, mode: "act" | "plan"): SettingsKey {
+export function getProviderModelIdKey(provider: ApiProvider, mode: "act" | "plan" | "kiss"): SettingsKey {
 	const keySuffix = ProviderKeyMap[provider]
 	if (keySuffix) {
 		// E.g. actModeOpenAiModelId, planModeOpenAiModelId, etc.

@@ -1,61 +1,49 @@
-out
-dist
-dist-standalone
-node_modules
-tmp
+node_modules/
+dist/
+dist-standalone/
+build/
+out/
+tmp/
+coverage/
+coverage-unit/
+.nyc_output/
+*.vsix
+*.tsbuildinfo
 .vscode-test/
+test-results/
 
 .DS_Store
-.idea
+.idea/
 .husky/_/
 
 pnpm-lock.yaml
 
 .clineignore
-.venv
+.venv/
 .actrc
 CLAUDE.local.md
-
-webview-ui/src/**/*.js
-webview-ui/src/**/*.js.map
-
-# Ignore coverage directories and files
-coverage
-coverage-unit
-.nyc_output
-# But don't ignore the coverage scripts in .github/scripts/
-!.github/scripts/coverage/
-
 *evals.env
 .env
 .secrets
+secrets.json
 .github/act/.secrets
 
-.worktrees
+.worktrees/
+.tui-test/
+tui-traces/
+tests/**/cache/
 
-## Generated files ##
+webview-ui/build/
+webview-ui/node_modules/
+webview-ui/src/**/*.js
+webview-ui/src/**/*.js.map
+webview-ui/src/services/grpc-client.ts
+
+cli/dist/
+cli/node_modules/
+
 src/generated/
 src/shared/proto/
-webview-ui/src/services/grpc-client.ts
-*.tsbuildinfo
-
-!dist/
-!dist/**
-dist/*.vsix
-
-# E2E Tests
-test-results
-
-/.github/act
-/pkg
-.secrets
-
-*.tsbuildinfo
-
-# Smoke test results (generated)
 evals/smoke-tests/results/
-
-.tui-test
-secrets.json
-tui-traces
-tests/**/cache
+/.github/act/
+/pkg/

@@ -46,9 +46,6 @@ export const getColor = (message: ClineMessage): string => {
 			case "command":
 			case "command_output":
 				return COLOR_PURPLE // Red for terminal commands
-			case "browser_action":
-			case "browser_action_result":
-				return COLOR_PURPLE // Purple for browser actions
 			case "completion_result":
 				return COLOR_GREEN // Green for task success
 			default:
@@ -89,8 +86,6 @@ export const getColor = (message: ClineMessage): string => {
 				return COLOR_BEIGE // Default beige for tool approvals
 			case "command":
 				return COLOR_PURPLE // Red for command approvals (same as terminal commands)
-			case "browser_action_launch":
-				return COLOR_PURPLE // Purple for browser launch approvals (same as browser actions)
 			default:
 				return COLOR_DARK_GRAY // Dark gray for unknown
 		}

@@ -461,7 +461,7 @@ All tests passed. Phase {phase} marked complete.
 <step name="scan_phase_artifacts">
 Run phase artifact scan to surface any open items before marking phase verified:
 
-`audit-open` is CJS-only until registered on `gsd-sdk query`:
+Use the Tasktronaut-native query surface for artifact audit:
 
 ```bash
 gsd-sdk query audit-open --json

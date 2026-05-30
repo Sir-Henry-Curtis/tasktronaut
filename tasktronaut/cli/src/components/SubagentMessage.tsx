@@ -9,7 +9,7 @@ import { jsonParseSafe } from "../utils/parser"
 interface SubagentMessageProps {
 	message: ClineMessage
 	isStreaming?: boolean
-	mode?: "act" | "plan"
+	mode?: "act" | "plan" | "kiss"
 }
 
 const TREE_PREFIX_WIDTH = 5

@@ -145,12 +145,6 @@ describe("display", () => {
 				expect(result).toContain("Tool:")
 			})
 
-			it("should format browser_action message", () => {
-				const message = createMessage({ say: "browser_action", text: "click button" })
-				const result = formatMessage(message)
-				expect(result).toContain("Browser:")
-			})
-
 			it("should format api_req_started in verbose mode", () => {
 				const message = createMessage({ say: "api_req_started", text: "" })
 				const result = formatMessage(message, true)
@@ -250,16 +244,6 @@ describe("display", () => {
 				})
 				const result = formatMessage(message)
 				expect(result).toContain("Resume task?")
-			})
-
-			it("should format browser_action_launch ask", () => {
-				const message = createMessage({
-					type: "ask",
-					ask: "browser_action_launch",
-					text: "https://example.com",
-				})
-				const result = formatMessage(message)
-				expect(result).toContain("Launch browser?")
 			})
 
 			it("should format use_mcp_server ask", () => {

@@ -285,7 +285,6 @@ function getAskPromptType(ask: ClineAsk, text: string): "confirmation" | "text" 
 		case "resume_completed_task":
 		case "command":
 		case "tool":
-		case "browser_action_launch":
 		case "use_mcp_server":
 		case "api_req_failed":
 			return "confirmation"

@@ -21,6 +21,7 @@ const AgentBaseConfigSchema = z.object({
 	modelId: z.string().trim().min(1).optional(),
 	role: AgentRoleSchema.default("research"),
 	isolation: AgentIsolationSchema.default("inherit"),
+	allowParallelSharedWorkspace: z.boolean().default(false),
 	systemPrompt: z.string().trim().min(1),
 })
 
@@ -30,6 +31,7 @@ const AgentConfigFrontmatterSchema = z.object({
 	modelId: z.string().trim().min(1).optional(),
 	role: AgentRoleSchema.optional(),
 	isolation: AgentIsolationSchema.optional(),
+	allowParallelSharedWorkspace: z.boolean().optional(),
 	tools: z.union([z.string(), z.array(z.string())]).optional(),
 	skills: z.union([z.string(), z.array(z.string())]).optional(),
 })
@@ -105,6 +107,7 @@ export function parseAgentConfigFromYaml(content: string): AgentBaseConfig {
 		modelId: parsedFrontmatter.modelId,
 		role: parsedFrontmatter.role,
 		isolation: parsedFrontmatter.isolation,
+		allowParallelSharedWorkspace: parsedFrontmatter.allowParallelSharedWorkspace,
 		tools: parseTools(parsedFrontmatter.tools),
 		skills: parseSkills(parsedFrontmatter.skills),
 		systemPrompt,

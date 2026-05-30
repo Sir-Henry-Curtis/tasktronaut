@@ -11,6 +11,7 @@
 import { telemetryService } from "@services/telemetry"
 import { ChildProcess, spawn } from "child_process"
 import { EventEmitter } from "events"
+import path from "path"
 import { terminateProcessTree } from "@/utils/process-termination"
 
 import {
@@ -22,6 +23,45 @@ import {
 	TRUNCATE_KEEP_LINES,
 } from "../constants"
 import type { ITerminal, ITerminalProcess, TerminalCompletionDetails, TerminalProcessEvents } from "../types"
+
+function getPathEnvKey(env: NodeJS.ProcessEnv): string {
+	if (process.platform !== "win32") {
+		return "PATH"
+	}
+
+	return Object.keys(env).find((key) => key.toLowerCase() === "path") ?? "Path"
+}
+
+function buildCommandEnv(cwd: string): NodeJS.ProcessEnv {
+	const env: NodeJS.ProcessEnv = {
+		...process.env,
+		TERM: "xterm-256color",
+		PAGER: "cat", // Prevent less from being used, reducing interactivity
+		EDITOR: process.env.EDITOR || "cat", // Set EDITOR if not already set
+		GIT_PAGER: "cat", // Prevent git from using less
+		SYSTEMD_PAGER: "", // Disable systemd pager
+		MANPAGER: "cat", // Disable man pager
+	}
+
+	const pathKey = getPathEnvKey(env)
+	const workspaceBin = path.join(cwd, ".tasktronaut", "bin")
+	env[pathKey] = `${workspaceBin}${path.delimiter}${env[pathKey] ?? ""}`
+
+	return env
+}
+
+function shellSingleQuote(value: string): string {
+	return `'${value.replace(/'/g, "'\\''")}'`
+}
+
+function prepareCommandForWorkspaceBin(command: string, cwd: string): string {
+	if (process.platform === "win32") {
+		return command
+	}
+
+	const workspaceBin = path.join(cwd, ".tasktronaut", "bin")
+	return `PATH=${shellSingleQuote(workspaceBin)}:$PATH; export PATH; ${command}`
+}
 
 /**
  * Manages the execution of a command in a standalone terminal environment.
@@ -84,7 +124,8 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 		const cwd = (terminal as any)._cwd || process.cwd()
 
 		// Prepare command for execution
-		const shellArgs = this.getShellArgs(shell, command)
+		const preparedCommand = prepareCommandForWorkspaceBin(command, cwd)
+		const shellArgs = this.getShellArgs(shell, preparedCommand)
 
 		try {
 			// Create shell options
@@ -96,15 +137,7 @@ export class StandaloneTerminalProcess extends EventEmitter<TerminalProcessEvent
 			} = {
 				cwd: cwd,
 				stdio: ["ignore", "pipe", "pipe"], // Disable STDIN to prevent interactivity
-				env: {
-					...process.env,
-					TERM: "xterm-256color",
-					PAGER: "cat", // Prevent less from being used, reducing interactivity
-					EDITOR: process.env.EDITOR || "cat", // Set EDITOR if not already set
-					GIT_PAGER: "cat", // Prevent git from using less
-					SYSTEMD_PAGER: "", // Disable systemd pager
-					MANPAGER: "cat", // Disable man pager
-				},
+				env: buildCommandEnv(cwd),
 			}
 
 			// Enable the shell option for "cmd.exe" to prevent double quotes from being over escaped

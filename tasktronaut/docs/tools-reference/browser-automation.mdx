@@ -1,116 +1,73 @@
 ---
-title: "Browser Automation"
-sidebarTitle: "Browser Automation"
-description: "Interact with websites through Cline's controlled browser instance."
+title: "Web Fetch"
+sidebarTitle: "Web Fetch"
+description: "Retrieve external web content through Tasktronaut's controlled URL fetch path."
 ---
 
-Browser automation allows Cline to interact with web content directly through a controlled Chrome instance. It can view websites, test applications, fill forms, and capture screenshots.
+Tasktronaut's baseline product does not ship general browser automation. Instead, it supports controlled external URL retrieval through `web_fetch` and approved research MCP tools.
 
 ## Capabilities
 
-- Visit websites and view content
-- Test locally running web applications
-- Fill out forms and click elements
-- Capture screenshots
-- Monitor console logs and errors
-- Scroll through pages
+- Retrieve content from a specific URL
+- Inspect official documentation and public reference pages
+- Pull external text into the task context for analysis
+- Combine URL retrieval with approved MCP research tools when policy allows
 
 ## Basic Commands
 
-Ask Cline to use the browser with simple instructions:
+Ask Cline to fetch a specific URL with simple instructions:
 
 ```text
-Use the browser to check https://example.com
+Fetch https://example.com and summarize the page
 ```
 
 ```text
-Click the login button
+Fetch https://example.com/docs/install and tell me the install steps
 ```
 
 ```text
-Type 'Hello world' in the search box
-```
-
-```text
-Scroll down to see more content
-```
-
-```text
-Close the browser
+Fetch the changelog at https://example.com/changelog and list the latest release notes
 ```
 
 ## Example Workflows
 
-### Testing a Web Application
+### Inspecting Official Documentation
 
 ```text
-Start my React app with "npm start" and check if it's working at http://localhost:3000
+Fetch https://example.com/docs/api and summarize the authentication requirements
 ```
 
-### Analyzing a Website
+### Reviewing Release Notes
 
 ```text
-Visit https://example.com and tell me about its design and layout
-```
-
-### Form Testing
-
-```text
-Go to https://example.com/contact, fill out the form with test data, and submit
+Fetch https://example.com/releases and list the latest compatibility changes
 ```
 
 ## Important Details
 
-### One Browser at a Time
+### No General Browser Session
 
-Cline can only run one browser at a time. To visit a different site:
-- Navigate to a new URL in the same session
-- Or close the browser and open a new one
+Tasktronaut does not maintain a general-purpose interactive browser session in its baseline profile. If you need multi-step website interaction, use an approved MCP/browser integration explicitly.
 
-### Close Before Other Tools
+### Prefer Official Sources
 
-Close the browser before editing files or running commands:
+For consistency and provenance:
 
-```text
-Close the browser and update the CSS to fix the alignment issue we saw
-```
-
-### Fixed Viewport
-
-The browser has a fixed 900x600 pixel viewport. Cline shares screenshots after each action so you see exactly what it sees.
-
-### Console Logs
-
-Cline captures browser console logs, which is helpful for debugging. These are included with each screenshot.
+- prefer official docs, changelogs, package pages, and vendor-hosted references
+- avoid ad hoc search unless policy-approved external research tools are available
+- record provenance when external findings affect project decisions
 
 ## Common Use Cases
 
-- **Web Development**: Test websites and applications
-- **UI/UX Review**: Get feedback on design and usability
-- **Content Research**: Browse to gather information
-- **Form Testing**: Verify forms work correctly
-- **Responsive Testing**: Check appearance at different sizes
+- **Documentation Review**: Inspect official docs and API references
+- **Release Research**: Read changelogs and release notes
+- **Reference Gathering**: Pull exact external URLs into the task for analysis
+- **Controlled External Context**: Add bounded outside information without a general browser surface
 
 ## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| Website doesn't load | Use full URL with http:// or https:// |
-| Click doesn't work | Describe element location more precisely |
-| Browser seems stuck | Close browser and try again |
-
-## WSL Configuration
-
-When running VS Code in WSL, configure Windows to allow WSL to connect to Chrome:
-
-### Allow Connection (PowerShell as Admin)
-
-```powershell
-New-NetFirewallRule -DisplayName "WSL Chrome Debug" -Direction Inbound -LocalPort 9222 -Protocol TCP -Action Allow
-```
-
-### Configure Cline
-
-1. Open VS Code settings
-2. Search for "Cline: Chrome Executable Path"
-3. Set to your Chrome path (e.g., `C:\Program Files\Google\Chrome\Application\chrome.exe`)
+| Website doesn't load | Use the full URL with `http://` or `https://` |
+| Content is too noisy | Prefer a more specific documentation or release-notes URL |
+| You need interaction, not retrieval | Use an approved MCP/browser integration rather than baseline `web_fetch` |

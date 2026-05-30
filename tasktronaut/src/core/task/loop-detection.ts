@@ -17,7 +17,7 @@ import type { TaskState } from "./TaskState"
 
 // Soft threshold: inject a warning, giving the LLM one chance to self-correct.
 // Hard threshold: escalate to user or fail task. Set higher to avoid false
-// positives on tools that may legitimately repeat (e.g., browser_action screenshots).
+// positives on tools that may legitimately repeat for progress reporting.
 export const LOOP_DETECTION_SOFT_THRESHOLD = 3
 const LOOP_DETECTION_HARD_THRESHOLD = 5
 

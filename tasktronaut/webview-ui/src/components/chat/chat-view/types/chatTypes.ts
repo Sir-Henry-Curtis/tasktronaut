@@ -6,6 +6,13 @@ import { ClineAsk, ClineMessage } from "@shared/ExtensionMessage"
 import { ListRange, VirtuosoHandle } from "react-virtuoso"
 import { ButtonActionType } from "../shared/buttonConfig"
 
+export interface QueuedMessage {
+	id: string
+	text: string
+	images: string[]
+	files: string[]
+}
+
 /**
  * Main ChatView component props
  */
@@ -35,6 +42,8 @@ export interface ChatState {
 	setSendingDisabled: React.Dispatch<React.SetStateAction<boolean>>
 	enableButtons: boolean
 	setEnableButtons: React.Dispatch<React.SetStateAction<boolean>>
+	messageQueue: QueuedMessage[]
+	setMessageQueue: React.Dispatch<React.SetStateAction<QueuedMessage[]>>
 	primaryButtonText: string | undefined
 	setPrimaryButtonText: React.Dispatch<React.SetStateAction<string | undefined>>
 	secondaryButtonText: string | undefined
@@ -70,6 +79,9 @@ export interface MessageHandlers {
 	handleSendMessage: (text: string, images: string[], files: string[]) => Promise<void>
 	handleTaskCloseButtonClick: () => void
 	startNewTask: () => Promise<void>
+	handleQueueMessage: (text: string, images: string[], files: string[]) => void
+	removeFromQueue: (id: string) => void
+	stopAndProcessQueue: () => Promise<void>
 }
 
 /**

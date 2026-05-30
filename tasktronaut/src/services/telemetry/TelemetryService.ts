@@ -1,5 +1,4 @@
 import { HostProvider } from "@hosts/host-provider"
-import type { BrowserSettings } from "@shared/BrowserSettings"
 import { ApiFormat, apiFormatToJSON } from "@shared/proto/cline/models"
 import type { TaskFeedbackType } from "@shared/WebviewMessage"
 import * as os from "os"
@@ -1118,92 +1117,6 @@ export class TelemetryService {
 				model,
 				provider,
 				ulid,
-			},
-		})
-	}
-
-	/**
-	 * Records when the browser tool is started
-	 * @param ulid Unique identifier for the task
-	 * @param browserSettings The browser settings being used
-	 */
-	public captureBrowserToolStart(ulid: string, browserSettings: BrowserSettings) {
-		if (!this.isCategoryEnabled("browser")) {
-			return
-		}
-
-		this.capture({
-			event: TelemetryService.EVENTS.TASK.BROWSER_TOOL_START,
-			properties: {
-				ulid,
-				viewport: browserSettings.viewport,
-				isRemote: !!browserSettings.remoteBrowserEnabled,
-				remoteBrowserHost: browserSettings.remoteBrowserHost,
-				timestamp: new Date().toISOString(),
-			},
-		})
-	}
-
-	/**
-	 * Records when the browser tool is completed
-	 * @param ulid Unique identifier for the task
-	 * @param stats Statistics about the browser session
-	 */
-	public captureBrowserToolEnd(
-		ulid: string,
-		stats: {
-			actionCount: number
-			duration: number
-			actions?: string[]
-		},
-	) {
-		if (!this.isCategoryEnabled("browser")) {
-			return
-		}
-
-		this.capture({
-			event: TelemetryService.EVENTS.TASK.BROWSER_TOOL_END,
-			properties: {
-				ulid,
-				actionCount: stats.actionCount,
-				duration: stats.duration,
-				actions: stats.actions,
-				timestamp: new Date().toISOString(),
-			},
-		})
-	}
-
-	/**
-	 * Records when browser errors occur during a task
-	 * @param ulid Unique identifier for the task
-	 * @param errorType Type of error that occurred (e.g., "launch_error", "connection_error", "navigation_error")
-	 * @param errorMessage The error message
-	 * @param context Additional context about where the error occurred
-	 */
-	public captureBrowserError(
-		ulid: string,
-		errorType: string,
-		errorMessage: string,
-		context?: {
-			action?: string
-			url?: string
-			isRemote?: boolean
-			remoteBrowserHost?: string
-			endpoint?: string
-		},
-	) {
-		if (!this.isCategoryEnabled("browser")) {
-			return
-		}
-
-		this.capture({
-			event: TelemetryService.EVENTS.TASK.BROWSER_ERROR,
-			properties: {
-				ulid,
-				errorType,
-				errorMessage,
-				...(context && { context }),
-				timestamp: new Date().toISOString(),
 			},
 		})
 	}

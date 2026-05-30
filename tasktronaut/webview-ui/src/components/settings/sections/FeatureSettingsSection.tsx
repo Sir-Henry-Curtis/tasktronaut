@@ -101,13 +101,6 @@ const editorFeatures: FeatureToggle[] = [
 		settingKey: "enableCheckpointsSetting",
 	},
 	{
-		id: "cline-web-tools",
-		label: "Tasktronaut Web Tools",
-		description: "Access web browsing and search capabilities",
-		stateKey: "clineWebToolsEnabled",
-		settingKey: "clineWebToolsEnabled",
-	},
-	{
 		id: "worktrees",
 		label: "Worktrees",
 		description: "Enables git worktree management for running parallel Tasktronaut tasks.",
@@ -208,10 +201,8 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		strictPlanModeEnabled,
 		useAutoCondense,
 		subagentsEnabled,
-		clineWebToolsEnabled,
 		worktreesEnabled,
 		focusChainSettings,
-		remoteConfigSettings,
 		nativeToolCallSetting,
 		enableParallelToolCalling,
 		backgroundEditEnabled,
@@ -237,7 +228,6 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		focusChainEnabled: focusChainSettings?.enabled,
 		useAutoCondense,
 		subagentsEnabled,
-		clineWebToolsEnabled: clineWebToolsEnabled?.user,
 		worktreesEnabled: worktreesEnabled?.user,
 		enableParallelToolCalling,
 		backgroundEditEnabled,
@@ -247,7 +237,6 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 
 	// Visibility lookup for features with feature flags
 	const featureVisibility: Record<string, boolean | undefined> = {
-		clineWebToolsEnabled: clineWebToolsEnabled?.featureFlag,
 		worktreesEnabled: worktreesEnabled?.featureFlag,
 	}
 

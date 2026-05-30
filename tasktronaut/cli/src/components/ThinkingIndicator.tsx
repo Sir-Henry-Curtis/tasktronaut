@@ -9,7 +9,7 @@ import { COLORS } from "../constants/colors"
 import { FeatureTip } from "./FeatureTip"
 
 interface ThinkingIndicatorProps {
-	mode?: "act" | "plan"
+	mode?: "act" | "plan" | "kiss"
 	startTime?: number // Unix timestamp when thinking started
 	onCancel?: () => void // Called when user presses esc to interrupt
 }

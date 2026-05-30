@@ -161,128 +161,9 @@ export class ClineAuthProvider {
 	 * @param controller - The controller instance to access stored secrets.
 	 * @returns {Promise<ClineAuthInfo | null>} A promise that resolves with the auth info or null.
 	 */
-	async retrieveClineAuthInfo(controller: Controller): Promise<ClineAuthInfo | null> {
-		try {
-			// Get the stored auth data from secure storage
-			const storedAuthDataString = controller.stateManager.getSecretKey("cline:clineAccountId")
-
-			if (!storedAuthDataString) {
-				Logger.debug("No stored authentication data found")
-				// Reset retry count when there's no stored auth
-				this.refreshRetryCount = 0
-				this.lastRefreshAttempt = 0
-				return null
-			}
-
-			// Parse the stored auth data
-			let storedAuthData: ClineAuthInfo
-			try {
-				storedAuthData = JSON.parse(storedAuthDataString)
-			} catch (e) {
-				Logger.error("Failed to parse stored auth data:", e)
-				return this.clearSession(controller, "Failed to parse stored auth data")
-			}
-
-			if (!storedAuthData.refreshToken || !storedAuthData?.idToken) {
-				return this.clearSession(controller, "No refresh token or ID token found in store", storedAuthData)
-			}
-
-			if (await this.shouldRefreshIdToken(storedAuthData.refreshToken, storedAuthData.expiresAt)) {
-				// If the token hasn't expired yet,
-				// and it failed the first refresh attempt
-				// with something other than invalid token
-				// continue with the request
-				if (this.refreshRetryCount > 0 && this.timeUntilExpiry(storedAuthData.idToken) > 30) {
-					this.refreshRetryCount = 0
-					this.lastRefreshAttempt = 0
-					return storedAuthData
-				}
-
-				// Check if we need to wait before retrying
-				const now = Date.now()
-				const timeSinceLastAttempt = now - this.lastRefreshAttempt
-				if (timeSinceLastAttempt < this.RETRY_DELAY_MS && this.refreshRetryCount > 0) {
-					Logger.debug(
-						`Waiting ${Math.ceil((this.RETRY_DELAY_MS - timeSinceLastAttempt) / 1000)}s before retry attempt ${this.refreshRetryCount + 1}/${this.MAX_REFRESH_RETRIES}`,
-					)
-					return null
-				}
-
-				// Check if we've exceeded max retries
-				if (this.refreshRetryCount >= this.MAX_REFRESH_RETRIES) {
-					Logger.error(`Max refresh retries (${this.MAX_REFRESH_RETRIES}) exceeded.`)
-					// Don't clear session - return stored data and let API request fail later
-					return storedAuthData
-				}
-
-				// Try to refresh the token using the refresh token
-				this.refreshRetryCount++
-				this.lastRefreshAttempt = now
-				Logger.debug(
-					`Token expired or expiring soon, attempting refresh (attempt ${this.refreshRetryCount}/${this.MAX_REFRESH_RETRIES}). API Base URL: ${this.config.apiBaseUrl}`,
-				)
-
-				try {
-					const authInfo = await this.refreshToken(storedAuthData.refreshToken, storedAuthData)
-					const newAuthInfoString = JSON.stringify(authInfo)
-					if (newAuthInfoString !== storedAuthDataString) {
-						controller.stateManager.setSecret("clineAccountId", undefined) // cleanup old key
-						controller.stateManager.setSecret("cline:clineAccountId", newAuthInfoString)
-					}
-					// Reset retry count on success
-					this.refreshRetryCount = 0
-					this.lastRefreshAttempt = 0
-					Logger.debug("Token refresh successful")
-					return authInfo || null
-				} catch (refreshError) {
-					Logger.error(
-						`Token refresh failed (attempt ${this.refreshRetryCount}/${this.MAX_REFRESH_RETRIES}):`,
-						refreshError,
-					)
-
-					// If it's an invalid token error, clear immediately and don't retry
-					if (refreshError instanceof AuthInvalidTokenError) {
-						this.clearSession(controller, "Invalid or expired refresh token. Clearing auth state.", storedAuthData)
-
-						throw refreshError
-					}
-
-					// For network errors, return stored data - let the API request fail later
-					// when the user actually tries to use Cline, not at startup
-					return storedAuthData
-				}
-			}
-
-			// Token is still valid and not expired, reset retry count
-			this.refreshRetryCount = 0
-			this.lastRefreshAttempt = 0
-
-			// Is the token valid?
-			if (storedAuthData.idToken && storedAuthData.refreshToken && storedAuthData.userInfo.id) {
-				return storedAuthData
-			}
-
-			// Verify the token structure
-			const tokenParts = storedAuthData.idToken.split(".")
-			if (tokenParts.length !== 3) {
-				throw new Error("Invalid token format")
-			}
-
-			// Decode the token to verify it's a valid JWT
-			const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString("utf-8"))
-			if (payload.external_id) {
-				storedAuthData.userInfo.id = payload.external_id
-			}
-			return storedAuthData
-		} catch (error) {
-			Logger.error("Authentication failed with stored credential:", error)
-			// Reset retry count on unexpected errors
-			if (!(error instanceof AuthInvalidTokenError)) {
-				this.refreshRetryCount = 0
-				this.lastRefreshAttempt = 0
-			}
-			return null
-		}
+	async retrieveClineAuthInfo(_controller: Controller): Promise<ClineAuthInfo | null> {
+		// FORK MOD: ITAR/network-isolated build — Cline account auth (api.cline.bot) disabled.
+		return null
 	}
 
 	/**
@@ -342,46 +223,9 @@ export class ClineAuthProvider {
 		}
 	}
 
-	async getAuthRequest(callbackUrl: string): Promise<string> {
-		const authUrl = new URL(CLINE_API_ENDPOINT.AUTH, this.config.apiBaseUrl)
-		authUrl.searchParams.set("client_type", "extension")
-		authUrl.searchParams.set("callback_url", callbackUrl)
-		// Ensure the redirect_uri is properly encoded and included
-		authUrl.searchParams.set("redirect_uri", callbackUrl)
-
-		// The server will respond with a 302 redirect to the OAuth provider
-		// We need to follow the redirect and get the final URL
-		let response: Response
-		try {
-			// Set redirect: 'manual' to handle the redirect manually
-			response = await fetch(authUrl.toString(), {
-				method: "GET",
-				redirect: "manual",
-				credentials: "include", // Important for cookies if needed
-				headers: await this.headers(),
-			})
-
-			// If we get a redirect status (3xx), get the Location header
-			if (response.status >= 300 && response.status < 400) {
-				const redirectUrl = response.headers.get("Location")
-				if (!redirectUrl) {
-					throw new Error("No redirect URL found in the response")
-				}
-
-				return redirectUrl
-			}
-
-			// If we didn't get a redirect, try to parse the response as JSON
-			const responseData = await response.json()
-			if (responseData.redirect_url) {
-				return responseData.redirect_url
-			}
-
-			throw new Error("Unexpected response from auth server")
-		} catch (error) {
-			Logger.error("Error during authentication request:", error)
-			throw new Error(`Authentication failed: ${error instanceof Error ? error.message : "Unknown error"}`)
-		}
+	async getAuthRequest(_callbackUrl: string): Promise<string> {
+		// FORK MOD: ITAR/network-isolated build — Cline account sign-in disabled.
+		throw new Error("Cline account sign-in is disabled in this build.")
 	}
 
 	async signIn(controller: Controller, authorizationCode: string, provider: string): Promise<ClineAuthInfo | null> {

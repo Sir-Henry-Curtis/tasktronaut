@@ -26,7 +26,7 @@ const STANDARD_PERMISSION_OPTIONS: ClinePermissionOption[] = [
 
 /**
  * Permission options for operations that don't support "always allow".
- * Used for browser actions and other one-time operations.
+ * Used for one-time operations such as command-output continuation.
  */
 const RESTRICTED_PERMISSION_OPTIONS: ClinePermissionOption[] = [
 	{ kind: "allow_once", optionId: "allow_once", name: "Allow Once" },
@@ -46,9 +46,6 @@ const ASK_TYPE_PERMISSION_MAP: Partial<Record<ClineAsk, ClinePermissionOption[]>
 	// MCP server operations support "always allow"
 	use_mcp_server: STANDARD_PERMISSION_OPTIONS,
 
-	// Browser actions are one-time, no "always allow"
-	browser_action_launch: RESTRICTED_PERMISSION_OPTIONS,
-
 	// Command output continuation - simple allow/reject
 	command_output: RESTRICTED_PERMISSION_OPTIONS,
 }
@@ -60,7 +57,6 @@ const ASK_TYPE_PERMISSION_MAP: Partial<Record<ClineAsk, ClinePermissionOption[]>
 const PERMISSION_REQUIRING_ASK_TYPES: Set<ClineAsk> = new Set([
 	"command",
 	"tool",
-	"browser_action_launch",
 	"use_mcp_server",
 	"command_output",
 ])

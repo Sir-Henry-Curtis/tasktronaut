@@ -85,28 +85,8 @@ let pendingRefresh: Promise<Record<string, ModelInfo>> | null = null
  * @returns Record of model ID to ModelInfo (application types)
  */
 export async function refreshVercelAiGatewayModels(_controller: Controller): Promise<Record<string, ModelInfo>> {
-	// Check in-memory cache first
-	const cache = StateManager.get().getModelsCache("vercel")
-	if (cache) {
-		return cache
-	}
-
-	// If a fetch is already in progress, return the same promise
-	if (pendingRefresh) {
-		return pendingRefresh
-	}
-
-	// Start new fetch and track the promise
-	pendingRefresh = (async () => {
-		try {
-			return await fetchAndCacheModels()
-		} finally {
-			// Clear pending promise when done (success or error)
-			pendingRefresh = null
-		}
-	})()
-
-	return pendingRefresh
+	// FORK MOD: ITAR/network-isolated build — Vercel AI Gateway model discovery (ai-gateway.vercel.sh) disabled.
+	return {}
 }
 
 async function fetchAndCacheModels(): Promise<Record<string, ModelInfo>> {

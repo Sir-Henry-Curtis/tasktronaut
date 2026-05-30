@@ -126,6 +126,90 @@ describe("Laika bridge contract", () => {
 				),
 			).to.equal(true)
 		})
+
+		it("accepts changes-requested review events when they are targeted at the active actor", () => {
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_request_changes",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+		})
+
+		it("accepts file review comment events when they are targeted at the active actor", () => {
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_add_review_comment",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+		})
+
+		it("accepts delivery request events when they are targeted at the active actor", () => {
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_request_commit",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_request_sync",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_request_ship_check",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+			expect(
+				shouldExecuteBridgeEvent(
+					{
+						event: "task_request_pr",
+						target_actor_id: "actor-1",
+					},
+					"actor-1",
+					{ active_actor_id: "actor-1" },
+				),
+			).to.equal(true)
+		})
+
+		it("accepts remote Tasktronaut console events when they are targeted at the active actor", () => {
+			for (const event of ["tasktronaut_ui_requested", "tasktronaut_auto_approval_updated"]) {
+				expect(
+					shouldExecuteBridgeEvent(
+						{
+							event,
+							target_actor_id: "actor-1",
+						},
+						"actor-1",
+						{ active_actor_id: "actor-1" },
+					),
+				).to.equal(true)
+			}
+		})
 	})
 
 	describe("getBridgeEventCommand", () => {

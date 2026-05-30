@@ -17,6 +17,7 @@ const ClineCommands = {
 	AccountButton: prefix + ".accountButtonClicked",
 	WorktreesButton: prefix + ".worktreesButtonClicked",
 	GsdButton: prefix + ".gsdButtonClicked",
+	GsdVerifyManagedAssets: prefix + ".gsd.verifyManagedAssets",
 	AddToChat: prefix + ".addToChat",
 	FixWithCline: prefix + ".fixWithCline",
 	ExplainCode: prefix + ".explainCode",

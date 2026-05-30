@@ -1,7 +1,8 @@
-import React from "react"
+import React, { useCallback } from "react"
 import ChatTextArea from "@/components/chat/ChatTextArea"
 import QuotedMessagePreview from "@/components/chat/QuotedMessagePreview"
 import { ChatState, MessageHandlers, ScrollBehavior } from "../../types/chatTypes"
+import { MessageQueuePanel } from "./MessageQueuePanel"
 
 interface InputSectionProps {
 	chatState: ChatState
@@ -13,7 +14,7 @@ interface InputSectionProps {
 }
 
 /**
- * Input section including quoted message preview and chat text area
+ * Input section including quoted message preview, chat text area, and message queue
  */
 export const InputSection: React.FC<InputSectionProps> = ({
 	chatState,
@@ -36,9 +37,20 @@ export const InputSection: React.FC<InputSectionProps> = ({
 		setSelectedFiles,
 		textAreaRef,
 		handleFocusChange,
+		messageQueue,
 	} = chatState
 
 	const { isAtBottom, scrollToBottomAuto } = scrollBehavior
+
+	// When the task is busy, queue the current input instead of sending
+	const handleQueueMessage = useCallback(() => {
+		const text = inputValue.trim()
+		if (!text && !selectedImages.length && !selectedFiles.length) return
+		messageHandlers.handleQueueMessage(text, selectedImages, selectedFiles)
+		setInputValue("")
+		setSelectedImages([])
+		setSelectedFiles([])
+	}, [inputValue, selectedImages, selectedFiles, messageHandlers, setInputValue, setSelectedImages, setSelectedFiles])
 
 	return (
 		<>
@@ -61,6 +73,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 						scrollToBottomAuto()
 					}
 				}}
+				onQueueMessage={sendingDisabled ? handleQueueMessage : undefined}
 				onSelectFilesAndImages={selectFilesAndImages}
 				onSend={() => messageHandlers.handleSendMessage(inputValue, selectedImages, selectedFiles)}
 				placeholderText={placeholderText}
@@ -72,6 +85,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
 				setSelectedFiles={setSelectedFiles}
 				setSelectedImages={setSelectedImages}
 				shouldDisableFilesAndImages={shouldDisableFilesAndImages}
+			/>
+
+			<MessageQueuePanel
+				isBusy={sendingDisabled}
+				onRemove={messageHandlers.removeFromQueue}
+				onStopAndProcess={messageHandlers.stopAndProcessQueue}
+				queue={messageQueue}
 			/>
 		</>
 	)

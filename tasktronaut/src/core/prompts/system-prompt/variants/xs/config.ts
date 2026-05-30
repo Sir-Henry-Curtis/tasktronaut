@@ -1,4 +1,3 @@
-import { isLocalModel } from "@utils/model-utils"
 import { ModelFamily } from "@/shared/prompts"
 import { Logger } from "@/shared/services/Logger"
 import { ClineDefaultTool } from "@/shared/tools"
@@ -20,12 +19,10 @@ export const config = createVariant(ModelFamily.XS)
 		use_native_tools: 1,
 	})
 	.matcher((context) => {
-		const providerInfo = context.providerInfo
-		if (!isLocalModel(providerInfo)) {
-			return false
-		}
-		// Match compact local models
-		return providerInfo.customPrompt === "compact"
+		// customPrompt === "compact" is an explicit signal (e.g. set by KISS mode for any
+		// provider type) and selects the xs variant regardless of whether the provider is
+		// a local model host. The isLocalModel guard is intentionally removed here.
+		return context.providerInfo.customPrompt === "compact"
 	})
 	.template(baseTemplate)
 	.components(

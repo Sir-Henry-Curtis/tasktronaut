@@ -165,29 +165,6 @@ Usage:
 <task_progress>Checklist here (optional)</task_progress>
 </web_fetch>
 
-## web_search
-Description: Performs a web search and returns relevant results
-- Takes a search query as input and returns search results with titles and URLs
-- Optionally filter results by allowed or blocked domains
-- Use this tool when you need to search the web for information
-- IMPORTANT: If an MCP-provided web search tool is available, prefer using that tool instead of this one, as it may have fewer restrictions.
-- The query must be at least 2 characters
-- You may provide either allowed_domains OR blocked_domains, but NOT both
-- Domains should be provided as a JSON array of strings
-- This tool is read-only and does not modify any files
-Parameters:
-- query: (required) The search query to use
-- allowed_domains: (optional) JSON array of domains to restrict results to
-- blocked_domains: (optional) JSON array of domains to exclude from results
-- task_progress: (optional) A checklist showing task progress after this tool use is completed. The task_progress parameter must be included as a separate parameter inside of the parent tool call, it must be separate from other parameters such as content, arguments, etc. (See 'UPDATING TASK PROGRESS' section for more details)
-Usage:
-<web_search>
-<query>latest developments in AI</query>
-<allowed_domains>["example.com", "github.com"]</allowed_domains>
-<blocked_domains>["ads.com", "spam.com"]</blocked_domains>
-<task_progress>Checklist here (optional)</task_progress>
-</web_search>
-
 ## use_mcp_tool
 Description: Request to use a tool provided by a connected MCP server. Each MCP server can provide multiple tools with different capabilities. Tools have defined input schemas that specify required and optional parameters.
 Parameters:
@@ -608,7 +585,7 @@ CAPABILITIES
 - You can use the list_code_definition_names tool to get an overview of source code definitions for all files at the top level of a specified directory. This can be particularly useful when you need to understand the broader context and relationships between certain parts of the code. You may need to call this tool multiple times to understand various parts of the codebase related to the task.
     - For example, when asked to make edits or improvements you might analyze the file structure in the initial environment_details to get an overview of the project, then use list_code_definition_names to get further insight using source code definitions for files located in relevant directories, then read_file to examine the contents of relevant files, analyze the code and suggest improvements or make necessary edits, then use the replace_in_file tool to implement changes. If you refactored code that could affect other parts of the codebase, you could use search_files to ensure you update other files as needed.
 - You can use the execute_command tool to run commands on the user's computer whenever you feel it can help accomplish the user's task. When you need to execute a CLI command, you must provide a clear explanation of what the command does. Prefer to execute complex CLI commands over creating executable scripts, since they are more flexible and easier to run. Prefer non-interactive commands when possible: use flags to disable pagers (e.g., '--no-pager'), auto-confirm prompts (e.g., '-y' when safe), provide input via flags/arguments rather than stdin, suppress interactive behavior, etc. For commands that may fail, consider redirecting stderr to stdout (e.g., `command 2>&1`) so you can see error messages in the output. For long-running commands, the user may keep them running in the background and you will be kept updated on their status along the way. Each command you execute is run in a new terminal instance.
-- When the task requires or could benefit from getting up to date information on a topic (e.g. latest best practices, latest documentation, latest news, etc.), use the web_search tool to find current results, then use the web_fetch tool to retrieve and analyze the content from relevant URLs.
+- When you already have a specific URL that is relevant to the task, use the web_fetch tool to retrieve and analyze the content from that page.
 - You have access to MCP servers that may provide additional tools and resources. Each server may provide different capabilities that you can use to accomplish tasks more effectively.
 
 ====

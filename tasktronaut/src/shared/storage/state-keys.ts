@@ -7,7 +7,6 @@ import {
 	type OcaModelInfo,
 	OpenAiCompatibleModelInfo,
 } from "@shared/api"
-import { BrowserSettings, DEFAULT_BROWSER_SETTINGS } from "@shared/BrowserSettings"
 import { ClineRulesToggles } from "@shared/cline-rules"
 import { DEFAULT_FOCUS_CHAIN_SETTINGS, FocusChainSettings } from "@shared/FocusChainSettings"
 import { HistoryItem } from "@shared/HistoryItem"
@@ -223,9 +222,54 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	actModeVercelAiGatewayModelId: { default: undefined as string | undefined },
 	actModeVercelAiGatewayModelInfo: { default: undefined as ModelInfo | undefined },
 
+	// Kiss mode configurations
+	kissModeApiModelId: { default: undefined as string | undefined },
+	kissModeThinkingBudgetTokens: { default: undefined as number | undefined },
+	geminiKissModeThinkingLevel: { default: undefined as string | undefined },
+	kissModeReasoningEffort: { default: undefined as string | undefined },
+	kissModeVerbosity: { default: undefined as string | undefined },
+	kissModeVsCodeLmModelSelector: { default: undefined as LanguageModelChatSelector | undefined },
+	kissModeAwsBedrockCustomSelected: { default: undefined as boolean | undefined },
+	kissModeAwsBedrockCustomModelBaseId: { default: undefined as string | undefined },
+	kissModeOpenRouterModelId: { default: undefined as string | undefined },
+	kissModeOpenRouterModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeClineModelId: { default: undefined as string | undefined },
+	kissModeClineModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeOpenAiModelId: { default: undefined as string | undefined },
+	kissModeOpenAiModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	kissModeOllamaModelId: { default: undefined as string | undefined },
+	kissModeLmStudioModelId: { default: undefined as string | undefined },
+	kissModeLiteLlmModelId: { default: undefined as string | undefined },
+	kissModeLiteLlmModelInfo: { default: undefined as LiteLLMModelInfo | undefined },
+	kissModeRequestyModelId: { default: undefined as string | undefined },
+	kissModeRequestyModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeTogetherModelId: { default: undefined as string | undefined },
+	kissModeFireworksModelId: { default: undefined as string | undefined },
+	kissModeSapAiCoreModelId: { default: undefined as string | undefined },
+	kissModeSapAiCoreDeploymentId: { default: undefined as string | undefined },
+	kissModeGroqModelId: { default: undefined as string | undefined },
+	kissModeGroqModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeBasetenModelId: { default: undefined as string | undefined },
+	kissModeBasetenModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeHuggingFaceModelId: { default: undefined as string | undefined },
+	kissModeHuggingFaceModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeHuaweiCloudMaasModelId: { default: undefined as string | undefined },
+	kissModeHuaweiCloudMaasModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeOcaModelId: { default: undefined as string | undefined },
+	kissModeOcaModelInfo: { default: undefined as OcaModelInfo | undefined },
+	kissModeOcaReasoningEffort: { default: undefined as string | undefined },
+	kissModeAihubmixModelId: { default: undefined as string | undefined },
+	kissModeAihubmixModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	kissModeHicapModelId: { default: undefined as string | undefined },
+	kissModeHicapModelInfo: { default: undefined as ModelInfo | undefined },
+	kissModeNousResearchModelId: { default: undefined as string | undefined },
+	kissModeVercelAiGatewayModelId: { default: undefined as string | undefined },
+	kissModeVercelAiGatewayModelInfo: { default: undefined as ModelInfo | undefined },
+
 	// Model-specific settings
 	planModeApiProvider: { default: DEFAULT_API_PROVIDER as ApiProvider },
 	actModeApiProvider: { default: DEFAULT_API_PROVIDER as ApiProvider },
+	kissModeApiProvider: { default: DEFAULT_API_PROVIDER as ApiProvider },
 
 	// Deprecated model settings
 	hicapModelId: { default: undefined as string | undefined },
@@ -240,10 +284,6 @@ const USER_SETTINGS_FIELDS = {
 	globalClineRulesToggles: { default: {} as ClineRulesToggles },
 	globalWorkflowToggles: { default: {} as ClineRulesToggles },
 	globalSkillsToggles: { default: {} as Record<string, boolean> },
-	browserSettings: {
-		default: DEFAULT_BROWSER_SETTINGS as BrowserSettings,
-		transform: (v: any) => ({ ...DEFAULT_BROWSER_SETTINGS, ...v }),
-	},
 	planActSeparateModelsSetting: { default: false as boolean, isComputed: true },
 	enableCheckpointsSetting: { default: true as boolean },
 	maxConsecutiveMistakes: { default: 3 as number },
@@ -252,7 +292,7 @@ const USER_SETTINGS_FIELDS = {
 	yoloModeToggled: { default: false as boolean },
 	autoApproveAllToggled: { default: false as boolean },
 	useAutoCondense: { default: false as boolean },
-	subagentsEnabled: { default: false as boolean },
+	subagentsEnabled: { default: true as boolean },
 	clineWebToolsEnabled: { default: true as boolean },
 	worktreesEnabled: { default: false as boolean },
 	preferredLanguage: { default: "English" as string },

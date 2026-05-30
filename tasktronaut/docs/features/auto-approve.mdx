@@ -20,7 +20,7 @@ If you find yourself repeatedly clicking approve for the same safe operations, A
 
 ## How It Works
 
-Auto Approve is evaluated per tool call. When Cline is about to read a file, edit a file, run a command, or use the browser, it checks your Auto Approve settings for that category.
+Auto Approve is evaluated per tool call. When Cline is about to read a file, edit a file, run a command, or fetch external URL content, it checks your Auto Approve settings for that category.
 
 A few details matter:
 
@@ -38,7 +38,7 @@ A few details matter:
 | Edit all files | Edit files outside your workspace (requires base toggle) |
 | Execute safe commands | Run terminal commands marked safe |
 | Execute all commands | Run commands requiring approval (requires base toggle) |
-| Use the browser | Browser tool for web fetching and searching |
+| Fetch external URLs | Built-in external URL fetching (`web_fetch`) |
 | Use MCP servers | MCP tools and resources |
 | Enable notifications | Notifies you about long-running commands |
 
@@ -64,7 +64,7 @@ Cline does not use a fixed allowlist. The model marks each command with a `requi
 
 A good default setup:
 - Enable **Read project files**
-- Leave edits, commands, browser, and MCP off until you have a specific reason
+- Leave edits, commands, external URL fetching, and MCP off until you have a specific reason
 
 If you enable edits, use [Checkpoints](/core-workflows/checkpoints) so you can roll back quickly.
 
@@ -72,7 +72,7 @@ If you enable edits, use [Checkpoints](/core-workflows/checkpoints) so you can r
 
 ## YOLO Mode
 
-YOLO mode is Auto Approve on steroids. Check the box and Cline auto-approves everything: file changes, terminal commands, browser actions, MCP tools, and mode transitions.
+YOLO mode is Auto Approve on steroids. Check the box and Cline auto-approves everything: file changes, terminal commands, external URL fetching, MCP tools, and mode transitions.
 
 <Note>
 **Warning: This is dangerous.** YOLO mode disables all safety checks. Cline executes whatever it decides without asking permission.
@@ -83,7 +83,7 @@ YOLO mode is Auto Approve on steroids. Check the box and Cline auto-approves eve
 When YOLO mode is enabled:
 - All file operations anywhere on your system
 - All terminal commands including potentially destructive ones
-- Browser actions
+- External URL fetching
 - MCP server tools
 - Mode transitions (Plan to Act)
 

@@ -193,8 +193,8 @@ If STATE.md shows paused_at:
 → Next action: `/gsd-resume-work`
 </step>
 
-<step name="show_and_execute">
-Display the determination:
+<step name="show_next">
+Present the Next Up block and stop:
 
 ```
 ## GSD Next
@@ -202,19 +202,28 @@ Display the determination:
 **Current:** Phase [N] — [name] | [progress]%
 **Status:** [status description]
 
-▶ **Next step:** `/gsd-[command] [args]`
-  [One-line explanation of why this is the next step]
+---
+
+## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
+
+`/clear` then:
+
+`/gsd-[command] [args]`
+
+[One-line explanation of why this is the next step]
+
+---
 ```
 
-Then immediately invoke the determined command via SlashCommand.
-Do not ask for confirmation — the whole point of `/gsd-next` is zero-friction advancement.
+Stop here. Do NOT attempt to invoke the command — slash commands are user-layer chat triggers and cannot be dispatched from within a running task.
 </step>
 
 </process>
 
 <success_criteria>
+
 - [ ] Project state correctly detected
 - [ ] Next action correctly determined from routing rules
-- [ ] Command invoked immediately without user confirmation
-- [ ] Clear status shown before invoking
+- [ ] Next Up block presented clearly for user to invoke
+
 </success_criteria>

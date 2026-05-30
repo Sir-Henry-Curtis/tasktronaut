@@ -14,7 +14,7 @@ Tasktronaut is designed around three core ideas:
 - structured planning and execution
 - controlled setup and deployment
 
-The extension provides file editing, terminal execution, browser actions, and human approval gates while aligning the product surface with a more internal, mission-ready workflow model.
+The extension provides file editing, terminal execution, controlled external URL fetching, and human approval gates while aligning the product surface with a more internal, mission-ready workflow model.
 
 ## Architecture
 
@@ -41,4 +41,8 @@ This fork builds on upstream open-source work and should continue to preserve li
 
 ## Attribution
 
-Tasktronaut is a derivative work based on Cline by Cline Bot Inc. (github.com/cline/cline), licensed under the Apache License 2.0. The original copyright notice is preserved in the `LICENSE` file. Modifications from the upstream work are documented in `CHANGELOG.md`.
+Tasktronaut is a derivative work based on Cline by Cline Bot Inc. (github.com/cline/cline), licensed under the Apache License 2.0. The original copyright notice is preserved in the `LICENSE` file.
+
+Tasktronaut also includes and adapts workflow, agent, hook, and SDK-shim concepts from GSD / Get Shit Done (`get-shit-done-cc` and `@gsd-build/sdk`) by Lex Christopherson and contributors (github.com/gsd-build/get-shit-done), licensed under the MIT License.
+
+Modifications from upstream work are documented in `CHANGELOG.md`.

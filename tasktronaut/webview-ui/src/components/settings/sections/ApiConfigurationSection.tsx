@@ -47,6 +47,16 @@ const ApiConfigurationSection = ({ renderSectionHeader, initialModelTab }: ApiCo
 								}}>
 								Act Mode
 							</TabButton>
+							<TabButton
+								disabled={currentTab === "kiss"}
+								isActive={currentTab === "kiss"}
+								onClick={() => setCurrentTab("kiss")}
+								style={{
+									opacity: 1,
+									cursor: "pointer",
+								}}>
+								KISS Mode
+							</TabButton>
 						</div>
 
 						{/* Content container */}
@@ -55,7 +65,39 @@ const ApiConfigurationSection = ({ renderSectionHeader, initialModelTab }: ApiCo
 						</div>
 					</div>
 				) : (
-					<ApiOptions currentMode={mode} initialModelTab={initialModelTab} showModelOptions={true} />
+					<div className="rounded-md mb-5">
+						<div className="flex gap-px mb-[10px] -mt-2 border-0 border-b border-solid border-(--vscode-panel-border)">
+							<TabButton
+								disabled={currentTab !== "kiss"}
+								isActive={currentTab !== "kiss"}
+								onClick={() => setCurrentTab(mode !== "kiss" ? mode : "act")}
+								style={{
+									opacity: 1,
+									cursor: "pointer",
+								}}>
+								Plan / Act
+							</TabButton>
+							<TabButton
+								disabled={currentTab === "kiss"}
+								isActive={currentTab === "kiss"}
+								onClick={() => setCurrentTab("kiss")}
+								style={{
+									opacity: 1,
+									cursor: "pointer",
+								}}>
+								KISS Mode
+							</TabButton>
+						</div>
+
+						{/* Content container */}
+						<div className="-mb-3">
+							<ApiOptions
+								currentMode={currentTab === "kiss" ? "kiss" : mode}
+								initialModelTab={initialModelTab}
+								showModelOptions={true}
+							/>
+						</div>
+					</div>
 				)}
 
 				<div className="mb-[5px]">

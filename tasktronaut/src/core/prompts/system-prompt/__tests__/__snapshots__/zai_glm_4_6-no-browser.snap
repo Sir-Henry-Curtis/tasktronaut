@@ -174,12 +174,12 @@ Example:
 - If the request is vague, use ask_followup_question to clarify. If intent can be inferred from context/tools, proceed without unnecessary questions.
 - If command output doesn't appear, assume success and continue. If you must see output, use ask_followup_question to request a pasted log.
 - If the user pasted a file's contents, don't call read_file for it.
-- - Never end attempt_completion with a question. Finish decisively.
+- {{BROWSER_RULES}}- Never end attempt_completion with a question. Finish decisively.
 - You will receive environment_details after each user message; use it as helpful context only, not as the user's request.
 - For replace_in_file, SEARCH blocks must contain complete, exact lines (no partial matches).
 - With multiple SEARCH/REPLACE blocks, order them as they appear in the file (earlier lines first).
 - For replace_in_file markers, do not alter the format; include the closing +++++++ REPLACE. Malformed XML breaks editing.
-- After each tool use, wait for the user's response to confirm success before proceeding.
+- After each tool use, wait for the user's response to confirm success before proceeding.{{BROWSER_WAIT_RULES}}
 
 ## ACT MODE V.S. PLAN MODE
 

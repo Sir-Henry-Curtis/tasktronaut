@@ -588,6 +588,16 @@ Separate from per-task commits — captures execution results only.
 Include ALL commits (previous + new if continuation agent).
 </completion_format>
 
+<routing_prohibition>
+After returning the PLAN COMPLETE format above, **stop**. Do not:
+
+- Attempt to dispatch or invoke slash commands (`/gsd-next`, `/gsd-verify-work`, etc.) — these are user-layer chat commands, not CLI-callable.
+- Use `gsd-sdk` for anything other than the `state.*`, `roadmap.*`, `requirements.*`, and `commit` queries listed above.
+- Manually edit STATE.md, ROADMAP.md, or any planning file outside the explicit `gsd-sdk query state.*` calls listed in `state_updates`.
+
+The parent orchestrator (`/gsd-execute-phase`) or the user handles all routing to the next workflow step. Your job ends at PLAN COMPLETE.
+</routing_prohibition>
+
 <success_criteria>
 Plan execution complete when:
 

@@ -3,6 +3,7 @@ import fs from "fs/promises"
 import * as path from "path"
 import { HostProvider } from "@/hosts/host-provider"
 import { Logger } from "@/shared/services/Logger"
+import { migrateLegacyCheckpointRoot } from "./CheckpointUtils"
 
 /**
  * Cleans up legacy checkpoints from task folders.
@@ -12,6 +13,13 @@ import { Logger } from "@/shared/services/Logger"
  */
 export async function cleanupLegacyCheckpoints(): Promise<void> {
 	try {
+		const migration = await migrateLegacyCheckpointRoot()
+		if (migration.migrated > 0 || migration.failed > 0) {
+			Logger.info(
+				`Checkpoint storage migration completed. Migrated: ${migration.migrated}, Failed: ${migration.failed}`,
+			)
+		}
+
 		const tasksDir = path.join(HostProvider.get().globalStorageFsPath, "tasks")
 
 		// Check if tasks directory exists

@@ -1058,26 +1058,37 @@ Use template structure for each PLAN.md.
 
 Use the Write tool to create files — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 
+**Phase directory (USE EXACTLY AS PROVIDED — do not invent a path):**
+
+The orchestrator supplies `Phase directory:` in the planning_context. Use that exact path as the directory. If not provided, derive it from `gsd-sdk query init.plan-phase`.
+
+```bash
+INIT=$(gsd-sdk query init.plan-phase "${PHASE}")
+PHASE_DIR=$(echo "$INIT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('phase_dir',''))")
+PADDED=$(echo "$INIT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('padded_phase','01'))")
+SLUG=$(echo "$INIT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('phase_slug',''))")
+mkdir -p "$PHASE_DIR"
+```
+
 **File naming convention (enforced):**
 
 The filename MUST follow the exact pattern: `{padded_phase}-{NN}-PLAN.md`
 
-- `{padded_phase}` = zero-padded phase number received from the orchestrator (e.g. `01`, `02`, `03`, `02.1`)
+- `{padded_phase}` = zero-padded phase number from orchestrator or init.plan-phase (e.g. `01`, `02`, `03`, `02.1`)
 - `{NN}` = zero-padded sequential plan number within the phase (e.g. `01`, `02`, `03`)
 - The suffix is always `-PLAN.md` — NEVER `PLAN-NN.md`, `NN-PLAN.md`, or any other variation
 
 **Correct examples:**
-- Phase 1, Plan 1 → `01-01-PLAN.md`
-- Phase 3, Plan 2 → `03-02-PLAN.md`
-- Phase 2.1, Plan 1 → `02.1-01-PLAN.md`
+- Phase 1, Plan 1 → `01-01-PLAN.md` at `.planning/phases/01-chart-foundation-reliability/01-01-PLAN.md`
+- Phase 3, Plan 2 → `03-02-PLAN.md` at `.planning/phases/03-data-modeling/03-02-PLAN.md`
+- Phase 2.1, Plan 1 → `02.1-01-PLAN.md` at `.planning/phases/02.1-auth-fixes/02.1-01-PLAN.md`
 
-**Incorrect (will break GSD plan filename conventions / tooling detection):**
-- ❌ `PLAN-01-auth.md`
-- ❌ `01-PLAN-01.md`
-- ❌ `plan-01.md`
-- ❌ `01-01-plan.md` (lowercase)
+**❌ NEVER create these — they will break GSD tooling detection:**
+- ❌ `.planning/PLANS/phase-1.xml` — wrong directory, wrong extension
+- ❌ `PLAN-01-auth.md`, `01-PLAN-01.md`, `plan-01.md`, `01-01-plan.md` (lowercase)
+- ❌ Any `.xml` file — plan files are ALWAYS `.md` with YAML frontmatter + XML task tags inside
 
-Full write path: `.planning/phases/{padded_phase}-{slug}/{padded_phase}-{NN}-PLAN.md`
+Full write path: `{phase_dir}/{padded_phase}-{NN}-PLAN.md`
 
 Include all frontmatter fields.
 </step>
@@ -1226,7 +1237,7 @@ Phase planning complete when:
 - [ ] Prior decisions, issues, concerns synthesized
 - [ ] Dependency graph built (needs/creates for each task)
 - [ ] Tasks grouped into plans by wave, not by sequence
-- [ ] PLAN file(s) exist with XML structure
+- [ ] PLAN.md file(s) exist at `.planning/phases/{phase-slug}/` with markdown format (YAML frontmatter + XML task tags inside markdown — NOT a standalone .xml file)
 - [ ] Each plan: depends_on, files_modified, autonomous, must_haves in frontmatter
 - [ ] Each plan: user_setup declared if external services involved
 - [ ] Each plan: Objective, context, tasks, verification, success criteria, output

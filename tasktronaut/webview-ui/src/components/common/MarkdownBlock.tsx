@@ -123,12 +123,11 @@ const ActModeHighlight: React.FC = () => {
 	return (
 		<span
 			className={cn("text-link inline-flex items-center gap-1", {
-				"hover:opacity-90 cursor-pointer": mode === "plan",
-				"cursor-not-allowed opacity-60": mode !== "plan",
+				"hover:opacity-90 cursor-pointer": mode !== "act",
+				"cursor-not-allowed opacity-60": mode === "act",
 			})}
 			onClick={() => {
-				// Only toggle to Act mode if we're currently in Plan mode
-				if (mode === "plan") {
+				if (mode !== "act") {
 					StateServiceClient.togglePlanActModeProto(
 						TogglePlanActModeRequest.create({
 							mode: PlanActMode.ACT,
@@ -136,7 +135,7 @@ const ActModeHighlight: React.FC = () => {
 					)
 				}
 			}}
-			title={mode === "plan" ? "Click to toggle to Act Mode" : "Already in Act Mode"}>
+			title={mode !== "act" ? "Click to toggle to Act Mode" : "Already in Act Mode"}>
 			<div className="p-1 rounded-md bg-code flex items-center justify-end w-7 border border-input-border">
 				<div className="rounded-full bg-link w-2 h-2" />
 			</div>

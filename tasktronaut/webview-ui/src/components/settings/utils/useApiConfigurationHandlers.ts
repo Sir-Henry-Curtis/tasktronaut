@@ -60,7 +60,11 @@ export const useApiConfigurationHandlers = () => {
 		value: ApiConfiguration[PlanK] & ApiConfiguration[ActK], // Intersection ensures value is compatible with both field types
 		currentMode: Mode,
 	) => {
-		if (planActSeparateModelsSetting) {
+		if (currentMode === "kiss") {
+			// Derive kiss field from act field name (actModeXxx → kissModeXxx)
+			const kissField = String(fieldPair.act).replace(/^actMode/, "kissMode") as keyof ApiConfiguration
+			await handleFieldChange(kissField, value as any)
+		} else if (planActSeparateModelsSetting) {
 			const targetField = fieldPair[currentMode]
 			await handleFieldChange(targetField, value)
 		} else {
@@ -86,7 +90,15 @@ export const useApiConfigurationHandlers = () => {
 		values: T,
 		currentMode: Mode,
 	) => {
-		if (planActSeparateModelsSetting) {
+		if (currentMode === "kiss") {
+			// Derive kiss fields from act field names (actModeXxx → kissModeXxx)
+			const updates: Partial<ApiConfiguration> = {}
+			Object.entries(fieldPairs).forEach(([key, { act }]) => {
+				const kissField = String(act).replace(/^actMode/, "kissMode") as keyof ApiConfiguration
+				updates[kissField] = values[key]
+			})
+			await handleFieldsChange(updates)
+		} else if (planActSeparateModelsSetting) {
 			// Update only the current mode's fields
 			const updates: Partial<ApiConfiguration> = {}
 			Object.entries(fieldPairs).forEach(([key, { plan, act }]) => {
@@ -95,7 +107,7 @@ export const useApiConfigurationHandlers = () => {
 			})
 			await handleFieldsChange(updates)
 		} else {
-			// Update both modes' fields
+			// Update both plan and act modes' fields
 			const updates: Partial<ApiConfiguration> = {}
 			Object.entries(fieldPairs).forEach(([key, { plan, act }]) => {
 				updates[plan] = values[key]

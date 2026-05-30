@@ -1,12 +1,18 @@
 import { strict as assert } from "node:assert"
 import type { ToolUse } from "@core/assistant-message"
 import { registerPartialMessageCallback } from "@core/controller/ui/subscribeToPartialMessage"
-import { Task } from "@core/task"
+import { shouldEndAfterTextOnlyAssistantResponse, Task } from "@core/task"
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import { ClineDefaultTool } from "@shared/tools"
 import { describe, it } from "mocha"
 
 describe("Task.processNativeToolCalls", () => {
+	it("treats a plain text answer as terminal instead of forcing a tool retry", () => {
+		assert.equal(shouldEndAfterTextOnlyAssistantResponse("Here is the answer.", false), true)
+		assert.equal(shouldEndAfterTextOnlyAssistantResponse("   \n\t", false), false)
+		assert.equal(shouldEndAfterTextOnlyAssistantResponse("I will inspect the file.", true), false)
+	})
+
 	it("finalizes a partial text row before handing off to native tool calls", async () => {
 		const clineMessages: ClineMessage[] = [
 			{

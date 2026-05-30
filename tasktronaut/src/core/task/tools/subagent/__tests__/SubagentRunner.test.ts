@@ -128,7 +128,6 @@ function createTaskConfig(
 				}),
 			},
 		},
-		browserSettings: {},
 		focusChainSettings: {},
 		autoApprovalSettings: {
 			enableNotifications: false,
@@ -151,7 +150,6 @@ function createTaskConfig(
 			reinitExistingTaskFromId: sinon.stub().resolves(),
 			cancelTask: sinon.stub().resolves(),
 			updateTaskHistory: sinon.stub().resolves([]),
-			applyLatestBrowserSettings: sinon.stub().resolves(undefined),
 			switchToActMode: sinon.stub().resolves(false),
 			setActiveHookExecution: sinon.stub().resolves(),
 			clearActiveHookExecution: sinon.stub().resolves(),

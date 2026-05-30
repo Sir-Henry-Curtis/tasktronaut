@@ -63,7 +63,6 @@ export const config = createVariant(ModelFamily.GENERIC)
 		ClineDefaultTool.SEARCH,
 		ClineDefaultTool.LIST_FILES,
 		ClineDefaultTool.LIST_CODE_DEF,
-		ClineDefaultTool.BROWSER,
 		ClineDefaultTool.MCP_USE,
 		ClineDefaultTool.MCP_ACCESS,
 		ClineDefaultTool.ASK,

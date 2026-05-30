@@ -345,6 +345,8 @@ export const ChatRowContent = memo(
 					// Thinking/reasoning is handled directly in the api_req_started renderer below.
 					return [null, null]
 				case "followup":
+					// Empty text = KISS mode silent wait (no question to display)
+					if (!message.text?.trim()) return [null, null]
 					return [
 						<span className="codicon codicon-question text-foreground mb-[-1.5px]" />,
 						<span className="font-bold text-foreground">Tasktronaut has a question:</span>,

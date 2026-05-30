@@ -461,7 +461,6 @@ export class SubagentRunner {
 				ide: host?.platform || "Unknown",
 				skills,
 				focusChainSettings: this.baseConfig.focusChainSettings,
-				browserSettings: this.baseConfig.browserSettings,
 				yoloModeToggled: false,
 				enableNativeToolCalls: nativeToolCallsRequested,
 				enableParallelToolCalling: false,
@@ -531,7 +530,7 @@ export class SubagentRunner {
 				}
 
 				const streamHandler = new StreamResponseHandler()
-				const { toolUseHandler } = streamHandler.getHandlers()
+				const { toolUseHandler, reasonsHandler } = streamHandler.getHandlers()
 				usageState.currentRequest = createEmptyRequestUsageState()
 				const requestUsage = usageState.currentRequest
 
@@ -593,6 +592,17 @@ export class SubagentRunner {
 							break
 						case "reasoning":
 							requestId = requestId ?? chunk.id
+							reasonsHandler.processReasoningDelta({
+								id: chunk.id,
+								reasoning: chunk.reasoning,
+								signature: chunk.signature,
+								details: chunk.details
+									? Array.isArray(chunk.details)
+										? chunk.details
+										: [chunk.details]
+									: [],
+								redacted_data: chunk.redacted_data,
+							})
 							break
 					}
 
@@ -651,6 +661,15 @@ export class SubagentRunner {
 					finalizedToolCalls = fallbackNonNativeToolCalls
 				}
 				const assistantContent = [] as any[]
+
+				// Reasoning blocks must precede their associated function_call/message in
+				// the Responses API history. Mirror the main engine's ordering exactly.
+				assistantContent.push(...reasonsHandler.getRedactedThinking())
+				const thinkingBlock = reasonsHandler.getCurrentReasoning()
+				if (thinkingBlock) {
+					assistantContent.push({ ...thinkingBlock })
+				}
+
 				if (assistantText.trim().length > 0) {
 					assistantContent.push({
 						type: "text",

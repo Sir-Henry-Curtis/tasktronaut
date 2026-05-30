@@ -53,7 +53,6 @@ function createConfig() {
 		updateFCListFromToolResponse: sinon.stub().resolves(),
 		shouldAutoApproveTool: sinon.stub().returns([true, true]),
 		reinitExistingTaskFromId: sinon.stub().resolves(),
-		applyLatestBrowserSettings: sinon.stub().resolves(undefined),
 	}
 
 	const config = {
@@ -78,7 +77,6 @@ function createConfig() {
 		autoApprover: {
 			shouldAutoApproveTool: sinon.stub().returns([true, true]),
 		},
-		browserSettings: {},
 		focusChainSettings: {},
 		services: {
 			stateManager: {
@@ -97,7 +95,6 @@ function createConfig() {
 				trackFileContext: sinon.stub().resolves(),
 			},
 			mcpHub: {},
-			browserSession: {},
 			urlContentFetcher: {},
 			diffViewProvider: {},
 			clineIgnoreController: { validateAccess: () => true, filterPaths: (paths: string[]) => paths },

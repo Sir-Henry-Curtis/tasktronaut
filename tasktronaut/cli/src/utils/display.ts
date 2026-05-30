@@ -105,8 +105,6 @@ function getMessageIcon(message: ClineMessage): string {
 			case "resume_task":
 			case "resume_completed_task":
 				return "▶️ "
-			case "browser_action_launch":
-				return "🌐"
 			case "use_mcp_server":
 				return "🔌"
 			default:
@@ -131,10 +129,6 @@ function getMessageIcon(message: ClineMessage): string {
 				return "⚙️ "
 			case "tool":
 				return "🔧"
-			case "browser_action":
-			case "browser_action_launch":
-			case "browser_action_result":
-				return "🌐"
 			case "mcp_server_request_started":
 			case "mcp_server_response":
 				return "🔌"
@@ -203,9 +197,6 @@ function formatAskMessage(message: ClineMessage, prefix: string, verbose: boolea
 		case "resume_completed_task":
 			return `${prefix} ${style.info("Resume task?")} ${message.text || ""}`
 
-		case "browser_action_launch":
-			return `${prefix} ${style.info("Launch browser?")} ${message.text || ""}`
-
 		case "use_mcp_server":
 			return `${prefix} ${style.info("Use MCP server?")} ${message.text || ""}`
 
@@ -249,13 +240,6 @@ function formatSayMessage(message: ClineMessage, prefix: string, verbose: boolea
 
 		case "tool":
 			return `${prefix} ${style.tool("Tool:")} ${message.text || ""}`
-
-		case "browser_action":
-		case "browser_action_launch":
-			return `${prefix} ${style.info("Browser:")} ${message.text || ""}`
-
-		case "browser_action_result":
-			return `${prefix} ${style.dim("Browser result")} ${message.text ? `- ${message.text.substring(0, 100)}...` : ""}`
 
 		case "mcp_server_request_started":
 			return `${prefix} ${style.info("MCP request started")} ${message.text || ""}`

@@ -13,7 +13,6 @@ import * as path from "path"
 import { HostProvider } from "@/hosts/host-provider"
 import { ShowMessageType } from "@/shared/proto/host/window"
 import { DiagnosticSeverity } from "@/shared/proto/index.cline"
-import { Logger } from "@/shared/services/Logger"
 import { isDirectory } from "@/utils/fs"
 import { getCwd } from "@/utils/path"
 import { FileContextTracker } from "../context/context-tracking/FileContextTracker"
@@ -47,10 +46,10 @@ export async function openMention(mention?: string): Promise<void> {
 export async function getFileMentionFromPath(filePath: string) {
 	const cwd = await getCwd()
 	if (!cwd) {
-		return "@/" + filePath
+		return `@/${filePath}`
 	}
 	const relativePath = path.relative(cwd, filePath)
-	return "@/" + relativePath
+	return `@/${relativePath}`
 }
 
 export async function parseMentions(
@@ -91,20 +90,6 @@ export async function parseMentions(
 		return match
 	})
 
-	const urlMention = Array.from(mentions).find((mention) => mention.startsWith("http"))
-	let launchBrowserError: Error | undefined
-	if (urlMention) {
-		try {
-			await urlContentFetcher.launchBrowser()
-		} catch (error) {
-			launchBrowserError = error
-			HostProvider.window.showMessage({
-				type: ShowMessageType.ERROR,
-				message: `Error fetching content for ${urlMention}: ${error.message}`,
-			})
-		}
-	}
-
 	// Filter out duplicate mentions while preserving order
 	const uniqueMentions = Array.from(new Set(mentions))
 
@@ -119,25 +104,19 @@ export async function parseMentions(
 
 		if (mention.startsWith("http")) {
 			let result: string
-			if (launchBrowserError) {
-				result = `Error fetching content: ${launchBrowserError.message}`
+			try {
+				const markdown = await urlContentFetcher.urlToMarkdown(mention)
+				result = markdown
+				// Track successful URL mention
+				telemetryService.captureMentionUsed("url", markdown.length)
+			} catch (error) {
+				HostProvider.window.showMessage({
+					type: ShowMessageType.ERROR,
+					message: `Error fetching content for ${mention}: ${error.message}`,
+				})
+				result = `Error fetching content: ${error.message}`
 				// Track failed URL mention
-				telemetryService.captureMentionFailed("url", "network_error", launchBrowserError?.message || "")
-			} else {
-				try {
-					const markdown = await urlContentFetcher.urlToMarkdown(mention)
-					result = markdown
-					// Track successful URL mention
-					telemetryService.captureMentionUsed("url", markdown.length)
-				} catch (error) {
-					HostProvider.window.showMessage({
-						type: ShowMessageType.ERROR,
-						message: `Error fetching content for ${mention}: ${error.message}`,
-					})
-					result = `Error fetching content: ${error.message}`
-					// Track failed URL mention
-					telemetryService.captureMentionFailed("url", "network_error", error.message)
-				}
+				telemetryService.captureMentionFailed("url", "network_error", error.message)
 			}
 			parsedText += `\n\n<url_content url="${mention}">\n${result}\n</url_content>`
 		} else if (isFileMention(mention)) {
@@ -189,7 +168,7 @@ export async function parseMentions(
 							await fileContextTracker.trackFileContext(mentionPath, "file_mentioned")
 						}
 					}
-					telemetryService.captureMentionUsed(mentionType, result.content!.length)
+					telemetryService.captureMentionUsed(mentionType, result.content?.length || 0)
 				} else {
 					// Found in multiple workspaces - include all candidates with workspace name
 					for (const result of successfulResults) {
@@ -301,14 +280,6 @@ export async function parseMentions(
 				// Track failed commit mention
 				telemetryService.captureMentionFailed("commit", "unknown", error.message)
 			}
-		}
-	}
-
-	if (urlMention) {
-		try {
-			await urlContentFetcher.closeBrowser()
-		} catch (error) {
-			Logger.error(`Error closing browser: ${error.message}`)
 		}
 	}
 

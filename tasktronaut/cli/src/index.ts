@@ -91,13 +91,13 @@ async function disposeCliContext(ctx: CliContext): Promise<void> {
 	await disposeTelemetryServices()
 }
 
-function setModeScopedState(currentMode: "act" | "plan", setter: (mode: "act" | "plan") => void): void {
+function setModeScopedState(currentMode: "act" | "plan" | "kiss", setter: (mode: "act" | "plan" | "kiss") => void): void {
 	const stateManager = StateManager.get()
 	setter(currentMode)
 
 	const separateModels = stateManager.getGlobalSettingsKey("planActSeparateModelsSetting") ?? false
 	if (!separateModels) {
-		const otherMode: "act" | "plan" = currentMode === "act" ? "plan" : "act"
+		const otherMode: "act" | "plan" | "kiss" = currentMode === "act" ? "plan" : "act"
 		setter(otherMode)
 	}
 }
@@ -148,7 +148,7 @@ function applyTaskOptions(options: TaskOptions): void {
 
 	// Apply model override if specified
 	if (options.model) {
-		const selectedMode = (StateManager.get().getGlobalSettingsKey("mode") ?? "act") as "act" | "plan"
+		const selectedMode = (StateManager.get().getGlobalSettingsKey("mode") ?? "act") as "act" | "plan" | "kiss"
 		const providerKey = selectedMode === "act" ? "actModeApiProvider" : "planModeApiProvider"
 		const currentProvider = StateManager.get().getGlobalSettingsKey(providerKey) as ApiProvider
 		const modelKey = getProviderModelIdKey(currentProvider, selectedMode)
@@ -158,7 +158,7 @@ function applyTaskOptions(options: TaskOptions): void {
 		telemetryService.captureHostEvent("model_flag", options.model)
 	}
 
-	const currentMode = (StateManager.get().getGlobalSettingsKey("mode") || "act") as "act" | "plan"
+	const currentMode = (StateManager.get().getGlobalSettingsKey("mode") || "act") as "act" | "plan" | "kiss"
 
 	// Set thinking budget based on --thinking flag (boolean or number)
 	if (options.thinking !== undefined) {

@@ -199,7 +199,8 @@ process.stdin.on('end', () => {
     if (!['write_to_file','apply_diff','str_replace_editor','create_file'].includes(tool)) { out(''); process.exit(0); }
     const fp = ((data.postToolUse || {}).tool_input || {}).path ||
                ((data.postToolUse || {}).tool_input || {}).file_path || '';
-    if (!fp || !sid || /[\\/\\\\]|\\.\\."/.test(sid)) { out(''); process.exit(0); }
+    if (!fp || !sid || /\\.\\.|[\\/\\\\]/.test(sid)) { out(''); process.exit(0); }
+    if (/\\.\\./.test(fp)) { out(''); process.exit(0); }
     const tmp = path.join(os.tmpdir(), 'gsd-writes-' + sid + '.json');
     let w = {};
     try { if (fs.existsSync(tmp)) w = JSON.parse(fs.readFileSync(tmp,'utf8')); } catch(_){}
@@ -229,7 +230,7 @@ const { execSync, spawnSync } = require('child_process');
 
 const args = process.argv.slice(2);
 const subcmd = args[0];
-if (subcmd !== 'query') { process.stderr.write('gsd-sdk shim: only "query" is supported\\n'); process.exit(0); }
+if (subcmd !== 'query') { process.stderr.write('Usage: gsd-sdk query <command>\\n\\nAll commands use the "query" prefix. State mutations are fully supported:\\n  gsd-sdk query state.advance-plan\\n  gsd-sdk query state.update-progress\\n  gsd-sdk query state.add-decision "text"\\n  gsd-sdk query state.record-session "" "Stopped at" "None"\\n  gsd-sdk query commit "message" --files file1 file2\\n  gsd-sdk query roadmap.update-plan-progress <phase>\\n  gsd-sdk query init.resume    (read project state)\\n'); process.exit(0); }
 
 const SPACED_QUERY_GROUPS = new Set(['check', 'detect', 'frontmatter', 'init', 'learnings', 'phase', 'phases', 'plan', 'roadmap', 'route', 'state', 'summary', 'todo', 'uat', 'validate', 'verify', 'workstream']);
 function normalizeQueryArgs(argv) {
@@ -1493,12 +1494,13 @@ function readBoundedFile(absPath, maxBytes) {
 }
 function readRecentCommitMessages(projectDir, limit) {
   try {
-    return execSync('git log -n ' + String(limit || 200) + ' --pretty=%s%n%b', {
+    const result = spawnSync('git', ['log', '-n', String(limit || 200), '--pretty=%s%n%b'], {
       cwd: projectDir || cwd,
       stdio: ['ignore', 'pipe', 'ignore'],
       encoding: 'utf8',
       maxBuffer: 4 * 1024 * 1024,
-    }) || '';
+    });
+    return result.status === 0 ? result.stdout || '' : '';
   } catch {
     return '';
   }
@@ -2318,7 +2320,8 @@ function parseStateSnapshotData() {
   const frontmatter = parsePlanningFrontmatter(content);
   const roadmap = analyzeRoadmapForReporting();
   const progress = frontmatter.progress && typeof frontmatter.progress === 'object' ? frontmatter.progress : {};
-  const currentPhase = String(frontmatter.current_phase || extractLabeledValue(content, 'current_phase') || extractLabeledValue(content, 'Current Phase') || roadmap.current_phase || '').trim() || null;
+  const rawCurrentPhase = String(frontmatter.current_phase || extractLabeledValue(content, 'current_phase') || extractLabeledValue(content, 'Current Phase') || roadmap.current_phase || '').trim() || null;
+  const currentPhase = rawCurrentPhase ? normalizePhaseNumber(rawCurrentPhase) : null;
   const currentPhaseName = String(frontmatter.current_phase_name || extractLabeledValue(content, 'current_phase_name') || extractLabeledValue(content, 'Current Phase Name') || '').trim() || null;
   const currentPlan = String(frontmatter.current_plan || extractLabeledValue(content, 'current_plan') || extractLabeledValue(content, 'Current Plan') || '').trim() || null;
   const status = String(frontmatter.status || extractLabeledValue(content, 'status') || extractLabeledValue(content, 'Status') || '').trim() || 'unknown';
@@ -3214,7 +3217,8 @@ function buildCheckShipReadyPayload(rawPhase) {
   const onFeatureBranch = currentBranch !== null && currentBranch !== 'main' && currentBranch !== 'master';
   let baseBranch = null;
   if (currentBranch) {
-    const mergeRef = runSyncSafe('git config --get branch.' + currentBranch + '.merge');
+    const mergeResult = spawnSync('git', ['config', '--get', 'branch.' + currentBranch + '.merge'], { cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const mergeRef = mergeResult.status === 0 ? mergeResult.stdout.trim() : null;
     if (mergeRef) baseBranch = mergeRef.replace('refs/heads/', '');
     else baseBranch = boolSyncSafe('git rev-parse --verify main') ? 'main' : 'master';
   }
@@ -9342,10 +9346,12 @@ switch (query) {
     break;
   }
   case 'commit': {
-    const msg = rest[0] || 'chore: gsd update';
+    const rawMsg = rest[0];
+    const amend = rest.includes('--amend');
+    const hasExplicitMsg = rawMsg !== undefined && rawMsg !== '';
+    const msg = hasExplicitMsg ? rawMsg : 'chore: gsd update';
     const pushAfterCommit = rest.includes('--push');
     const allowBehindPush = rest.includes('--allow-behind-push');
-    const amend = rest.includes('--amend');
     const noVerify = rest.includes('--no-verify');
     const files = [];
     for (let i = 1; i < rest.length; i++) {
@@ -9372,7 +9378,11 @@ switch (query) {
       const commitArgs = ['commit'];
       if (amend) commitArgs.push('--amend');
       if (noVerify) commitArgs.push('--no-verify');
-      commitArgs.push('-m', msg);
+      if (amend && !hasExplicitMsg) {
+        commitArgs.push('--no-edit');
+      } else {
+        commitArgs.push('-m', msg);
+      }
       const commitRes = runGit(commitArgs, cwd);
       if (commitRes.ok) {
         committed = true;
@@ -9396,7 +9406,7 @@ switch (query) {
       pushed: pushResult.pushed === true,
       push: pushResult,
       files,
-      message: msg,
+      message: (amend && !hasExplicitMsg) ? null : msg,
     }));
     break;
   }
@@ -9439,7 +9449,13 @@ switch (query) {
       process.stdout.write(JSON.stringify({ committed: false, reason: addResult.stderr || 'git add failed' }));
       break;
     }
-    const commitResult = spawnSync('git', ['commit', '-m', message], { cwd, stdio: 'pipe', encoding: 'utf8' });
+    const noVerify = rest.includes('--no-verify');
+    const amendSubrepo = rest.includes('--amend');
+    const commitSubArgs = ['commit'];
+    if (amendSubrepo) commitSubArgs.push('--amend');
+    if (noVerify) commitSubArgs.push('--no-verify');
+    commitSubArgs.push('-m', message);
+    const commitResult = spawnSync('git', commitSubArgs, { cwd, stdio: 'pipe', encoding: 'utf8' });
     if ((commitResult.status || 0) !== 0) {
       const reason = (commitResult.stderr || commitResult.stdout || 'commit failed').trim();
       process.stdout.write(JSON.stringify({ committed: false, reason }));
@@ -10140,10 +10156,136 @@ switch (query) {
     process.stdout.write(JSON.stringify(todoMatchPhase(rest[0] || '')));
     break;
   }
+  case 'help':
+  case 'help.all': {
+    const ref = [
+      '=== gsd-sdk query — command reference ===',
+      '',
+      '── INIT (read project context) ───────────────────────────────',
+      '  init.new-project                   scaffold + detect existing code',
+      '  init.resume                        read project state for resuming',
+      '  init.phase-op [N]                  phase context + agent status',
+      '  init.plan-phase [N]                planner context for phase N',
+      '  init.execute-phase [N]             executor context for phase N',
+      '  init.verify-work                   verifier context',
+      '  init.progress                      progress summary',
+      '  init.map-project                   classify workspace (code/docs/empty)',
+      '  init.map-codebase                  codebase mapping context',
+      '  init.quick                         quick-task context',
+      '  init.milestone-op                  milestone operation context',
+      '  init.new-milestone                 new milestone init',
+      '  init.new-workspace                 new workspace init',
+      '  init.list-workspaces               list workspaces',
+      '  init.remove-workspace              remove workspace',
+      '  init.resume                        resume project state',
+      '  init.todos                         todos context',
+      '  init.ingest-docs                   doc ingestion context',
+      '',
+      '── STATE (read/write STATE.md) ───────────────────────────────',
+      '  state.load                         read full state + config JSON',
+      '  state.json                         compact state JSON',
+      '  state.validate                     check STATE.md for issues',
+      '  state.patch \'{"field":"value"}\'    set arbitrary fields',
+      '  state.update-progress              recalculate progress from plans/summaries',
+      '  state.sync [--verify]              sync state fields with disk reality',
+      '  state.begin-phase --phase N        set current_phase=N, current_step=execute',
+      '  state.planned-phase --phase N      set current_step=plan',
+      '  state.advance-plan                 advance current_plan to next incomplete plan',
+      '    [--phase N] [--current-plan ID]',
+      '  state.add-decision TEXT            append decision to STATE.md',
+      '    [--phase N] [--rationale TEXT]   (positional arg OR --text TEXT)',
+      '  state.add-blocker TEXT             append blocker',
+      '    [--phase N] [--reason TEXT]',
+      '  state.resolve-blocker TEXT         mark blocker resolved',
+      '  state.record-metric --key K --value V [--unit U]',
+      '  state.record-session LABEL STOPPED_AT NEXT_STEP',
+      '    (3 positional args)',
+      '  state.add-roadmap-evolution        record roadmap change',
+      '    --phase N --action ACT --note TXT [--after N] [--urgent]',
+      '  state.milestone-switch --milestone ID --name NAME',
+      '  state.signal-waiting               write WAITING.json signal',
+      '    [--type TYPE] [--question Q] [--options A|B|C] [--phase N]',
+      '  state.signal-resume                remove WAITING.json',
+      '  state.prune                        prune stale state fields',
+      '',
+      '── ROADMAP ────────────────────────────────────────────────────',
+      '  roadmap.analyze                    parse ROADMAP.md into JSON',
+      '  roadmap.get-phase N                phase detail JSON',
+      '  roadmap.update-plan-progress N     mark plan N complete in ROADMAP.md',
+      '  roadmap.annotate-dependencies      annotate phase deps',
+      '',
+      '── PHASE ──────────────────────────────────────────────────────',
+      '  phase.complete N                   mark phase N complete, advance STATE.md',
+      '  phase.add --phase N --name NAME    add phase to ROADMAP.md',
+      '  phase.insert --after N ...         insert phase after N',
+      '  phase.remove --phase N             remove phase',
+      '  phase.scaffold --phase N           create phase directory',
+      '  phase.list-plans [N]               list plans for phase N',
+      '  phase.list-artifacts [N]           list phase artifacts',
+      '',
+      '── PROGRESS ───────────────────────────────────────────────────',
+      '  progress                           progress JSON',
+      '  progress.bar [--raw]               ASCII progress bar',
+      '  progress.table                     phase table',
+      '',
+      '── PLAN ───────────────────────────────────────────────────────',
+      '  plan.task-structure FILE           parse plan file structure',
+      '',
+      '── COMMIT ─────────────────────────────────────────────────────',
+      '  commit "message" [--files f1 f2]   git commit with optional file list',
+      '  commit-to-subrepo "msg" --subrepo PATH [--files f1 f2]',
+      '',
+      '── CHECK / VERIFY ─────────────────────────────────────────────',
+      '  check.phase-ready [N]              phase readiness check',
+      '  check.completion                   task completion check',
+      '  check.gates                        gate status',
+      '  check.ship-ready                   ship-readiness check',
+      '  check.config-gates                 config gate validation',
+      '  check.verification-status          verify status',
+      '  check.decision-coverage-verify     decision coverage',
+      '  verify.artifacts [N]               artifact verification',
+      '  verify.key-links                   key link verification',
+      '  verify.schema-drift                schema drift check',
+      '  verify.codebase-drift              codebase drift check',
+      '',
+      '── SECURITY ───────────────────────────────────────────────────',
+      '  security.scan-for-secrets [--dir D] scan directory for secrets',
+      '',
+      '── GENERATE ───────────────────────────────────────────────────',
+      '  generate-claude-md [--output F]    generate CLAUDE.md / instruction file',
+      '',
+      '── TODO ───────────────────────────────────────────────────────',
+      '  todo.match-phase PHASE             match todos to phase',
+      '  todo.complete ID                   mark todo complete',
+      '',
+      '── MISC ───────────────────────────────────────────────────────',
+      '  route.next-action                  determine next GSD action',
+      '  detect.phase-type [N]              detect phase type',
+      '  frontmatter.get FILE KEY           get frontmatter field',
+      '  frontmatter.set FILE KEY VALUE     set frontmatter field',
+      '  frontmatter.merge FILE JSON        merge frontmatter',
+      '  frontmatter.validate FILE          validate frontmatter',
+      '  learnings.list                     list learnings',
+      '  learnings.query TEXT               search learnings',
+      '  learnings.copy --from F --to T     copy learnings',
+      '  learnings.prune                    prune old learnings',
+      '  learnings.delete ID                delete learning',
+      '  workstream.list/get/create/set/status/complete/progress',
+      '  uat.render-checkpoint              UAT checkpoint render',
+      '  scan-sessions                      scan task sessions',
+      '  extract.messages                   extract messages',
+      '',
+      '  gsd-sdk query help                 show this reference',
+    ].join('\\n');
+    process.stderr.write(ref + '\\n');
+    process.exit(0);
+    break;
+  }
   default:
     process.stdout.write('');
     break;
 }
+
 
 `
 
@@ -10472,7 +10614,7 @@ export function buildManagedAssetManifest(workspacePath: string): {
 	}
 
 	assets.push({
-		path: path.join(".tasktronaut", "bin", "gsd-tools.cjs"),
+		path: path.join(".tasktronaut", "bin", "gsd-tools.js"),
 		sha256: hashManagedAsset(GSD_TOOLS_WRAPPER),
 		kind: "cli",
 	})
@@ -10615,6 +10757,26 @@ Read STATE.md and run the appropriate next /gsd-* command automatically.
 ### /gsd-quick
 Run a single task outside the phase workflow. Commit as: quick: description.
 
+## Tasktronaut Tool Mapping
+
+\`AskUserQuestion\` is a Claude Code CLI tool that is NOT available in Tasktronaut.
+Use \`ask_followup_question\` instead — it renders clickable option buttons in the UI.
+
+**Single-question pattern** (workflow says \`Use AskUserQuestion: ...options\`):
+
+\`\`\`xml
+<ask_followup_question>
+<question>Your question here?</question>
+<options>["Option A", "Option B", "Option C"]</options>
+</ask_followup_question>
+\`\`\`
+
+**Multi-question batch** (\`AskUserQuestion([{...}, {...}])\`): ask each question
+sequentially as separate \`ask_followup_question\` calls.
+
+**Options format**: use the \`label\` value only — drop \`description\` and \`header\` fields.
+For simple string options (\`"Map codebase first"\`), use the string as-is.
+
 ## Rules
 - Never skip discuss — decisions made here prevent rework.
 - Plans are immutable once execution starts.
@@ -10622,6 +10784,8 @@ Run a single task outside the phase workflow. Commit as: quick: description.
 - Verify against original acceptance criteria, not the implementation.
 - On context pressure (>150k tokens), save STATE.md and open a fresh task.
 `
+
+const TASKTRONAUTRULES_TOOL_MAPPING_MARKER = "## Tasktronaut Tool Mapping"
 
 export async function installGsdToWorkspace(workspacePath: string): Promise<void> {
 	const tasktronautRulesDir = path.join(workspacePath, ".tasktronautrules")
@@ -10632,11 +10796,39 @@ export async function installGsdToWorkspace(workspacePath: string): Promise<void
 		// Create .tasktronautrules/ and .tasktronautrules/hooks/ if needed
 		await mkdir(hooksDir, { recursive: true })
 
-		// Write the GSD rules file (only if not already present, to avoid overwriting user edits)
+		// Write the GSD rules file if absent, or patch it if it's missing the tool mapping section
 		const gsdRulesPath = path.join(tasktronautRulesDir, "gsd.md")
 		if (!existsSync(gsdRulesPath)) {
 			await writeFile(gsdRulesPath, TASKTRONAUTRULES_TEMPLATE, "utf8")
 			Logger.info("[GSD] Wrote .tasktronautrules/gsd.md")
+		} else {
+			const existing = await readFile(gsdRulesPath, "utf8")
+			if (!existing.includes(TASKTRONAUTRULES_TOOL_MAPPING_MARKER) && existing.includes("## Rules\n")) {
+				const toolMappingSection = `## Tasktronaut Tool Mapping
+
+\`AskUserQuestion\` is a Claude Code CLI tool that is NOT available in Tasktronaut.
+Use \`ask_followup_question\` instead — it renders clickable option buttons in the UI.
+
+**Single-question pattern** (workflow says \`Use AskUserQuestion: ...options\`):
+
+\`\`\`xml
+<ask_followup_question>
+<question>Your question here?</question>
+<options>["Option A", "Option B", "Option C"]</options>
+</ask_followup_question>
+\`\`\`
+
+**Multi-question batch** (\`AskUserQuestion([{...}, {...}])\`): ask each question
+sequentially as separate \`ask_followup_question\` calls.
+
+**Options format**: use the \`label\` value only — drop \`description\` and \`header\` fields.
+For simple string options (\`"Map codebase first"\`), use the string as-is.
+
+`
+				const patched = existing.replace("## Rules\n", toolMappingSection + "## Rules\n")
+				await writeFile(gsdRulesPath, patched, "utf8")
+				Logger.info("[GSD] Patched .tasktronautrules/gsd.md with Tasktronaut tool mapping")
+			}
 		}
 
 		// Write hook scripts and make them executable
@@ -10673,11 +10865,6 @@ export async function installGsdToWorkspace(workspacePath: string): Promise<void
 			const assetPath = path.join(tasktronautDir, asset.targetPath)
 			await mkdir(path.dirname(assetPath), { recursive: true })
 			await writeFile(assetPath, asset.content, "utf8")
-		}
-		const gsdToolsWrapperPath = path.join(binDir, "gsd-tools.cjs")
-		await writeFile(gsdToolsWrapperPath, GSD_TOOLS_WRAPPER, "utf8")
-		if (process.platform !== "win32") {
-			await chmod(gsdToolsWrapperPath, 0o755)
 		}
 		await writeWorkspaceCliScript(binDir, "gsd-tools", GSD_TOOLS_WRAPPER)
 		await writeWorkspaceCliScript(binDir, "gsd-sdk", gsdSdkShim)

@@ -51,7 +51,6 @@ function getPromptType(ask: ClineAsk, text: string): PromptType {
 
 		case "command":
 		case "tool":
-		case "browser_action_launch":
 		case "use_mcp_server":
 			return "confirmation"
 		default:
@@ -345,17 +344,6 @@ export const AskPrompt: React.FC<AskPromptProps> = ({ onRespond }) => {
 				</Box>
 			)
 
-		case "browser_action_launch":
-			return (
-				<Box flexDirection="column" marginTop={1}>
-					<Box>
-						<Text>{icon} </Text>
-						<Text color="cyan"> Launch browser? </Text>
-						<Text color="gray">(y/n)</Text>
-					</Box>
-				</Box>
-			)
-
 		case "use_mcp_server":
 			return (
 				<Box flexDirection="column" marginTop={1}>
@@ -392,8 +380,6 @@ function getCliMessagePrefixIcon(message: ClineMessage): string {
 			case "resume_task":
 			case "resume_completed_task":
 				return "▶️"
-			case "browser_action_launch":
-				return "🌐"
 			case "use_mcp_server":
 				return "🔌"
 			case "plan_mode_respond":
@@ -420,10 +406,6 @@ function getCliMessagePrefixIcon(message: ClineMessage): string {
 			return "⚙️"
 		case "tool":
 			return "🔧"
-		case "browser_action":
-		case "browser_action_launch":
-		case "browser_action_result":
-			return "🌐"
 		case "mcp_server_request_started":
 		case "mcp_server_response":
 			return "🔌"

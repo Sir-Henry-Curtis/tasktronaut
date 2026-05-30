@@ -1,10 +1,10 @@
 ---
 title: "Web Tools"
 sidebarTitle: "Web Tools"
-description: "Search the web and fetch content from URLs directly within Cline"
+description: "Fetch content from URLs directly within Tasktronaut"
 ---
 
-Web Tools give Cline the ability to search the internet and fetch content from specific URLs during your tasks. This is useful when you need up-to-date information, documentation lookups, or research that goes beyond your local codebase and the LLM's internal knowledge.
+Web Tools give Tasktronaut the ability to fetch content from specific URLs during your tasks. This is useful when you already know the documentation page, changelog, or reference URL you want to inspect.
 
 <Warning>
 	Web Tools require the **Cline provider**. They are not available when using other providers like OpenRouter, Anthropic, AWS Bedrock, etc.
@@ -12,12 +12,11 @@ Web Tools give Cline the ability to search the internet and fetch content from s
 
 ## How Web Tools Work
 
-Cline has two web tools:
+Tasktronaut currently exposes one built-in web tool:
 
-- **web_search**: Searches the web and returns a list of relevant webpages based on your query
 - **web_fetch**: Fetches and analyzes content from a specific URL
 
-When Cline determines that web information would help complete your task, it will use these tools automatically. The tools call Cline's backend API, which handles the search or fetch operation and returns the results.
+When Tasktronaut determines that a known URL would help complete your task, it can use `web_fetch` to retrieve and analyze that page.
 
 ## Enabling Web Tools
 
@@ -28,7 +27,7 @@ Web Tools are available when using the Cline provider. To use them:
 3. Enable the Web Tools toggle in the Feature Settings menu
 
 <Note>
-	Web tools can be auto-approved using the "Use the browser" setting in [Auto Approve](/features/auto-approve).
+	Web tools can be auto-approved using the "Fetch external URLs" setting in [Auto Approve](/features/auto-approve). In Tasktronaut's current product boundary, that setting governs built-in `web_fetch`, not a general browser automation capability.
 </Note>
 
 ## Use Cases
@@ -36,20 +35,19 @@ Web Tools are available when using the Cline provider. To use them:
 ### Looking Up Documentation
 
 When working with unfamiliar libraries or APIs:
-- Search for official documentation
-- Fetch specific API reference pages
-- Get examples and usage patterns
+- Fetch specific official documentation pages
+- Retrieve API reference pages
+- Inspect examples and usage patterns from a known URL
 
 ### Research Before Implementation
 
 Before implementing a feature:
-- Search for best practices and common patterns
-- Find recent discussions about approaches
-- Look up known issues or limitations
+- Fetch design docs, changelogs, or issue threads you already have links to
+- Inspect known issues or limitations from specific project pages
 
 ### Checking Latest Information
 
 For time-sensitive information:
-- Latest release notes and changelogs
-- Recent bug fixes or security updates
-- Current recommended versions
+- Latest release notes and changelogs from known URLs
+- Recent bug fixes or security updates from official project pages
+- Current recommended versions when documented on official sources

@@ -32,7 +32,7 @@ The current direction is a lightweight hybrid model referred to in the design no
 - use **GSD v1** as the workflow layer
 - add a small programmatic bridge where prompt-only orchestration is not sufficient
 
-For the multi-agent orchestration layer, the current recommendation is a **standalone Tauri desktop app** rather than a VS Code webview. The current prototype is branded **Laika**, Tasktronaut's Work Hound, and its rationale plus SVG architecture set are captured in [prototypes/laika/laika.md](./prototypes/laika/laika.md).
+For the multi-agent orchestration layer, the current recommendation is a **standalone Tauri desktop app** rather than a VS Code webview. The prototype work that informed this direction is intentionally kept outside the shareable repository history.
 
 This approach was chosen over a standalone orchestration replacement because it keeps the integration surface smaller, fits better with the existing extension model, and aligns with a controlled deployment environment.
 
@@ -72,8 +72,8 @@ The steady-state deployment model is intentionally narrow:
 
 This workspace currently contains the two upstream foundations for the project:
 
-- [tasktronaut](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/tasktronaut)
-- [get-shit-done](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/get-shit-done)
+- [tasktronaut](./tasktronaut)
+- [get-shit-done](./get-shit-done)
 
 The root of this repo is the integration layer and documentation surface for the combined system.
 
@@ -87,7 +87,7 @@ The root of this repo is the integration layer and documentation surface for the
 
 ## Visual Identity
 
-The current brand exploration is captured in [assets/tasktronaut-brand-pack.png](/home/jeramy/Documents/SETHLANS/SW-Software/cline_extension-v0.1/assets/tasktronaut-brand-pack.png). It is not part of the product surface yet, but it establishes the direction for the sidebar icon, wordmark, and supporting graphics.
+The current brand exploration is captured in [assets/tasktronaut-brand-pack.png](./assets/tasktronaut-brand-pack.png). It is not part of the product surface yet, but it establishes the direction for the sidebar icon, wordmark, and supporting graphics.
 
 ## Attribution
 

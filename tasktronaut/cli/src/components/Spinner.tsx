@@ -7,7 +7,7 @@ import Spinner from "ink-spinner"
 import React from "react"
 
 interface LoadingSpinnerProps {
-	mode?: "act" | "plan"
+	mode?: "act" | "plan" | "kiss"
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ mode = "act" }) => {

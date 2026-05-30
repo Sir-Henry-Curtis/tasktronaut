@@ -344,7 +344,7 @@ export class ClineAgent implements acp.Agent {
 		const stateManager = StateManager.get()
 
 		// Get current provider and model for the mode
-		const providerKey = mode === "act" ? "actModeApiProvider" : "planModeApiProvider"
+		const providerKey = mode === "plan" ? "planModeApiProvider" : mode === "kiss" ? "kissModeApiProvider" : "actModeApiProvider"
 		const currentProvider = stateManager.getGlobalSettingsKey(providerKey) as ApiProvider | undefined
 
 		// Use provider-specific model ID key (e.g., cline uses actModeOpenRouterModelId)
@@ -943,7 +943,7 @@ export class ClineAgent implements acp.Agent {
 		})
 
 		// Validate mode
-		const validModes = ["plan", "act"]
+		const validModes = ["plan", "act", "kiss"]
 		if (!validModes.includes(params.modeId)) {
 			throw new Error(`Invalid mode: ${params.modeId}. Valid modes are: ${validModes.join(", ")}`)
 		}

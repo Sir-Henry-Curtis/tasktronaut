@@ -5,7 +5,18 @@ export const GSD_WORKFLOWS: GlobalInstructionsFile[] = [
 	{
 		alwaysEnabled: true,
 		name: "gsd-map-codebase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Orchestrate parallel codebase mapper agents to analyze codebase and produce structured documents in .planning/codebase/
 
 Each agent has fresh context, explores a specific focus area, and **writes documents directly**. The orchestrator only receives confirmation + line counts, then writes a summary.
@@ -416,7 +427,18 @@ End workflow.
 	{
 		alwaysEnabled: true,
 		name: "gsd-new-project",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Initialize a new project through unified flow: questioning, research (optional), requirements, roadmap. This is the most leveraged moment in any project — deep questioning here means better plans, better execution, better outcomes. One workflow takes you from idea to ready-for-planning.
 </purpose>
 
@@ -711,7 +733,7 @@ Wait for their response. This gives you the context needed to ask intelligent fo
 
 **Research-before-questions mode:** Check if \`workflow.research_before_questions\` is enabled in \`.planning/config.json\` (or the config from init context). When enabled, before asking follow-up questions about a topic area:
 
-1. Do a brief web search for best practices related to what the user described
+1. Do a brief review of official documentation and approved MCP research sources related to what the user described
 2. Mention key findings naturally as you ask questions (e.g., "Most projects like this use X — is that what you're thinking, or something different?")
 3. This makes questions more informed without changing the conversational flow
 
@@ -866,10 +888,10 @@ gsd-sdk query commit "docs: initialize project" --files .planning/PROJECT.md
 
 **If auto mode:** Skip — config was collected in Step 2a. Proceed to Step 5.5.
 
-**Check for global defaults** at \`~/.gsd/defaults.json\`. If the file exists, read and display its contents before asking:
+**Check for global defaults** at \`~/.tasktronaut/gsd/defaults.json\`. If the file exists, read and display its contents before asking:
 
 \`\`\`bash
-DEFAULTS_RAW=$(cat ~/.gsd/defaults.json 2>/dev/null)
+DEFAULTS_RAW=$(cat ~/.tasktronaut/gsd/defaults.json 2>/dev/null)
 \`\`\`
 
 Format the JSON into human-readable bullets using these label mappings:
@@ -885,7 +907,7 @@ Format the JSON into human-readable bullets using these label mappings:
 Display above the prompt:
 
 \`\`\`text
-Your saved defaults (~/.gsd/defaults.json):
+Your saved defaults (~/.tasktronaut/gsd/defaults.json):
   • Mode: [value]
   • Granularity: [value]
   • Execution: [Parallel|Sequential]
@@ -956,7 +978,7 @@ AskUserQuestion([
 
 For each selected setting, ask only that question using the option set from Round 1 / Round 2 below. Merge user answers over the saved defaults — unchanged settings retain their saved values. Then skip to **Commit config.json**.
 
-**If "Configure fresh" or \`~/.gsd/defaults.json\` doesn't exist:** proceed with the questions below.
+**If "Configure fresh" or \`~/.tasktronaut/gsd/defaults.json\` doesn't exist:** proceed with the questions below.
 
 **Round 1 — Core workflow settings (4 questions):**
 
@@ -1841,16 +1863,27 @@ PHASE1_HAS_UI=$(echo "$PHASE1_SECTION" | grep -qi "UI hint.*yes" && echo "true" 
 	{
 		alwaysEnabled: true,
 		name: "gsd-discuss-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Extract implementation decisions that downstream agents need. Analyze the phase to identify gray areas, let the user choose what to discuss, then deep-dive each selected area until satisfied.
 
 You are a thinking partner, not an interviewer. The user is the visionary — you are the builder. Your job is to capture decisions that will guide research and planning, not to figure out implementation yourself.
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/domain-probes.md
-@~/.claude/get-shit-done/references/gate-prompts.md
-@~/.claude/get-shit-done/references/universal-anti-patterns.md
+@.tasktronaut/references/domain-probes.md
+@.tasktronaut/references/gate-prompts.md
+@.tasktronaut/references/universal-anti-patterns.md
 </required_reading>
 
 <progressive_disclosure>
@@ -1972,7 +2005,7 @@ Exit workflow.
 
 \`\`\`bash
 # Detect advisor mode (file-existence guard — no Read until needed)
-if [ -f "$HOME/.claude/get-shit-done/USER-PROFILE.md" ]; then
+if [ -f "$HOME/.tasktronaut/gsd/USER-PROFILE.md" ]; then
   ADVISOR_MODE=true
 else
   ADVISOR_MODE=false
@@ -2123,7 +2156,7 @@ Parse JSON for: \`todo_count\`, \`matches[]\` (each with \`file\`, \`title\`, \`
 <step name="scout_codebase">
 Lightweight scan of existing code to inform gray area identification (~10% context).
 
-Read \`@~/.claude/get-shit-done/references/scout-codebase.md\` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and \`<codebase_context>\` output schema. Then execute:
+Read \`@.tasktronaut/references/scout-codebase.md\` — it contains the phase-type→map selection table, single-read rule, no-maps fallback, and \`<codebase_context>\` output schema. Then execute:
 1. \`ls .planning/codebase/*.md\` to find existing maps
 2. Select 2–3 maps via the reference's table; or grep fallback if none exist
 3. Build internal \`<codebase_context>\` per the reference's output schema
@@ -2343,7 +2376,18 @@ Otherwise, route to \`confirm_creation\` (manual next steps).
 	{
 		alwaysEnabled: true,
 		name: "gsd-plan-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification. Default flow: Research (if needed) -> Plan -> Verify -> Done. Orchestrates gsd-phase-researcher, gsd-planner, and gsd-plan-checker agents with a revision loop (max 3 iterations).
 </purpose>
 
@@ -3064,6 +3108,9 @@ Planner prompt:
 \`\`\`markdown
 <planning_context>
 **Phase:** {phase_number}
+**Padded phase:** {padded_phase}
+**Phase slug:** {phase_slug}
+**Phase directory:** {phase_dir}
 **Mode:** {standard | gap_closure | reviews}
 
 <files_to_read>
@@ -3974,7 +4021,18 @@ If freezes persist, try \`--skip-research\` to reduce the agent chain from 3 to 
 	{
 		alwaysEnabled: true,
 		name: "gsd-execute-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Execute all plans in a phase using wave-based parallel execution. Orchestrator stays lean — delegates plan execution to subagents.
 </purpose>
 
@@ -5479,7 +5537,7 @@ gsd-sdk query commit "docs(phase-{X}): complete phase execution" --files .planni
 **Auto-copy phase learnings to global store (when enabled).**
 
 This step runs AFTER phase completion and SUMMARY.md is written. It copies any LEARNINGS.md
-entries from the completed phase to the global learnings store at \`~/.gsd/knowledge/\`.
+entries from the completed phase to the global learnings store at \`~/.tasktronaut/gsd/knowledge/\`.
 
 **Check config gate:**
 \`\`\`bash
@@ -5667,7 +5725,18 @@ STATE.md tracks: last completed plan, current wave, pending checkpoints.
 	{
 		alwaysEnabled: true,
 		name: "gsd-verify-work",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Validate built features through conversational testing with persistent state. Creates UAT.md that tracks test progress, survives /clear, and feeds gaps into /gsd-plan-phase --gaps.
 
 User tests, Tasktronaut records. One test at a time. Plain text responses.
@@ -6130,7 +6199,7 @@ All tests passed. Phase {phase} marked complete.
 <step name="scan_phase_artifacts">
 Run phase artifact scan to surface any open items before marking phase verified:
 
-\`audit-open\` is CJS-only until registered on \`gsd-sdk query\`:
+Use the Tasktronaut-native query surface for artifact audit:
 
 \`\`\`bash
 gsd-sdk query audit-open --json
@@ -6417,7 +6486,18 @@ Default to **major** if unclear. User can correct if needed.
 	{
 		alwaysEnabled: true,
 		name: "gsd-ship",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Create a pull request from completed phase/milestone work, generate a rich PR body from planning artifacts, optionally run code review, and prepare for merge. Closes the plan → execute → verify → ship loop.
 </purpose>
 
@@ -6724,7 +6804,18 @@ After shipping:
 	{
 		alwaysEnabled: true,
 		name: "gsd-next",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Detect current project state and automatically advance to the next logical GSD workflow step.
 Reads project state to determine: discuss → plan → execute → verify → complete progression.
 </purpose>
@@ -6919,8 +7010,8 @@ If STATE.md shows paused_at:
 → Next action: \`/gsd-resume-work\`
 </step>
 
-<step name="show_and_execute">
-Display the determination:
+<step name="show_next">
+Present the Next Up block and stop:
 
 \`\`\`
 ## GSD Next
@@ -6928,28 +7019,48 @@ Display the determination:
 **Current:** Phase [N] — [name] | [progress]%
 **Status:** [status description]
 
-▶ **Next step:** \`/gsd-[command] [args]\`
-  [One-line explanation of why this is the next step]
+---
+
+## ▶ Next Up — [\${PROJECT_CODE}] \${PROJECT_TITLE}
+
+\`/clear\` then:
+
+\`/gsd-[command] [args]\`
+
+[One-line explanation of why this is the next step]
+
+---
 \`\`\`
 
-Then immediately invoke the determined command via SlashCommand.
-Do not ask for confirmation — the whole point of \`/gsd-next\` is zero-friction advancement.
+Stop here. Do NOT attempt to invoke the command — slash commands are user-layer chat triggers and cannot be dispatched from within a running task.
 </step>
 
 </process>
 
 <success_criteria>
+
 - [ ] Project state correctly detected
 - [ ] Next action correctly determined from routing rules
-- [ ] Command invoked immediately without user confirmation
-- [ ] Clear status shown before invoking
+- [ ] Next Up block presented clearly for user to invoke
+
 </success_criteria>
 `,
 	},
 	{
 		alwaysEnabled: true,
 		name: "gsd-quick",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Execute small, ad-hoc tasks with GSD guarantees (atomic commits, STATE.md tracking). Quick mode spawns gsd-planner (quick mode) + gsd-executor(s), tracks tasks in \`.planning/quick/\`, and updates STATE.md's "Quick Tasks Completed" table.
 
 With \`--full\` flag: enables the complete quality pipeline — discussion + research + plan-checking + verification. One flag for everything.
@@ -7996,7 +8107,18 @@ Ready for next task: /gsd-quick \${GSD_WS}
 	{
 		alwaysEnabled: true,
 		name: "gsd-fast",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Execute a trivial task inline without subagent overhead. No PLAN.md, no Task spawning,
 no research, no plan checking. Just: understand → do → commit → log.
 
@@ -8106,7 +8228,18 @@ No next-step suggestions. No workflow routing. Just done.
 	{
 		alwaysEnabled: true,
 		name: "gsd-add-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Add a new integer phase to the end of the current milestone in the roadmap. Automatically calculates next phase number, creates phase directory, and updates roadmap structure.
 </purpose>
 
@@ -8223,7 +8356,18 @@ Roadmap updated: .planning/ROADMAP.md
 	{
 		alwaysEnabled: true,
 		name: "gsd-insert-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Insert a decimal phase for urgent work discovered mid-milestone between existing integer phases. Uses decimal numbering (72.1, 72.2, etc.) to preserve the logical sequence of planned phases while accommodating urgent insertions without renumbering the entire roadmap.
 </purpose>
 
@@ -8379,7 +8523,18 @@ Phase insertion is complete when:
 	{
 		alwaysEnabled: true,
 		name: "gsd-edit-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Edit any field of an existing phase in ROADMAP.md in place. The phase number and position are always preserved. Guarded against in-progress and completed phases unless --force is passed. Validates depends_on references before writing. Shows a diff and requests confirmation before writing.
 </purpose>
 
@@ -8678,7 +8833,18 @@ Edit-phase is complete when:
 	{
 		alwaysEnabled: true,
 		name: "gsd-remove-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Remove an unstarted future phase from the project roadmap, delete its directory, renumber all subsequent phases to maintain a clean linear sequence, and commit the change. The git commit serves as the historical record of removal.
 </purpose>
 
@@ -8838,7 +9004,18 @@ Phase removal is complete when:
 	{
 		alwaysEnabled: true,
 		name: "gsd-list-phase-assumptions",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Surface Claude's assumptions about a phase before planning, enabling users to correct misconceptions early.
 
 Key difference from discuss-phase: This is ANALYSIS of what Claude thinks, not INTAKE of what user knows. No file output - purely conversational to prompt discussion.
@@ -9021,7 +9198,18 @@ If "Re-examine": Return to analyze_phase with updated understanding
 	{
 		alwaysEnabled: true,
 		name: "gsd-audit-milestone",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Verify milestone achieved its definition of done by aggregating phase verifications, checking cross-phase integration, and assessing requirements coverage. Reads existing VERIFICATION.md files (phases already verified during execute-phase), aggregates tech debt and deferred gaps, then spawns integration checker for cross-phase wiring.
 </purpose>
 
@@ -9368,7 +9556,18 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 	{
 		alwaysEnabled: true,
 		name: "gsd-complete-milestone",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 
 Mark a shipped version (v1.0, v1.1, v2.0) as complete. Creates historical record in MILESTONES.md, performs full PROJECT.md evolution review, reorganizes ROADMAP.md with milestone groupings, and tags the release in git.
 
@@ -9888,7 +10087,7 @@ ls .planning/RETROSPECTIVE.md 2>/dev/null || true
 
 **If exists:** Read the file, append new milestone section before the "## Cross-Milestone Trends" section.
 
-**If doesn't exist:** Create from template at \`~/.claude/get-shit-done/templates/retrospective.md\`.
+**If doesn't exist:** Create from template at \`.tasktronaut/templates/retrospective.md\`.
 
 **Gather retrospective data:**
 
@@ -10220,7 +10419,18 @@ Milestone completion is successful when:
 	{
 		alwaysEnabled: true,
 		name: "gsd-new-milestone",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 
 Start a new milestone cycle for an existing project. Loads project context, gathers milestone goals (from MILESTONE-CONTEXT.md or conversation), updates PROJECT.md and STATE.md, optionally runs parallel research, defines scoped requirements with REQ-IDs, spawns the roadmapper to create phased execution plan, and commits all artifacts. Brownfield equivalent of new-project.
 
@@ -10888,7 +11098,18 @@ Also: \`/gsd-plan-phase [N] \${GSD_WS}\` — skip discussion, plan directly
 	{
 		alwaysEnabled: true,
 		name: "gsd-milestone-summary",
-		contents: `# Milestone Summary Workflow
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+# Milestone Summary Workflow
 
 Generate a comprehensive, human-friendly project summary from completed milestone artifacts.
 Designed for team onboarding — a new contributor can read the output and understand the entire project.
@@ -11116,7 +11337,18 @@ gsd-sdk query state.record-session "" \\
 	{
 		alwaysEnabled: true,
 		name: "gsd-pause-work",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Create structured \`.planning/HANDOFF.json\` and \`.continue-here.md\` handoff files to preserve complete work state across sessions. The JSON provides machine-readable state for \`/gsd-resume-work\`; the markdown provides human-readable context.
 </purpose>
 
@@ -11364,7 +11596,18 @@ To resume: /gsd-resume-work
 	{
 		alwaysEnabled: true,
 		name: "gsd-resume-work",
-		contents: `<trigger>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<trigger>
 Use this workflow when:
 - Starting a new session on an existing project
 - User says "continue", "what's next", "where were we", "resume"
@@ -11377,7 +11620,7 @@ Instantly restore full project context so "Where were we?" has an immediate, com
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/continuation-format.md
+@.tasktronaut/references/continuation-format.md
 </required_reading>
 
 <process>
@@ -11695,7 +11938,18 @@ Resume is complete when:
 	{
 		alwaysEnabled: true,
 		name: "gsd-session-report",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Generate a post-session summary document capturing work performed, outcomes achieved, and estimated resource usage. Writes SESSION_REPORT.md to .planning/reports/ for human review and stakeholder sharing.
 </purpose>
 
@@ -11846,7 +12100,18 @@ If this is the first report, mention:
 	{
 		alwaysEnabled: true,
 		name: "gsd-ingest-docs",
-		contents: `# Ingest Docs Workflow
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+# Ingest Docs Workflow
 
 Scan a repo for mixed planning documents (ADR, PRD, SPEC, DOC), synthesize them into a consolidated context, and bootstrap or merge into \`.planning/\`.
 
@@ -11900,7 +12165,7 @@ If \`PATH_NOT_FOUND\` or \`MANIFEST_NOT_FOUND\`: display error and exit.
 Run the init query:
 
 \`\`\`bash
-INIT=$(gsd-tools init ingest-docs)
+INIT=$(gsd-sdk query init.ingest-docs)
 \`\`\`
 
 Parse \`project_exists\`, \`planning_exists\`, \`has_git\`, \`project_path\` from INIT.
@@ -12137,7 +12402,7 @@ Preview the merge diff to the user and gate via approve-revise-abort before writ
 Commit the ingest results:
 
 \`\`\`bash
-gsd-tools commit "docs: ingest {N} docs from {SCAN_PATH} (#2387)" --files \\
+gsd-sdk query commit "docs: ingest {N} docs from {SCAN_PATH} (#2387)" --files \\
   .planning/PROJECT.md \\
   .planning/REQUIREMENTS.md \\
   .planning/ROADMAP.md \\
@@ -12183,7 +12448,18 @@ Do NOT:
 	{
 		alwaysEnabled: true,
 		name: "gsd-review",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Cross-AI peer review — invoke external AI CLIs to independently review phase plans.
 Each CLI gets the same prompt (PROJECT.md context, phase plans, requirements) and
 produces structured feedback. Results are combined into REVIEWS.md for the planner
@@ -12635,7 +12911,18 @@ Clean up temp files.
 	{
 		alwaysEnabled: true,
 		name: "gsd-code-review-fix",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Auto-fix issues from REVIEW.md. Validates phase, checks config gate, verifies REVIEW.md exists and has fixable issues, spawns gsd-code-fixer agent, handles --auto iteration loop (capped at 3), commits REVIEW-FIX.md once at the end, and presents results.
 </purpose>
 
@@ -13141,7 +13428,18 @@ echo "════════════════════════�
 	{
 		alwaysEnabled: true,
 		name: "gsd-secure-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Verify threat mitigations for a completed phase. Confirm PLAN.md threat register dispositions are resolved. Update SECURITY.md.
 </purpose>
 
@@ -13315,7 +13613,18 @@ Display \`/clear\` reminder.
 	{
 		alwaysEnabled: true,
 		name: "gsd-validate-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Audit Nyquist validation gaps for a completed phase. Generate missing tests. Update VALIDATION.md.
 </purpose>
 
@@ -13499,7 +13808,18 @@ Display \`/clear\` reminder.
 	{
 		alwaysEnabled: true,
 		name: "gsd-pr-branch",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Create a clean branch for pull requests by filtering out transient .planning/ commits.
 The PR branch contains only code changes and structural planning state — reviewers
 don't see GSD transient artifacts (PLAN.md, SUMMARY.md, CONTEXT.md, RESEARCH.md, etc.)
@@ -13661,7 +13981,18 @@ Or use /gsd-ship to create the PR automatically.
 	{
 		alwaysEnabled: true,
 		name: "gsd-audit-uat",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Cross-phase audit of all UAT and verification files. Finds every outstanding item (pending, skipped, blocked, human_needed), optionally verifies against the codebase to detect stale docs, and produces a prioritized human test plan.
 </purpose>
 
@@ -13775,7 +14106,18 @@ Prerequisites: {what needs to be running/configured}
 	{
 		alwaysEnabled: true,
 		name: "gsd-docs-update",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Generate, update, and verify all project documentation — both canonical doc types and existing hand-written docs. The orchestrator detects the project's doc structure, assembles a work manifest tracking every item, dispatches parallel doc-writer and doc-verifier agents across waves, reviews existing docs for accuracy, identifies documentation gaps, and fixes inaccuracies via a bounded fix loop. All state is persisted in a work manifest so no work item is lost between steps. Output: Complete, structure-aware documentation verified against the live codebase.
 </purpose>
 
@@ -14941,7 +15283,18 @@ End workflow.
 	{
 		alwaysEnabled: true,
 		name: "gsd-ui-phase",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd-ui-researcher and gsd-ui-checker with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
 
 UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks. This prevents design debt caused by ad-hoc styling decisions during execution.
@@ -15278,12 +15631,23 @@ gsd-sdk query state.record-session \\
 	{
 		alwaysEnabled: true,
 		name: "gsd-ui-review",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Retroactive 6-pillar visual audit of implemented frontend code. Standalone command that works on any project — GSD-managed or not. Produces scored UI-REVIEW.md with actionable findings.
 </purpose>
 
 <required_reading>
-@~/.claude/get-shit-done/references/ui-brand.md
+@.tasktronaut/references/ui-brand.md
 </required_reading>
 
 <available_agent_types>
@@ -15353,7 +15717,7 @@ Build file list for auditor:
 Build prompt:
 
 \`\`\`markdown
-Read ~/.claude/agents/gsd-ui-auditor.md for instructions.
+Read .tasktronaut/agents/gsd-ui-auditor.md for instructions.
 
 <objective>
 Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
@@ -15475,7 +15839,18 @@ gsd-sdk query commit "docs(\${padded_phase}): UI audit review" --files "\${PHASE
 	{
 		alwaysEnabled: true,
 		name: "gsd-spike",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Spike an idea through experiential exploration — build focused experiments to feel the pieces
 of a future app, validate feasibility, and produce verified knowledge for the real build.
 Saves artifacts to \`.planning/spikes/\`. Companion to \`/gsd-spike-wrap-up\`.
@@ -15664,7 +16039,7 @@ This step runs **before each individual spike**, not once at the start.
 > **Spike NNN: Descriptive Name**
 > [2-3 sentences: what this spike is, why it matters, key risk or unknown.]
 
-**b. Research the current state of the art.** Use context7 (resolve-library-id → query-docs) for libraries/frameworks. Use web search for APIs/services without a context7 entry. Read actual documentation.
+**b. Research the current state of the art.** Use context7 (resolve-library-id → query-docs) for libraries/frameworks. Use official docs and approved MCP research sources for APIs/services without a context7 entry. Read actual documentation.
 
 **c. Surface competing approaches** as a table:
 
@@ -15932,7 +16307,18 @@ gsd-sdk query commit "docs(spikes): update conventions" --files .planning/spikes
 	{
 		alwaysEnabled: true,
 		name: "gsd-sketch",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Explore design directions through throwaway HTML mockups before committing to implementation.
 Each sketch produces 2-3 variants for comparison. Saves artifacts to \`.planning/sketches/\`.
 Companion to \`/gsd-sketch-wrap-up\`.
@@ -15945,10 +16331,10 @@ Supports two modes:
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
-@~/.claude/get-shit-done/references/sketch-theme-system.md
-@~/.claude/get-shit-done/references/sketch-variant-patterns.md
-@~/.claude/get-shit-done/references/sketch-interactivity.md
-@~/.claude/get-shit-done/references/sketch-tooling.md
+@.tasktronaut/references/sketch-theme-system.md
+@.tasktronaut/references/sketch-variant-patterns.md
+@.tasktronaut/references/sketch-interactivity.md
+@.tasktronaut/references/sketch-tooling.md
 </required_reading>
 
 <process>
@@ -16106,7 +16492,7 @@ Before sketching, ground the design in what's actually buildable. Sketches are H
 
 **a. Identify the target stack.** Check for package.json, Cargo.toml, etc. If the user mentioned a framework (React, SwiftUI, Flutter, etc.), note it.
 
-**b. Check component/pattern availability.** Use context7 (resolve-library-id → query-docs) or web search to answer:
+**b. Check component/pattern availability.** Use context7 (resolve-library-id → query-docs) or approved MCP research sources to answer:
 - What layout primitives does the target framework provide?
 - Are there existing component libraries in use? What components are available?
 - What interaction patterns are idiomatic?
@@ -16297,7 +16683,18 @@ After all sketches complete:
 	{
 		alwaysEnabled: true,
 		name: "gsd-spike-wrap-up",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Package spike experiment findings into a persistent project skill — an implementation blueprint
 for future build conversations. Reads from \`.planning/spikes/\`, writes skill to
 \`./.claude/skills/spike-findings-[project]/\` (project-local) and summary to
@@ -16608,7 +17005,18 @@ After the summary, present next-step options:
 	{
 		alwaysEnabled: true,
 		name: "gsd-sketch-wrap-up",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Curate sketch design findings and package them into a persistent project skill for future
 UI implementation. Reads from \`.planning/sketches/\`, writes skill to \`./.claude/skills/sketch-findings-[project]/\`
 (project-local) and summary to \`.planning/sketches/WRAP-UP-SUMMARY.md\`.
@@ -16898,7 +17306,18 @@ The sketch-findings skill will auto-load when building the UI.
 	{
 		alwaysEnabled: true,
 		name: "gsd-forensics",
-		contents: `# Forensics Workflow
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+# Forensics Workflow
 
 Post-mortem investigation for failed or stuck GSD workflows. Analyzes git history,
 \`.planning/\` artifacts, and file system state to detect anomalies and generate a
@@ -17169,7 +17588,18 @@ gsd-sdk query state.record-session "" \\
 	{
 		alwaysEnabled: true,
 		name: "gsd-health",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Validate \`.planning/\` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans. Optionally repairs auto-fixable issues.
 </purpose>
 
@@ -17362,7 +17792,18 @@ Report as info diagnostic: \`I002 | info | Stale subagent task directories found
 	{
 		alwaysEnabled: true,
 		name: "gsd-plant-seed",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Capture a forward-looking idea as a structured seed file with trigger conditions.
 Seeds auto-surface during /gsd-new-milestone when trigger conditions match the
 new milestone's scope.
@@ -17539,7 +17980,18 @@ and the milestone scope matches the trigger condition.
 	{
 		alwaysEnabled: true,
 		name: "gsd-add-todo",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Capture an idea, task, or issue that surfaces during a GSD session as a structured todo for later work. Enables "thought → capture → continue" flow without losing context.
 </purpose>
 
@@ -17704,7 +18156,18 @@ Would you like to:
 	{
 		alwaysEnabled: true,
 		name: "gsd-note",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Zero-friction idea capture. One Write call, one confirmation line. No questions, no prompts.
 
 **Text mode (\`workflow.text_mode: true\` in config or \`--text\` flag):** Set \`TEXT_MODE=true\` if \`--text\` is present in \`$ARGUMENTS\` OR \`text_mode\` from init JSON is \`true\`. When TEXT_MODE is active, replace every \`AskUserQuestion\` call with a plain-text numbered list and ask the user to type their choice number. This is required for non-Claude runtimes (OpenAI Codex, Gemini CLI, etc.) where \`AskUserQuestion\` is not available.
@@ -17867,7 +18330,18 @@ Promoted from quick note captured on {original date}.
 	{
 		alwaysEnabled: true,
 		name: "gsd-do",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Analyze freeform text from the user and route to the most appropriate GSD command. This is a dispatcher — it never does the work itself. Match user intent to the best command, confirm the routing, and hand off.
 </purpose>
 
@@ -17982,7 +18456,18 @@ After invoking the command, stop. The dispatched command handles everything from
 	{
 		alwaysEnabled: true,
 		name: "gsd-progress",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Check project progress, summarize recent work and what's ahead, then intelligently route to the next action — either executing an existing plan or creating the next one. Provides situational awareness before continuing work.
 </purpose>
 
@@ -18026,7 +18511,7 @@ If missing both ROADMAP.md and PROJECT.md: suggest \`/gsd-new-project\`.
 </step>
 
 <step name="load">
-**Use structured extraction from \`gsd-sdk query\` (or legacy gsd-tools.cjs):**
+**Use structured extraction from \`gsd-sdk query\`:**
 
 Instead of reading full files, use targeted tools to get only the data needed for the report:
 - \`ROADMAP=$(gsd-sdk query roadmap.analyze)\`
@@ -18606,7 +19091,18 @@ Then for each failed check, add a concrete next action:
 	{
 		alwaysEnabled: true,
 		name: "gsd-help",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Display the complete GSD command reference. Output ONLY the reference content. Do NOT add project-specific analysis, git status, next-step suggestions, or any commentary beyond the reference.
 </purpose>
 
@@ -19278,7 +19774,18 @@ Example config:
 	{
 		alwaysEnabled: true,
 		name: "gsd-stats",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Display comprehensive project statistics including phases, plans, requirements, git metrics, and timeline.
 </purpose>
 
@@ -19343,7 +19850,18 @@ If no \`.planning/\` directory exists, inform the user to run \`/gsd-new-project
 	{
 		alwaysEnabled: true,
 		name: "gsd-manager",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 
 Interactive command center for managing a milestone from a single terminal. Shows a dashboard of all phases with visual status, dispatches discuss inline and plan/execute as background agents, and loops back to the dashboard after each action. Enables parallel phase work from one terminal.
 
@@ -19740,8 +20258,19 @@ Display final status with progress bar:
 	{
 		alwaysEnabled: true,
 		name: "gsd-settings",
-		contents: `<purpose>
-Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates .planning/config.json with user preferences. Optionally saves settings as global defaults (~/.gsd/defaults.json) for future projects.
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
+Interactive configuration of GSD workflow agents (research, plan_check, verifier) and model profile selection via multi-question prompt. Updates .planning/config.json with user preferences. Optionally saves settings as global defaults (~/.tasktronaut/gsd/defaults.json) for future projects.
 </purpose>
 
 <required_reading>
@@ -19792,7 +20321,6 @@ Parse current values (default to \`true\` if not present):
 - \`workflow.ui_review\` — run visual quality audit (/gsd-ui-review) in autonomous mode (default: true if absent)
 - \`commit_docs\` — whether \`.planning/\` files are committed to git (default: true if absent)
 - \`intel.enabled\` — enable queryable codebase intelligence (/gsd-intel) (default: false if absent)
-- \`graphify.enabled\` — enable project knowledge graph (/gsd-graphify) (default: false if absent)
 - \`model_profile\` — which model each agent uses (default: \`balanced\`)
 - \`git.branching_strategy\` — branching approach (default: \`"none"\`)
 - \`workflow.use_worktrees\` — whether parallel executor agents run in worktree isolation (default: \`true\`)
@@ -19832,7 +20360,7 @@ Verifier, TDD Mode, Code Review, Code Review Depth _(conditional — only when c
 Commit Docs, Skip Discuss, Worktrees
 
 ### Features
-Intel, Graphify
+Intel
 
 ### Model & Pipeline
 Model Profile, Auto-Advance, Branching
@@ -19998,7 +20526,7 @@ AskUserQuestion([
     ]
   },
   {
-    question: "Research best practices before asking questions? (web search during new-project and discuss-phase)",
+    question: "Research best practices before asking questions? (official docs / approved MCP research during new-project and discuss-phase)",
     header: "Research Qs",
     multiSelect: false,
     options: [
@@ -20086,9 +20614,6 @@ Merge new settings into existing config.json:
   "intel": {
     "enabled": true/false
   },
-  "graphify": {
-    "enabled": true/false
-  },
   "git": {
     "branching_strategy": "none" | "phase" | "milestone",
     "quick_branch_template": <string|null>
@@ -20115,20 +20640,20 @@ AskUserQuestion([
     header: "Defaults",
     multiSelect: false,
     options: [
-      { label: "Yes", description: "New projects start with these settings (saved to ~/.gsd/defaults.json)" },
+      { label: "Yes", description: "New projects start with these settings (saved to ~/.tasktronaut/gsd/defaults.json)" },
       { label: "No", description: "Only apply to this project" }
     ]
   }
 ])
 \`\`\`
 
-If "Yes": write the same config object (minus project-specific fields like \`brave_search\`) to \`~/.gsd/defaults.json\`:
+If "Yes": write the same config object (minus project-specific fields like \`brave_search\`) to \`~/.tasktronaut/gsd/defaults.json\`:
 
 \`\`\`bash
-mkdir -p ~/.gsd
+mkdir -p ~/.tasktronaut/gsd
 \`\`\`
 
-Write \`~/.gsd/defaults.json\` with:
+Write \`~/.tasktronaut/gsd/defaults.json\` with:
 \`\`\`json
 {
   "mode": <current>,
@@ -20157,9 +20682,6 @@ Write \`~/.gsd/defaults.json\` with:
   "intel": {
     "enabled": <current>
   },
-  "graphify": {
-    "enabled": <current>
-  }
 }
 \`\`\`
 </step>
@@ -20185,7 +20707,6 @@ Display:
 | UI Review            | {On/Off} |
 | Commit Docs          | {On/Off} |
 | Intel                | {On/Off} |
-| Graphify             | {On/Off} |
 | Auto-Advance         | {On/Off} |
 | Nyquist Validation   | {On/Off} |
 | UI Phase             | {On/Off} |
@@ -20214,7 +20735,7 @@ Quick commands:
 - [ ] Current config read
 - [ ] User presented with 22 settings (profile + workflow toggles + features + git branching + ctx warnings), grouped into six sections: Planning, Execution, Docs & Output, Features, Model & Pipeline, Misc. \`code_review_depth\` is conditional on \`code_review=on\`.
 - [ ] Config updated with model_profile, workflow, and git sections
-- [ ] User offered to save as global defaults (~/.gsd/defaults.json)
+- [ ] User offered to save as global defaults (~/.tasktronaut/gsd/defaults.json)
 - [ ] Changes confirmed to user
 </success_criteria>
 `,
@@ -20222,19 +20743,30 @@ Quick commands:
 	{
 		alwaysEnabled: true,
 		name: "gsd-profile-user",
-		contents: `<purpose>
+		contents: `> **TASKTRONAUT RUNTIME NOTE — read before executing this workflow:**
+> \`AskUserQuestion\` is a Claude Code CLI tool that does NOT exist in Tasktronaut/Cline.
+> Whenever this workflow says \`Use AskUserQuestion:\` or \`AskUserQuestion([...])\`, call \`ask_followup_question\` instead:
+> - Set \`question\` = the workflow's \`question\` field.
+> - Set \`options\` = a JSON string array of the option labels only — no descriptions, no header, no objects.
+>   Example: \`["Approve", "Adjust phases", "Review full file"]\`
+> - For multi-question batches \`AskUserQuestion([q1, q2, ...])\`, ask each question sequentially as separate \`ask_followup_question\` calls.
+> - For options written as \`{ label: "X", description: "..." }\`, use only the \`label\` string value.
+> - For options written as \`"Label — description"\`, strip the \` — description\` part and use only \`"Label"\`.
+> This note overrides any conflicting instruction in the workflow below.
+
+<purpose>
 Orchestrate the full developer profiling flow: consent, session analysis (or questionnaire fallback), profile generation, result display, and artifact creation.
 
-This workflow wires Phase 1 (session pipeline) and Phase 2 (profiling engine) into a cohesive user-facing experience. All heavy lifting is done by existing \`gsd-sdk query\` handlers (with legacy \`gsd-tools.cjs\` parity where needed) and the gsd-user-profiler agent -- this workflow orchestrates the sequence, handles branching, and provides the UX.
+This workflow wires Phase 1 (session pipeline) and Phase 2 (profiling engine) into a cohesive user-facing experience. All heavy lifting is done by existing \`gsd-sdk query\` handlers and the gsd-user-profiler agent -- this workflow orchestrates the sequence, handles branching, and provides the UX.
 </purpose>
 
 <required_reading>
 Read all files referenced by the invoking prompt's execution_context before starting.
 
 Key references:
-- @$HOME/.claude/get-shit-done/references/ui-brand.md (display patterns)
-- @$HOME/.claude/agents/gsd-user-profiler.md (profiler agent definition)
-- @$HOME/.claude/get-shit-done/references/user-profiling.md (profiling reference doc)
+- @.tasktronaut/references/ui-brand.md (display patterns)
+- @.tasktronaut/agents/gsd-user-profiler.md (profiler agent definition)
+- @.tasktronaut/references/user-profiling.md (profiling reference doc)
 </required_reading>
 
 <process>
@@ -20248,7 +20780,7 @@ Parse flags from $ARGUMENTS:
 Check for existing profile:
 
 \`\`\`bash
-PROFILE_PATH="$HOME/.claude/get-shit-done/USER-PROFILE.md"
+PROFILE_PATH="$HOME/.tasktronaut/gsd/USER-PROFILE.md"
 [ -f "$PROFILE_PATH" ] && echo "EXISTS" || echo "NOT_FOUND"
 \`\`\`
 
@@ -20272,7 +20804,7 @@ If "Cancel": Display "No changes made." and exit.
 
 Backup existing profile:
 \`\`\`bash
-cp "$HOME/.claude/get-shit-done/USER-PROFILE.md" "$HOME/.claude/USER-PROFILE.backup.md"
+cp "$HOME/.tasktronaut/gsd/USER-PROFILE.md" "$HOME/.tasktronaut/USER-PROFILE.backup.md"
 \`\`\`
 
 Display: "Re-analyzing your sessions to update your profile."
@@ -20316,7 +20848,7 @@ Your recent Claude Code sessions, looking for patterns in these
 
 ✓ Reads session files locally (read-only, nothing modified)
 ✓ Analyzes message patterns (not content meaning)
-✓ Stores profile at $HOME/.claude/get-shit-done/USER-PROFILE.md
+✓ Stores profile at $HOME/.tasktronaut/gsd/USER-PROFILE.md
 ✗ Nothing is sent to external services
 ✗ Sensitive content (API keys, passwords) is automatically excluded
 \`\`\`
@@ -20387,13 +20919,13 @@ Display: "◆ Analyzing patterns..."
 
 Use the Task tool to spawn the \`gsd-user-profiler\` agent. Provide it with:
 - The sampled JSONL file path from profile-sample output
-- The user-profiling reference doc at \`$HOME/.claude/get-shit-done/references/user-profiling.md\`
+- The user-profiling reference doc at \`.tasktronaut/references/user-profiling.md\`
 
 The agent prompt should follow this structure:
 \`\`\`
 Read the profiling reference document and the sampled session messages, then analyze the developer's behavioral patterns across all 8 dimensions.
 
-Reference: @$HOME/.claude/get-shit-done/references/user-profiling.md
+Reference: @.tasktronaut/references/user-profiling.md
 Session data: @{temp_dir}/profile-sample.jsonl
 
 Analyze these messages and return your analysis in the <analysis> JSON format specified in the reference document.
@@ -20498,7 +21030,7 @@ Display: "◆ Writing profile..."
 gsd-sdk query write-profile --input "$ANALYSIS_PATH" --json
 \`\`\`
 
-Display: "✓ Profile written to $HOME/.claude/get-shit-done/USER-PROFILE.md"
+Display: "✓ Profile written to $HOME/.tasktronaut/gsd/USER-PROFILE.md"
 
 ---
 
@@ -20560,10 +21092,10 @@ Use AskUserQuestion with multiSelect:
 - question: "Which artifacts should I generate?"
 - options (ALL pre-selected by default):
   - "/gsd-dev-preferences command file" -- "Load your preferences in any session"
-  - "CLAUDE.md profile section" -- "Add profile to this project's CLAUDE.md"
-  - "Global CLAUDE.md" -- "Add profile to $HOME/.claude/CLAUDE.md for all projects"
+  - "TASKTRONAUT.md profile section" -- "Add profile to this project's TASKTRONAUT.md"
+  - "Global TASKTRONAUT.md" -- "Add profile to $HOME/.tasktronaut/TASKTRONAUT.md for all projects"
 
-**If no artifacts selected:** Display "No artifacts generated. Your profile is saved at $HOME/.claude/get-shit-done/USER-PROFILE.md" and jump to step 10.
+**If no artifacts selected:** Display "No artifacts generated. Your profile is saved at $HOME/.tasktronaut/gsd/USER-PROFILE.md" and jump to step 10.
 
 ---
 
@@ -20577,25 +21109,25 @@ Generate selected artifacts sequentially (file I/O is fast, no benefit from para
 gsd-sdk query generate-dev-preferences --analysis "$ANALYSIS_PATH" --json
 \`\`\`
 
-Display: "✓ Generated /gsd-dev-preferences at $HOME/.claude/commands/gsd/dev-preferences.md"
+Display: "✓ Generated /gsd-dev-preferences at $HOME/.tasktronaut/commands/gsd/dev-preferences.md"
 
-**For CLAUDE.md profile section (if selected):**
-
-\`\`\`bash
-gsd-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --json
-\`\`\`
-
-Display: "✓ Added profile section to CLAUDE.md"
-
-**For Global CLAUDE.md (if selected):**
+**For TASKTRONAUT.md profile section (if selected):**
 
 \`\`\`bash
-gsd-sdk query generate-claude-profile --analysis "$ANALYSIS_PATH" --global --json
+gsd-sdk query generate-tasktronaut-profile --analysis "$ANALYSIS_PATH" --json
 \`\`\`
 
-Display: "✓ Added profile section to $HOME/.claude/CLAUDE.md"
+Display: "✓ Added profile section to TASKTRONAUT.md"
 
-**Error handling:** If any \`gsd-sdk query\` or gsd-tools.cjs call fails, display the error message and use AskUserQuestion to offer "Retry" or "Skip this artifact". On retry, re-run the command. On skip, continue to next artifact.
+**For Global TASKTRONAUT.md (if selected):**
+
+\`\`\`bash
+gsd-sdk query generate-tasktronaut-profile --analysis "$ANALYSIS_PATH" --global --json
+\`\`\`
+
+Display: "✓ Added profile section to $HOME/.tasktronaut/TASKTRONAUT.md"
+
+**Error handling:** If any \`gsd-sdk query\` call fails, display the error message and use AskUserQuestion to offer "Retry" or "Skip this artifact". On retry, re-run the command. On skip, continue to next artifact.
 
 ---
 
@@ -20607,7 +21139,7 @@ Read both old backup and new analysis to compare dimension ratings/confidence.
 
 Read the backed-up profile:
 \`\`\`bash
-BACKUP_PATH="$HOME/.claude/USER-PROFILE.backup.md"
+BACKUP_PATH="$HOME/.tasktronaut/USER-PROFILE.backup.md"
 \`\`\`
 
 Compare each dimension's rating and confidence between old and new. Display diff table showing only changed dimensions:
@@ -20630,15 +21162,15 @@ If nothing changed: Display "No changes detected -- your profile is already up t
  GSD > PROFILE COMPLETE ✓
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Your profile:    $HOME/.claude/get-shit-done/USER-PROFILE.md
+Your profile:    $HOME/.tasktronaut/gsd/USER-PROFILE.md
 \`\`\`
 
 Then list paths for each generated artifact:
 \`\`\`
 Artifacts:
-  ✓ /gsd-dev-preferences   $HOME/.claude/commands/gsd/dev-preferences.md
-  ✓ CLAUDE.md section       ./CLAUDE.md
-  ✓ Global CLAUDE.md        $HOME/.claude/CLAUDE.md
+  ✓ /gsd-dev-preferences    $HOME/.tasktronaut/commands/gsd/dev-preferences.md
+  ✓ TASKTRONAUT.md section  ./TASKTRONAUT.md
+  ✓ Global TASKTRONAUT.md   $HOME/.tasktronaut/TASKTRONAUT.md
 \`\`\`
 
 (Only show artifacts that were actually generated.)
@@ -20670,7 +21202,7 @@ rm -f "$ANALYSIS_PATH" 2>/dev/null
 - [ ] Profile written to USER-PROFILE.md via write-profile subcommand
 - [ ] Result display shows report card table and highlight reel with evidence
 - [ ] Artifact selection uses multiSelect with all options pre-selected
-- [ ] Artifacts generated sequentially via gsd-sdk query (or gsd-tools.cjs) subcommands
+- [ ] Artifacts generated sequentially via gsd-sdk query subcommands
 - [ ] Refresh diff shows changed dimensions when --refresh was used
 - [ ] Temp files cleaned up on completion
 </success_criteria>

@@ -42,6 +42,10 @@ export async function updateApiConfigurationProto(
 				protoApiConfiguration.actModeApiProvider !== undefined
 					? coerceSupportedApiProvider(convertProtoToApiProvider(protoApiConfiguration.actModeApiProvider!))
 					: undefined,
+			kissModeApiProvider:
+				protoApiConfiguration.kissModeApiProvider !== undefined
+					? coerceSupportedApiProvider(convertProtoToApiProvider(protoApiConfiguration.kissModeApiProvider!))
+					: undefined,
 
 			// Convert ModelInfo objects (empty arrays → undefined)
 			// Plan Mode
@@ -119,10 +123,51 @@ export async function updateApiConfigurationProto(
 			actModeAihubmixModelInfo: protoApiConfiguration.actModeAihubmixModelInfo
 				? fromProtobufOpenAiCompatibleModelInfo(protoApiConfiguration.actModeAihubmixModelInfo)
 				: undefined,
+
+			// Kiss Mode
+			kissModeOpenRouterModelInfo: protoApiConfiguration.kissModeOpenRouterModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeOpenRouterModelInfo)
+				: undefined,
+			kissModeClineModelInfo: protoApiConfiguration.kissModeClineModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeClineModelInfo)
+				: undefined,
+			kissModeOpenAiModelInfo: protoApiConfiguration.kissModeOpenAiModelInfo
+				? fromProtobufOpenAiCompatibleModelInfo(protoApiConfiguration.kissModeOpenAiModelInfo)
+				: undefined,
+			kissModeLiteLlmModelInfo: protoApiConfiguration.kissModeLiteLlmModelInfo
+				? fromProtobufLiteLLMModelInfo(protoApiConfiguration.kissModeLiteLlmModelInfo)
+				: undefined,
+			kissModeRequestyModelInfo: protoApiConfiguration.kissModeRequestyModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeRequestyModelInfo)
+				: undefined,
+			kissModeGroqModelInfo: protoApiConfiguration.kissModeGroqModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeGroqModelInfo)
+				: undefined,
+			kissModeHuggingFaceModelInfo: protoApiConfiguration.kissModeHuggingFaceModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeHuggingFaceModelInfo)
+				: undefined,
+			kissModeHuaweiCloudMaasModelInfo: protoApiConfiguration.kissModeHuaweiCloudMaasModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeHuaweiCloudMaasModelInfo)
+				: undefined,
+			kissModeBasetenModelInfo: protoApiConfiguration.kissModeBasetenModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeBasetenModelInfo)
+				: undefined,
+			kissModeVercelAiGatewayModelInfo: protoApiConfiguration.kissModeVercelAiGatewayModelInfo
+				? fromProtobufModelInfo(protoApiConfiguration.kissModeVercelAiGatewayModelInfo)
+				: undefined,
+			kissModeOcaModelInfo: protoApiConfiguration.kissModeOcaModelInfo
+				? fromProtobufOcaModelInfo(protoApiConfiguration.kissModeOcaModelInfo)
+				: undefined,
+			kissModeAihubmixModelInfo: protoApiConfiguration.kissModeAihubmixModelInfo
+				? fromProtobufOpenAiCompatibleModelInfo(protoApiConfiguration.kissModeAihubmixModelInfo)
+				: undefined,
+
 			geminiPlanModeThinkingLevel: protoApiConfiguration.geminiPlanModeThinkingLevel,
 			geminiActModeThinkingLevel: protoApiConfiguration.geminiActModeThinkingLevel,
+			geminiKissModeThinkingLevel: protoApiConfiguration.geminiKissModeThinkingLevel,
 			planModeReasoningEffort: protoApiConfiguration.planModeReasoningEffort as OpenaiReasoningEffort | undefined,
 			actModeReasoningEffort: protoApiConfiguration.actModeReasoningEffort as OpenaiReasoningEffort | undefined,
+			kissModeReasoningEffort: protoApiConfiguration.kissModeReasoningEffort as OpenaiReasoningEffort | undefined,
 		}
 
 		// Update the API configuration in storage

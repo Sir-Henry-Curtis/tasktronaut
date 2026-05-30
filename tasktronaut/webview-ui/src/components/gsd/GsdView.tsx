@@ -1,5 +1,6 @@
 import { NewTaskRequest } from "@shared/proto/cline/task"
 import { useCallback, useEffect, useState } from "react"
+import { PLATFORM_CONFIG } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { TaskServiceClient } from "@/services/grpc-client"
 
@@ -370,84 +371,85 @@ const GsdView = ({ onDone }: GsdViewProps) => {
 	useEffect(() => {
 		const handler = (event: MessageEvent) => {
 			const msg = event.data
-			if (msg?.type === "gsdState" && msg.content) {
-				setGsdState(parseGsdState(msg.content))
+			if (msg?.type === "gsdState") {
+				setGsdState(msg.content ? parseGsdState(msg.content) : null)
 			}
 		}
 		window.addEventListener("message", handler)
+		PLATFORM_CONFIG.postMessage({ type: "requestGsdState" })
 		return () => window.removeEventListener("message", handler)
 	}, [])
 
 	const stepIndex = gsdState ? STEP_ORDER.indexOf(gsdState.current_step) : -1
 
 	return (
-		<div className="flex flex-col h-full overflow-hidden">
-			{/* Fixed header + state */}
-			<div className="flex-none px-4 pt-4 flex flex-col gap-4">
-				<div className="flex items-center justify-between">
-					<div>
-						<h2 className="text-base font-semibold text-[var(--vscode-foreground)]">GSD Workflow</h2>
-						<p className="text-xs text-[var(--vscode-descriptionForeground)] mt-0.5">
-							Get Shit Done — spec-driven AI development
-						</p>
+		<div className="fixed inset-0 flex flex-col overflow-hidden">
+			<div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4 pt-4">
+				<div className="flex flex-col gap-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<h2 className="text-base font-semibold text-[var(--vscode-foreground)]">GSD Workflow</h2>
+							<p className="text-xs text-[var(--vscode-descriptionForeground)] mt-0.5">
+								Get Shit Done — spec-driven AI development
+							</p>
+						</div>
+						<button
+							aria-label="Close"
+							className="text-[var(--vscode-descriptionForeground)] hover:text-[var(--vscode-foreground)] p-1 rounded"
+							onClick={onDone}
+							type="button">
+							✕
+						</button>
 					</div>
-					<button
-						aria-label="Close"
-						className="text-[var(--vscode-descriptionForeground)] hover:text-[var(--vscode-foreground)] p-1 rounded"
-						onClick={onDone}
-						type="button">
-						✕
-					</button>
-				</div>
 
-				{/* Current State */}
-				{gsdState ? (
-					<div className="rounded border border-[var(--vscode-panel-border)] bg-[var(--vscode-editor-background)] p-3">
-						<div className="text-xs text-[var(--vscode-descriptionForeground)] mb-2 uppercase tracking-wide">
-							Active Project
+					{gsdState ? (
+						<div className="rounded border border-[var(--vscode-panel-border)] bg-[var(--vscode-editor-background)] p-3">
+							<div className="text-xs text-[var(--vscode-descriptionForeground)] mb-2 uppercase tracking-wide">
+								Active Project
+							</div>
+							<div className="font-medium text-sm text-[var(--vscode-foreground)]">
+								{gsdState.phase_name ?? `Phase ${gsdState.current_phase}`}
+							</div>
+							<div className="flex gap-1 mt-3">
+								{STEP_ORDER.map((s, i) => (
+									<div
+										className={`flex-1 h-1 rounded-full ${
+											i < stepIndex
+												? "bg-[var(--vscode-charts-green)]"
+												: i === stepIndex
+													? "bg-[var(--vscode-focusBorder)]"
+													: "bg-[var(--vscode-panel-border)]"
+										}`}
+										key={s}
+									/>
+								))}
+							</div>
+							<div className="flex justify-between mt-1">
+								{STEP_ORDER.map((s, i) => (
+									<span
+										className={`text-[10px] ${
+											i === stepIndex
+												? "text-[var(--vscode-focusBorder)]"
+												: "text-[var(--vscode-descriptionForeground)]"
+										}`}
+										key={s}>
+										{STEP_LABELS[s]}
+									</span>
+								))}
+							</div>
 						</div>
-						<div className="font-medium text-sm text-[var(--vscode-foreground)]">
-							{gsdState.phase_name ?? `Phase ${gsdState.current_phase}`}
+					) : (
+						<div className="rounded border border-[var(--vscode-panel-border)] bg-[var(--vscode-editor-background)] p-3 text-xs text-[var(--vscode-descriptionForeground)]">
+							No active GSD project. Use <span className="font-mono">/gsd-new-project</span> to start one.
 						</div>
-						<div className="flex gap-1 mt-3">
-							{STEP_ORDER.map((s, i) => (
-								<div
-									className={`flex-1 h-1 rounded-full ${
-										i < stepIndex
-											? "bg-[var(--vscode-charts-green)]"
-											: i === stepIndex
-												? "bg-[var(--vscode-focusBorder)]"
-												: "bg-[var(--vscode-panel-border)]"
-									}`}
-									key={s}
-								/>
-							))}
-						</div>
-						<div className="flex justify-between mt-1">
-							{STEP_ORDER.map((s, i) => (
-								<span
-									className={`text-[10px] ${
-										i === stepIndex
-											? "text-[var(--vscode-focusBorder)]"
-											: "text-[var(--vscode-descriptionForeground)]"
-									}`}
-									key={s}>
-									{STEP_LABELS[s]}
-								</span>
-							))}
-						</div>
+					)}
+
+					<div className="flex flex-col gap-2">
+						{GSD_COMMAND_GROUPS.map((group) => (
+							<CollapsibleGroup group={group} key={group.id} onSend={sendCommand} />
+						))}
 					</div>
-				) : (
-					<div className="rounded border border-[var(--vscode-panel-border)] bg-[var(--vscode-editor-background)] p-3 text-xs text-[var(--vscode-descriptionForeground)]">
-						No active GSD project. Use <span className="font-mono">/gsd-new-project</span> to start one.
-					</div>
-				)}
-			</div>
-			{/* Scrollable command groups */}
-			<div className="flex-1 overflow-y-auto min-h-0 px-4 pb-4 pt-3 flex flex-col gap-2">
-				{GSD_COMMAND_GROUPS.map((group) => (
-					<CollapsibleGroup group={group} key={group.id} onSend={sendCommand} />
-				))}
+				</div>
 			</div>
 		</div>
 	)

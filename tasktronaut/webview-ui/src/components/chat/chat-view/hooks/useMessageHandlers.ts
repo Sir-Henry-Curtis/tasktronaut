@@ -1,7 +1,7 @@
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import { EmptyRequest, StringRequest } from "@shared/proto/cline/common"
 import { AskResponseRequest, NewTaskRequest } from "@shared/proto/cline/task"
-import { useCallback, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { SlashServiceClient, TaskServiceClient } from "@/services/grpc-client"
 import type { ButtonActionType } from "../shared/buttonConfig"
@@ -23,8 +23,14 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 		setEnableButtons,
 		clineAsk,
 		lastMessage,
+		messageQueue,
+		setMessageQueue,
 	} = chatState
 	const cancelInFlightRef = useRef(false)
+	const stopInFlightRef = useRef(false)
+	// Updated on every render — readable from async callbacks without stale-closure issues.
+	const clineAskRef = useRef(clineAsk)
+	clineAskRef.current = clineAsk
 
 	// Handle sending a message
 	const handleSendMessage = useCallback(
@@ -72,7 +78,6 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 							case "followup":
 							case "plan_mode_respond":
 							case "tool":
-							case "browser_action_launch":
 							case "command":
 							case "command_output":
 							case "use_mcp_server":
@@ -312,10 +317,125 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 		startNewTask()
 	}, [startNewTask])
 
+	// Add a message to the queue (called when task is busy)
+	const handleQueueMessage = useCallback(
+		(text: string, images: string[], files: string[]) => {
+			const trimmed = text.trim()
+			if (!trimmed && !images.length && !files.length) return
+			setMessageQueue((prev) => [
+				...prev,
+				{
+					id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+					text: trimmed,
+					images,
+					files,
+				},
+			])
+		},
+		[setMessageQueue],
+	)
+
+	// Remove a message from the queue by ID
+	const removeFromQueue = useCallback(
+		(id: string) => {
+			setMessageQueue((prev) => prev.filter((m) => m.id !== id))
+		},
+		[setMessageQueue],
+	)
+
+	// Cancel the current task and auto-send the first queued message when resumed.
+	// Polls clineAskRef directly so it works even when cancelTask() produces no
+	// history item (and therefore no resume_task ask) — in that case we timeout
+	// and put the message back in the queue.
+	const stopAndProcessQueue = useCallback(async () => {
+		if (!messageQueue.length) return
+		if (stopInFlightRef.current) return
+		stopInFlightRef.current = true
+
+		const [first, ...rest] = messageQueue
+		setMessageQueue(rest)
+		setSendingDisabled(true)
+		setEnableButtons(false)
+		try {
+			if (backgroundCommandRunning) {
+				await TaskServiceClient.cancelBackgroundCommand(EmptyRequest.create({})).catch((err) =>
+					console.error("Failed to cancel background command:", err),
+				)
+			}
+			await TaskServiceClient.cancelTask(EmptyRequest.create({}))
+
+			// Poll until the task enters resume state (max 15 s).
+			// clineAskRef.current is updated on every render so it's always fresh.
+			const deadline = Date.now() + 15_000
+			while (
+				clineAskRef.current !== "resume_task" &&
+				clineAskRef.current !== "resume_completed_task"
+			) {
+				if (Date.now() > deadline) {
+					throw new Error("[Queue] Timed out waiting for resume state")
+				}
+				await new Promise<void>((r) => setTimeout(r, 100))
+			}
+
+			await TaskServiceClient.askResponse(
+				AskResponseRequest.create({
+					responseType: "yesButtonClicked",
+					text: first.text,
+					images: first.images,
+					files: first.files,
+				}),
+			)
+		} catch (err) {
+			console.error("[Queue] Failed to process queued message:", err)
+			setMessageQueue((prev) => [first, ...prev])
+		} finally {
+			stopInFlightRef.current = false
+		}
+	}, [messageQueue, setMessageQueue, setSendingDisabled, setEnableButtons, backgroundCommandRunning])
+
+	// Auto-drain the queue when the model becomes naturally idle (no user button press needed).
+	// Fires when clineAsk transitions to a "waiting for input" state while items remain queued.
+	const autoProcessInFlightRef = useRef(false)
+	useEffect(() => {
+		if (messageQueue.length === 0) return
+		if (autoProcessInFlightRef.current || stopInFlightRef.current) return
+
+		// Only auto-send when model is waiting for user input (not streaming, not tool approval)
+		if (clineAsk !== "followup" && clineAsk !== "resume_task" && clineAsk !== "resume_completed_task") return
+
+		autoProcessInFlightRef.current = true
+		const [first, ...rest] = messageQueue
+		setMessageQueue(rest)
+		setSendingDisabled(true)
+		setEnableButtons(false)
+
+		const responseType =
+			clineAsk === "resume_task" || clineAsk === "resume_completed_task" ? "yesButtonClicked" : "messageResponse"
+
+		TaskServiceClient.askResponse(
+			AskResponseRequest.create({
+				responseType,
+				text: first.text,
+				images: first.images,
+				files: first.files,
+			}),
+		)
+			.catch((err) => {
+				console.error("[Queue] Auto-process failed:", err)
+				setMessageQueue((prev) => [first, ...prev])
+			})
+			.finally(() => {
+				autoProcessInFlightRef.current = false
+			})
+	}, [clineAsk, messageQueue, setMessageQueue, setSendingDisabled, setEnableButtons])
+
 	return {
 		handleSendMessage,
 		executeButtonAction,
 		handleTaskCloseButtonClick,
 		startNewTask,
+		handleQueueMessage,
+		removeFromQueue,
+		stopAndProcessQueue,
 	}
 }

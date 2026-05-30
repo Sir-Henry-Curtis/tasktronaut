@@ -2,6 +2,7 @@ import { DeleteAllTaskHistoryCount } from "@shared/proto/cline/task"
 import fs from "fs/promises"
 import path from "path"
 import { HostProvider } from "@/hosts/host-provider"
+import { getCheckpointRootCandidates } from "@/integrations/checkpoints/CheckpointUtils"
 import { ShowMessageRequest, ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
 import { fileExistsAtPath } from "../../../utils/fs"
@@ -97,10 +98,11 @@ export async function deleteAllTaskHistory(controller: Controller): Promise<Dele
 				await fs.rm(taskDirPath, { recursive: true, force: true })
 			}
 
-			// Remove checkpoints directory contents
-			const checkpointsDirPath = path.join(HostProvider.get().globalStorageFsPath, "checkpoints")
-			if (await fileExistsAtPath(checkpointsDirPath)) {
-				await fs.rm(checkpointsDirPath, { recursive: true, force: true })
+			// Remove current and legacy checkpoint roots.
+			for (const checkpointsDirPath of getCheckpointRootCandidates()) {
+				if (await fileExistsAtPath(checkpointsDirPath)) {
+					await fs.rm(checkpointsDirPath, { recursive: true, force: true })
+				}
 			}
 		} catch (error) {
 			HostProvider.window.showMessage({
