@@ -1,0 +1,19 @@
+# Normalize all text files to LF in the repo and in the working tree.
+# This overrides core.autocrlf so Windows checkouts don't fight build tools
+# that write LF (esbuild, protoc, npm scripts, etc.).
+* text=auto eol=lf
+
+# Binary files — never touch line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.vsix binary
+*.zip binary
+*.gz binary
+*.tgz binary
