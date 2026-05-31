@@ -21,6 +21,8 @@ process.stdin.on('end', () => {
   clearTimeout(t);
   try {
     const data = JSON.parse(input);
+    // KISS mode is conversational and never compacts — skip GSD state injection.
+    if (data.mode === 'kiss') { out(''); process.exit(0); }
     const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
     const sp = path.join(cwd, '.planning', 'STATE.md');
     if (!fs.existsSync(sp)) { out(''); process.exit(0); }
@@ -48,6 +50,8 @@ process.stdin.on('end', () => {
   clearTimeout(t);
   try {
     const data = JSON.parse(input);
+    // KISS mode: suppress all GSD context so lightweight models get a clean slate.
+    if (data.mode === 'kiss') { out(''); process.exit(0); }
     const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
     const sp = path.join(cwd, '.planning', 'STATE.md');
     if (!fs.existsSync(sp)) { out(''); process.exit(0); }
@@ -83,6 +87,8 @@ process.stdin.on('end', () => {
   clearTimeout(t);
   try {
     const data = JSON.parse(input);
+    // KISS mode: suppress all GSD context injection — the model receives no workflow state.
+    if (data.mode === 'kiss') { out(''); process.exit(0); }
     const prompt = (data.userPromptSubmit || {}).prompt || '';
     const cwd = data.cwd || (data.workspaceRoots || [])[0] || process.cwd();
     const m = prompt.match(/(^|\\s)\\/gsd-([a-zA-Z0-9-]+)/);

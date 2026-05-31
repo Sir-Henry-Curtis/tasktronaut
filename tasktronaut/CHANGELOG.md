@@ -1,5 +1,11 @@
 # Tasktronaut Changelog
 
+## [1.2.33] - 2026-05-31
+
+### Fixed
+
+- **KISS mode GSD context suppression** — All three GSD hooks (`TaskStart`, `PreCompact`, `UserPromptSubmit`) now check the active mode before injecting any planning context. In KISS mode the hooks return no context, so lightweight local models receive a clean slate with no STATE.md dumps, no phase plans, and no `/gsd-*` workflow injection. The mode is surfaced by adding a `mode` field (field 8) to the `HookInput` proto message and populating it in `HookFactory.completeParams()` via `StateManager`. In non-KISS modes all existing GSD context injection is unchanged.
+
 ## [1.2.31] - 2026-05-30
 
 ### Fixed

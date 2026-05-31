@@ -212,6 +212,7 @@ export abstract class HookRunner<Name extends HookName> {
 			timestamp: Date.now().toString(),
 			workspaceRoots,
 			userId: getDistinctId(), // Always available: Cline User ID, machine ID, or generated UUID
+			mode: StateManager.get().getGlobalSettingsKey("mode") ?? "act",
 			...params,
 			model,
 		}

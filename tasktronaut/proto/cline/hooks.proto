@@ -15,6 +15,8 @@ message HookInput {
   repeated string workspace_roots = 5;
   string user_id = 6;
   HookModelContext model = 7;
+  // Current interaction mode: "act", "plan", or "kiss"
+  string mode = 8;
   oneof data {
     PreToolUseData pre_tool_use = 10;
     PostToolUseData post_tool_use = 11;
