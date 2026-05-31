@@ -135,7 +135,7 @@ function assertQuery(content, filePath, query, workspacePath, validate, extraArg
 	validate(payload)
 }
 
-const source = fs.readFileSync(sourcePath, "utf8")
+const source = fs.readFileSync(sourcePath, "utf8").replace(/\r\n/g, "\n")
 const extractedShim = extractShimSource(source)
 assertNoKnownTemplateEscapeCorruption(extractedShim)
 
@@ -196,7 +196,7 @@ assertQuery(extractedShim, tempShimPath, "init.map-codebase", tempWorkspace, (pa
 		fail("init.map-codebase did not return existing map details", JSON.stringify(payload, null, 2))
 	}
 	const stack = payload.existing_map_details.find((entry) => entry.name === "STACK.md")
-	if (!stack || stack.path !== ".planning/codebase/STACK.md" || stack.lines < 1 || stack.bytes < 1) {
+	if (!stack || stack.path.replace(/\\/g, "/") !== ".planning/codebase/STACK.md" || stack.lines < 1 || stack.bytes < 1) {
 		fail("init.map-codebase returned malformed STACK.md details", JSON.stringify(payload, null, 2))
 	}
 })
@@ -224,7 +224,7 @@ if (JSON.stringify(securityPayload).includes("sk-testtasktronautshimsecret123456
 }
 
 if (fs.existsSync(managedPath)) {
-	const managedContent = fs.readFileSync(managedPath, "utf8")
+	const managedContent = fs.readFileSync(managedPath, "utf8").replace(/\r\n/g, "\n")
 	assertNoKnownTemplateEscapeCorruption(managedContent)
 	assertCompiles(managedContent, managedPath)
 
